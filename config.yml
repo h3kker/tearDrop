@@ -29,3 +29,12 @@ template: "simple"
 # For session support enable the following line and see Dancer::Session
 # session: "YAML"
 
+plugins:
+  DBIC:
+    default:
+      dsn: dbi:Pg:dbname=teardrop
+      schema_class: TearDrop::Model
+      user: teardrop
+      options:
+        RaiseError: 1
+        PrintError: 1
