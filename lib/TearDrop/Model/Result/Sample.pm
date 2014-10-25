@@ -149,9 +149,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 raw_files
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:adEKf6sy87TgENaMwmW0tQ
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::RawFile>
+
+=cut
+
+__PACKAGE__->has_many(
+  "raw_files",
+  "TearDrop::Model::Result::RawFile",
+  { "foreign.sample_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-25 13:24:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4XeMxHu2jiciiiNvInXbOg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

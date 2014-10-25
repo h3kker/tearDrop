@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS db_sources CASCADE;
 CREATE TABLE db_sources (
   id serial primary key,
+  description text not null,
   dbtype text,
   url text,
   version text,
@@ -11,8 +12,15 @@ CREATE TABLE db_sources (
 DROP TABLE IF EXISTS organisms CASCADE;
 CREATE TABLE organisms (
   name text primary key,
+  scientific_name text not null,
   genome_version text not null,
   genome_path text
+);
+
+DROP TABLE IF EXISTS gene_models CASCADE;
+CREATE TABLE gene_models (
+  organism text references organisms(name),
+  path text
 );
 
 DROP TABLE IF EXISTS transcripts CASCADE;
@@ -60,6 +68,7 @@ CREATE TABLE samples (
 DROP TABLE IF EXISTS raw_files CASCADE;
 CREATE TABLE raw_files (
   id serial primary key,
+  parent_file_id integer references raw_files(id),
   sample_id integer not null references samples(id),
   read integer not null,
   description text not null,
@@ -83,6 +92,12 @@ CREATE TABLE count_tables (
   subset_of integer references count_tables(id),
   path text not null,
   run_date timestamp
+);
+
+DROP TABLE IF EXISTS count_raw_files CASCADE;
+CREATE TABLE count_raw_files (
+  count_table_id integer not null references count_tables(id),
+  raw_file_id integer not null references raw_files(id)
 );
 
 DROP TABLE IF EXISTS raw_counts CASCADE;
