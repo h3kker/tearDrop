@@ -1,0 +1,105 @@
+'use strict';
+
+angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.grid.pagination'])
+
+.config(['$routeProvider', function($routeProvider) {
+  $routeProvider.when('/deresults', {
+    templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
+    controller: 'DeResultsCtrl'
+  });
+}])
+
+.controller('DeResultsCtrl', ['$rootScope', '$scope', '$http', 'uiGridConstants', function($rootScope, $scope, $http, uiGridConstants) {
+
+  $scope.deRuns=[];
+  $http.get('[% config.base_uri %]/api/deruns').success(function(data) {
+    $scope.deRuns=data;
+    if ($rootScope.deresults.selectedDeRun==null) {
+      $rootScope.deresults.selectedDeRun=$scope.deRuns[0];
+      $rootScope.deresults.selectedContrast=$scope.deRuns[0].contrasts[0];
+    }
+  });
+  if ($rootScope.deresults == null) {
+    $rootScope.deresults={
+      'selectedDeRun': null,
+      'selectedContrast': null,
+      'pagingOptions': {
+        'page': 1,
+        'pagesize': 50,
+      },
+      'sort': [
+        { 'adjp': 'asc' },
+      ],
+      'filters': {
+      },
+    };
+  }
+
+  $scope.gridOptions = {
+    showFooter: true,
+    enableFiltering: true,
+    useExternalFiltering: true,
+    useExternalSorting: true,
+    minRowsToShow: 20,
+    rowsPerPage: $rootScope.deresults.pagingOptions.pagesize,
+    columnDefs: [
+      { name: 'Transcript/Gene', field: 'transcript_id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>'},
+      { name: 'Base Mean', field: 'base_mean' },
+      { name: 'p-value', field: 'pvalue' },
+      { name: 'Adjusted p-value', field: 'adjp' },
+      { name: 'Log2 FC', field: 'log2_foldchange' },
+      { name: 'Flagged', field: 'flagged' },
+    ],
+  };
+
+  $scope.gridOptions.onRegisterApi = function(gridApi) {
+    $scope.gridApi = gridApi;
+    $scope.gridApi.core.on.sortChanged($scope, function(grid, sortColumns) {
+      console.log(sortColumns);
+      $rootScope.deresults.sort=[];
+      angular.forEach(sortColumns, function(col) {
+        $rootScope.deresults.sort.push({
+          field: col.field,
+          direction: col.sort.direction==uiGridConstants.DESC ? 'desc' : 'asc',
+        });
+      });
+      $scope.refresh();
+    });
+    $scope.gridApi.core.on.filterChanged( $scope, function() {
+      var grid = this.grid;
+      $rootScope.deresults.filters={};
+      angular.forEach(grid.columns, function(col) {
+        angular.forEach(col.filters, function(f) {
+          if (f.term != null && f.term !== '') {
+            $rootScope.deresults.filters[col.field]=f.term;
+          }
+        });
+      });
+      $scope.refresh();
+    });
+  };
+
+  $scope.$watch('deresults.pagingOptions', function (newVal, oldVal) {
+    if (newVal !== oldVal && newVal.page !== oldVal.page) {
+      $scope.refresh();
+    }
+  }, true);
+
+  $scope.refresh = function() {
+    if ($rootScope.deresults.selectedDeRun==null || $rootScope.deresults.selectedContrast==null) return;
+    var p = angular.copy($rootScope.deresults.pagingOptions);
+    angular.forEach($rootScope.deresults.filters, function(v,k) {
+      p['filter.'+k]=v;
+    });
+    angular.forEach($rootScope.deresults.sort, function(v,k) {
+      p['sort-'+k+'-'+v.field]=v.direction;
+    });
+    $http.get('[% config.base_uri %]/api/deruns/'+$rootScope.deresults.selectedDeRun.id+'/contrasts/'+$rootScope.deresults.selectedContrast.id+'/results', { 'params': p }).success(
+      function(res) {
+        $rootScope.deresults.pagingOptions.total_items = res.total_items;
+        $scope.gridOptions.data = res.data;
+      }
+    );
+  }
+  $scope.refresh();
+}]);

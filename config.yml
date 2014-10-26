@@ -4,10 +4,12 @@
 
 # Your application's name
 appname: "TearDrop"
+base_uri: '/teardrop'
 
 # The default layout to use for your application (located in
 # views/layouts/main.tt)
 layout: "main"
+auto_page: 1
 
 # when the charset is set to UTF-8 Dancer will handle for you
 # all the magic of encoding and decoding. You should not care
@@ -18,16 +20,21 @@ charset: "UTF-8"
 # simple: default and very basic template engine
 # template_toolkit: TT
 
-template: "simple"
+#template: "simple"
 
-# template: "template_toolkit"
-# engines:
-#   template_toolkit:
-#     start_tag: '[%'
-#     end_tag:   '%]'
-
+template: "template_toolkit"
+engines:
+  template_toolkit:
+    encoding:  'utf8'
+    start_tag: '[%'
+    end_tag:   '%]'
+  JSON:
+    convert_blessed: 1
+    allow_blessed: 1
+    allow_unknown: 1
+    
 # For session support enable the following line and see Dancer::Session
-# session: "YAML"
+session: "YAML"
 
 plugins:
   DBIC:

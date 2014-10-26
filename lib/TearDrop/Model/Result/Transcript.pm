@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<transcripts>
 
@@ -40,9 +42,16 @@ __PACKAGE__->table("transcripts");
   data_type: 'text'
   is_nullable: 0
 
+=head2 assembly_id
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 0
+
 =head2 gene
 
   data_type: 'text'
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 name
@@ -50,9 +59,8 @@ __PACKAGE__->table("transcripts");
   data_type: 'text'
   is_nullable: 1
 
-=head2 sequence
+=head2 nsequence
 
-  accessor: undef
   data_type: 'text'
   is_nullable: 1
 
@@ -78,12 +86,14 @@ __PACKAGE__->table("transcripts");
 __PACKAGE__->add_columns(
   "id",
   { data_type => "text", is_nullable => 0 },
+  "assembly_id",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "gene",
-  { data_type => "text", is_nullable => 1 },
+  { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
   "name",
   { data_type => "text", is_nullable => 1 },
-  "sequence",
-  { accessor => undef, data_type => "text", is_nullable => 1 },
+  "nsequence",
+  { data_type => "text", is_nullable => 1 },
   "organism",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
   "best_homolog",
@@ -106,6 +116,21 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
 
+=head2 assembly
+
+Type: belongs_to
+
+Related object: L<TearDrop::Model::Result::TranscriptAssembly>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "assembly",
+  "TearDrop::Model::Result::TranscriptAssembly",
+  { id => "assembly_id" },
+  { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
+
 =head2 blast_results
 
 Type: has_many
@@ -119,6 +144,26 @@ __PACKAGE__->has_many(
   "TearDrop::Model::Result::BlastResult",
   { "foreign.transcript_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 gene
+
+Type: belongs_to
+
+Related object: L<TearDrop::Model::Result::Gene>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "gene",
+  "TearDrop::Model::Result::Gene",
+  { id => "gene" },
+  {
+    is_deferrable => 0,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 organism
@@ -157,9 +202,10 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:03iCQBwbsHovYZIB8BBiqg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:14:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tO1ivQPMUN9oHoKO+s+pcw
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

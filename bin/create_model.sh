@@ -1,2 +1,4 @@
 
-dbicdump -o dump_directory=./lib -o components='["InflateColumn::DateTime"]' TearDrop::Model 'dbi:Pg:database=teardrop' teardrop
+dbicdump -o dump_directory=./lib \
+	-o components='["InflateColumn::DateTime", "Helper::Row::ToJSON"]'  \
+	TearDrop::Model 'dbi:Pg:database=teardrop' teardrop

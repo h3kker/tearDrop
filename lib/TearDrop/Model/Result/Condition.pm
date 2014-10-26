@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<conditions>
 
@@ -35,47 +37,26 @@ __PACKAGE__->table("conditions");
 
 =head1 ACCESSORS
 
-=head2 id
-
-  data_type: 'integer'
-  is_auto_increment: 1
-  is_nullable: 0
-  sequence: 'conditions_id_seq'
-
 =head2 name
 
   data_type: 'text'
   is_nullable: 0
 
+=head2 description
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
-  "id",
-  {
-    data_type         => "integer",
-    is_auto_increment => 1,
-    is_nullable       => 0,
-    sequence          => "conditions_id_seq",
-  },
   "name",
   { data_type => "text", is_nullable => 0 },
+  "description",
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
-
-=over 4
-
-=item * L</id>
-
-=back
-
-=cut
-
-__PACKAGE__->set_primary_key("id");
-
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<conditions_name_key>
 
 =over 4
 
@@ -85,7 +66,7 @@ __PACKAGE__->set_primary_key("id");
 
 =cut
 
-__PACKAGE__->add_unique_constraint("conditions_name_key", ["name"]);
+__PACKAGE__->set_primary_key("name");
 
 =head1 RELATIONS
 
@@ -100,7 +81,7 @@ Related object: L<TearDrop::Model::Result::Contrast>
 __PACKAGE__->has_many(
   "contrasts_base_conditions",
   "TearDrop::Model::Result::Contrast",
-  { "foreign.base_condition_id" => "self.id" },
+  { "foreign.base_condition" => "self.name" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -115,7 +96,7 @@ Related object: L<TearDrop::Model::Result::Contrast>
 __PACKAGE__->has_many(
   "contrasts_contrast_conditions",
   "TearDrop::Model::Result::Contrast",
-  { "foreign.contrast_condition_id" => "self.id" },
+  { "foreign.contrast_condition" => "self.name" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -130,14 +111,15 @@ Related object: L<TearDrop::Model::Result::Sample>
 __PACKAGE__->has_many(
   "samples",
   "TearDrop::Model::Result::Sample",
-  { "foreign.condition_id" => "self.id" },
+  { "foreign.condition" => "self.name" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uaKDXcJXPiBDAVBG7t0P0w
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+XWdd2jNrGqgce6QPUR3qg
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

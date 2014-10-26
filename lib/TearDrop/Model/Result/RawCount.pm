@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<raw_counts>
 
@@ -42,19 +44,13 @@ __PACKAGE__->table("raw_counts");
   is_nullable: 0
   sequence: 'raw_counts_id_seq'
 
-=head2 count_table_id
-
-  data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 transcript_id
 
   data_type: 'text'
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 sample_id
+=head2 sample_count_id
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -70,12 +66,6 @@ __PACKAGE__->table("raw_counts");
   data_type: 'double precision'
   is_nullable: 1
 
-=head2 include
-
-  data_type: 'boolean'
-  default_value: true
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -86,18 +76,14 @@ __PACKAGE__->add_columns(
     is_nullable       => 0,
     sequence          => "raw_counts_id_seq",
   },
-  "count_table_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "transcript_id",
   { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
-  "sample_id",
+  "sample_count_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "count",
   { data_type => "double precision", is_nullable => 1 },
   "tpm",
   { data_type => "double precision", is_nullable => 1 },
-  "include",
-  { data_type => "boolean", default_value => \"true", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -112,36 +98,55 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<raw_counts_transcript_id_sample_count_id_key>
+
+=over 4
+
+=item * L</transcript_id>
+
+=item * L</sample_count_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "raw_counts_transcript_id_sample_count_id_key",
+  ["transcript_id", "sample_count_id"],
+);
+
 =head1 RELATIONS
 
-=head2 count_table
+=head2 sample_count
 
 Type: belongs_to
 
-Related object: L<TearDrop::Model::Result::CountTable>
+Related object: L<TearDrop::Model::Result::SampleCount>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "count_table",
-  "TearDrop::Model::Result::CountTable",
-  { id => "count_table_id" },
+  "sample_count",
+  "TearDrop::Model::Result::SampleCount",
+  { id => "sample_count_id" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
-=head2 sample
+=head2 table_counts
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<TearDrop::Model::Result::Sample>
+Related object: L<TearDrop::Model::Result::TableCount>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "sample",
-  "TearDrop::Model::Result::Sample",
-  { id => "sample_id" },
-  { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
+__PACKAGE__->has_many(
+  "table_counts",
+  "TearDrop::Model::Result::TableCount",
+  { "foreign.raw_count_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 transcript
@@ -160,8 +165,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7LBh1WS+KfuD9eDb3ip7QQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D73FShpbmzMsHJnMXsW5wQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

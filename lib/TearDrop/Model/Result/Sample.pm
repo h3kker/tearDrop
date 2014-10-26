@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<samples>
 
@@ -52,9 +54,9 @@ __PACKAGE__->table("samples");
   data_type: 'text'
   is_nullable: 0
 
-=head2 condition_id
+=head2 condition
 
-  data_type: 'integer'
+  data_type: 'text'
   is_foreign_key: 1
   is_nullable: 0
 
@@ -83,8 +85,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
   "description",
   { data_type => "text", is_nullable => 0 },
-  "condition_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  "condition",
+  { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
   "replicate_number",
   { data_type => "integer", is_nullable => 1 },
   "flagged",
@@ -130,23 +132,8 @@ Related object: L<TearDrop::Model::Result::Condition>
 __PACKAGE__->belongs_to(
   "condition",
   "TearDrop::Model::Result::Condition",
-  { id => "condition_id" },
+  { name => "condition" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
-);
-
-=head2 raw_counts
-
-Type: has_many
-
-Related object: L<TearDrop::Model::Result::RawCount>
-
-=cut
-
-__PACKAGE__->has_many(
-  "raw_counts",
-  "TearDrop::Model::Result::RawCount",
-  { "foreign.sample_id" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 raw_files
@@ -164,9 +151,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 sample_counts
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-25 13:24:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4XeMxHu2jiciiiNvInXbOg
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::SampleCount>
+
+=cut
+
+__PACKAGE__->has_many(
+  "sample_counts",
+  "TearDrop::Model::Result::SampleCount",
+  { "foreign.sample_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UyJYla3vS/5JZQLblobIEw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

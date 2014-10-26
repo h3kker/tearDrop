@@ -1,12 +1,12 @@
 use utf8;
-package TearDrop::Model::Result::DbSource;
+package TearDrop::Model::Result::TranscriptAssembly;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-TearDrop::Model::Result::DbSource
+TearDrop::Model::Result::TranscriptAssembly
 
 =cut
 
@@ -29,11 +29,11 @@ use base 'DBIx::Class::Core';
 
 __PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
-=head1 TABLE: C<db_sources>
+=head1 TABLE: C<transcript_assemblies>
 
 =cut
 
-__PACKAGE__->table("db_sources");
+__PACKAGE__->table("transcript_assemblies");
 
 =head1 ACCESSORS
 
@@ -42,29 +42,29 @@ __PACKAGE__->table("db_sources");
   data_type: 'integer'
   is_auto_increment: 1
   is_nullable: 0
-  sequence: 'db_sources_id_seq'
+  sequence: 'transcript_assemblies_id_seq'
 
-=head2 description
+=head2 name
 
   data_type: 'text'
   is_nullable: 0
 
-=head2 dbtype
+=head2 description
 
   data_type: 'text'
   is_nullable: 1
 
-=head2 url
+=head2 program
+
+  data_type: 'text'
+  is_nullable: 0
+
+=head2 parameters
 
   data_type: 'text'
   is_nullable: 1
 
-=head2 version
-
-  data_type: 'text'
-  is_nullable: 1
-
-=head2 downloaded
+=head2 assembly_date
 
   data_type: 'timestamp'
   is_nullable: 1
@@ -74,6 +74,11 @@ __PACKAGE__->table("db_sources");
   data_type: 'text'
   is_nullable: 1
 
+=head2 is_primary
+
+  data_type: 'boolean'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -82,20 +87,22 @@ __PACKAGE__->add_columns(
     data_type         => "integer",
     is_auto_increment => 1,
     is_nullable       => 0,
-    sequence          => "db_sources_id_seq",
+    sequence          => "transcript_assemblies_id_seq",
   },
-  "description",
+  "name",
   { data_type => "text", is_nullable => 0 },
-  "dbtype",
+  "description",
   { data_type => "text", is_nullable => 1 },
-  "url",
+  "program",
+  { data_type => "text", is_nullable => 0 },
+  "parameters",
   { data_type => "text", is_nullable => 1 },
-  "version",
-  { data_type => "text", is_nullable => 1 },
-  "downloaded",
+  "assembly_date",
   { data_type => "timestamp", is_nullable => 1 },
   "path",
   { data_type => "text", is_nullable => 1 },
+  "is_primary",
+  { data_type => "boolean", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -112,38 +119,53 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<db_sources_description_key>
+=head2 C<transcript_assemblies_name_key>
 
 =over 4
 
-=item * L</description>
+=item * L</name>
 
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("db_sources_description_key", ["description"]);
+__PACKAGE__->add_unique_constraint("transcript_assemblies_name_key", ["name"]);
 
 =head1 RELATIONS
 
-=head2 blast_results
+=head2 assembled_files
 
 Type: has_many
 
-Related object: L<TearDrop::Model::Result::BlastResult>
+Related object: L<TearDrop::Model::Result::AssembledFile>
 
 =cut
 
 __PACKAGE__->has_many(
-  "blast_results",
-  "TearDrop::Model::Result::BlastResult",
-  { "foreign.db_source_id" => "self.id" },
+  "assembled_files",
+  "TearDrop::Model::Result::AssembledFile",
+  { "foreign.assembly_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 transcripts
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::Transcript>
+
+=cut
+
+__PACKAGE__->has_many(
+  "transcripts",
+  "TearDrop::Model::Result::Transcript",
+  { "foreign.assembly_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:B6kxTDvS5SGCfxQIiwjIyw
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:01HyfvSisNnxm8350jMRfg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -1,12 +1,12 @@
 use utf8;
-package TearDrop::Model::Result::RawFile;
+package TearDrop::Model::Result::SampleCount;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-TearDrop::Model::Result::RawFile
+TearDrop::Model::Result::SampleCount
 
 =cut
 
@@ -29,11 +29,11 @@ use base 'DBIx::Class::Core';
 
 __PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
-=head1 TABLE: C<raw_files>
+=head1 TABLE: C<sample_counts>
 
 =cut
 
-__PACKAGE__->table("raw_files");
+__PACKAGE__->table("sample_counts");
 
 =head1 ACCESSORS
 
@@ -42,13 +42,7 @@ __PACKAGE__->table("raw_files");
   data_type: 'integer'
   is_auto_increment: 1
   is_nullable: 0
-  sequence: 'raw_files_id_seq'
-
-=head2 parent_file_id
-
-  data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 1
+  sequence: 'sample_counts_id_seq'
 
 =head2 sample_id
 
@@ -56,14 +50,10 @@ __PACKAGE__->table("raw_files");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 read
-
-  data_type: 'integer'
-  is_nullable: 0
-
-=head2 description
+=head2 count_method
 
   data_type: 'text'
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 path
@@ -71,7 +61,17 @@ __PACKAGE__->table("raw_files");
   data_type: 'text'
   is_nullable: 0
 
-=head2 md5
+=head2 mapped_ratio
+
+  data_type: 'double precision'
+  is_nullable: 1
+
+=head2 run_date
+
+  data_type: 'timestamp'
+  is_nullable: 1
+
+=head2 call
 
   data_type: 'text'
   is_nullable: 1
@@ -84,19 +84,19 @@ __PACKAGE__->add_columns(
     data_type         => "integer",
     is_auto_increment => 1,
     is_nullable       => 0,
-    sequence          => "raw_files_id_seq",
+    sequence          => "sample_counts_id_seq",
   },
-  "parent_file_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "sample_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-  "read",
-  { data_type => "integer", is_nullable => 0 },
-  "description",
-  { data_type => "text", is_nullable => 0 },
+  "count_method",
+  { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
   "path",
   { data_type => "text", is_nullable => 0 },
-  "md5",
+  "mapped_ratio",
+  { data_type => "double precision", is_nullable => 1 },
+  "run_date",
+  { data_type => "timestamp", is_nullable => 1 },
+  "call",
   { data_type => "text", is_nullable => 1 },
 );
 
@@ -112,69 +112,35 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<raw_files_path_key>
-
-=over 4
-
-=item * L</path>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("raw_files_path_key", ["path"]);
-
 =head1 RELATIONS
 
-=head2 assembled_files
-
-Type: has_many
-
-Related object: L<TearDrop::Model::Result::AssembledFile>
-
-=cut
-
-__PACKAGE__->has_many(
-  "assembled_files",
-  "TearDrop::Model::Result::AssembledFile",
-  { "foreign.raw_file_id" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 parent_file
+=head2 count_method
 
 Type: belongs_to
 
-Related object: L<TearDrop::Model::Result::RawFile>
+Related object: L<TearDrop::Model::Result::CountMethod>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "parent_file",
-  "TearDrop::Model::Result::RawFile",
-  { id => "parent_file_id" },
-  {
-    is_deferrable => 0,
-    join_type     => "LEFT",
-    on_delete     => "NO ACTION",
-    on_update     => "NO ACTION",
-  },
+  "count_method",
+  "TearDrop::Model::Result::CountMethod",
+  { name => "count_method" },
+  { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
-=head2 raw_files
+=head2 raw_counts
 
 Type: has_many
 
-Related object: L<TearDrop::Model::Result::RawFile>
+Related object: L<TearDrop::Model::Result::RawCount>
 
 =cut
 
 __PACKAGE__->has_many(
-  "raw_files",
-  "TearDrop::Model::Result::RawFile",
-  { "foreign.parent_file_id" => "self.id" },
+  "raw_counts",
+  "TearDrop::Model::Result::RawCount",
+  { "foreign.sample_count_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -195,7 +161,7 @@ __PACKAGE__->belongs_to(
 
 
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vwOIJO4rhI01sBSSBLxKtg
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:denZLZ3zFDfyNpzwXw4gmg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

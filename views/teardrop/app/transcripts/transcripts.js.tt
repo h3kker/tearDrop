@@ -1,0 +1,94 @@
+'use strict';
+
+angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.grid.pagination'])
+
+.config(['$routeProvider', function($routeProvider) {
+  $routeProvider.when('/transcripts', {
+    templateUrl: '[% config.base_uri %]/app/transcripts/transcripts.html',
+    controller: 'TranscriptsCtrl'
+  });
+  $routeProvider.when('/genes/:id', {
+    templateUrl: '[% config.base_uri %]/app/transcripts/gene_details.html',
+    controller: 'GenesDetailCtrl'
+  });
+  $routeProvider.when('/transcripts/:id', {
+    templateUrl: '[% config.base_uri %]/app/transcripts/transcript_details.html',
+    controller: 'TranscriptsDetailCtrl'
+  });
+}])
+.controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+  $rootScope.transcripts={
+    'pagingOptions': {
+      'page': 1,
+      'pagesize': 50,
+    }
+  };
+  $scope.gridOptions={
+    showFooter: true,
+    minRowsToShow: 20,
+    rowsPerPage: $rootScope.transcripts.pagingOptions.pagesize,
+    columnDefs: [
+      { name: 'Transcript', field: 'id' },
+      { name: 'Gene', field: 'gene', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
+      { name: 'Name', field: 'name' },
+      { name: 'Organism', field: 'organism.scientific_name' },
+      { name: 'Best Homolog', field: 'best_homolog' },
+    ],
+  };
+
+  $scope.gridOptions.onRegisterApi = function(gridApi) {
+    $scope.gridApi = gridApi;
+  };
+
+  $scope.$watch('transcripts.pagingOptions', function (newVal, oldVal) {
+    if (newVal !== oldVal && newVal.page !== oldVal.page) {
+      $scope.refresh();
+    }
+  }, true);
+  $scope.refresh = function() {
+    $http.get('[% config.base_uri %]/api/transcripts', { 'params': $rootScope.transcripts.pagingOptions }).success(
+      function(res) {
+        $rootScope.transcripts.pagingOptions.total_items = res.total_items;
+        $scope.gridOptions.data = res.data;
+      }
+    );
+  }
+  $scope.refresh();
+}])
+.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', function($rootScope, $routeParams, $scope, $http) {
+  $scope.refresh = function() {
+    $scope.transcript=null;
+    $http.get('[% config.base_uri %]/api/transcripts/'+$routeParams.id).success(function(data) {
+      $scope.transcript=data;
+    });
+  };
+  $scope.refresh();
+}])
+.controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
+  $scope.deGridOptions={
+    showFooter: true,
+    rowsPerPage: 10,
+    columnDefs: [
+      { name: 'DE Run', field: 'de_run.description' },
+      { name: 'Base Cond', field: 'contrast.base_condition.name', },
+      { name: 'Contrast Cond', field: 'contrast.contrast_condition.name', },
+      { name: 'Base Mean', field: 'base_mean', aggregationType: uiGridConstants.aggregationTypes.avg },
+      { name: 'p-value', field: 'pvalue', aggregationType: uiGridConstants.aggregationTypes.min },
+      { name: 'Adjusted p-value', field: 'adjp', aggregationType: uiGridConstants.aggregationTypes.min },
+      { name: 'log2 Foldchange', field: 'log2_foldchange', aggregationType: uiGridConstants.aggregationTypes.max },
+    ],
+  };
+  $scope.refresh = function() {
+    $scope.gene = null;
+    $http.get('[% config.base_uri %]/api/genes/'+$routeParams.id).success(function(data) {
+      $scope.gene=data;
+      angular.forEach($scope.gene.de_results, function(de) {
+        ['log2_foldchange', 'adjp', 'pvalue', 'base_mean'].forEach(function(f) {
+          de[f]=parseFloat(de[f]);
+        });
+      });
+      $scope.deGridOptions.data=$scope.gene.de_results;
+    });
+  }
+  $scope.refresh();
+}]);

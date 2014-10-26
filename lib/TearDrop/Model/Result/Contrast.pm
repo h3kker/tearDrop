@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<contrasts>
 
@@ -42,15 +44,15 @@ __PACKAGE__->table("contrasts");
   is_nullable: 0
   sequence: 'contrasts_id_seq'
 
-=head2 base_condition_id
+=head2 base_condition
 
-  data_type: 'integer'
+  data_type: 'text'
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 contrast_condition_id
+=head2 contrast_condition
 
-  data_type: 'integer'
+  data_type: 'text'
   is_foreign_key: 1
   is_nullable: 0
 
@@ -64,10 +66,10 @@ __PACKAGE__->add_columns(
     is_nullable       => 0,
     sequence          => "contrasts_id_seq",
   },
-  "base_condition_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-  "contrast_condition_id",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  "base_condition",
+  { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
+  "contrast_condition",
+  { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -95,7 +97,7 @@ Related object: L<TearDrop::Model::Result::Condition>
 __PACKAGE__->belongs_to(
   "base_condition",
   "TearDrop::Model::Result::Condition",
-  { id => "base_condition_id" },
+  { name => "base_condition" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
@@ -110,7 +112,7 @@ Related object: L<TearDrop::Model::Result::Condition>
 __PACKAGE__->belongs_to(
   "contrast_condition",
   "TearDrop::Model::Result::Condition",
-  { id => "contrast_condition_id" },
+  { name => "contrast_condition" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
@@ -129,10 +131,26 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 de_run_contrasts
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hkQCJnxLgaZziE+UtgQC/g
+Type: has_many
 
+Related object: L<TearDrop::Model::Result::DeRunContrast>
+
+=cut
+
+__PACKAGE__->has_many(
+  "de_run_contrasts",
+  "TearDrop::Model::Result::DeRunContrast",
+  { "foreign.contrast_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:28:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PgRjqAXhFrOsbJt1vf+q5A
+
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

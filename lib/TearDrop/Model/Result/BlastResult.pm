@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<blast_results>
 
@@ -152,8 +154,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4UjWu+QhS0MJS/sOWFxT0w
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CGZZHUa50nXfP/CpWBJqDQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

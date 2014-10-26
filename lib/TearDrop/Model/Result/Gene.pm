@@ -1,12 +1,12 @@
 use utf8;
-package TearDrop::Model::Result::CountMethod;
+package TearDrop::Model::Result::Gene;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-TearDrop::Model::Result::CountMethod
+TearDrop::Model::Result::Gene
 
 =cut
 
@@ -29,80 +29,82 @@ use base 'DBIx::Class::Core';
 
 __PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
-=head1 TABLE: C<count_methods>
+=head1 TABLE: C<genes>
 
 =cut
 
-__PACKAGE__->table("count_methods");
+__PACKAGE__->table("genes");
 
 =head1 ACCESSORS
 
-=head2 name
+=head2 id
 
   data_type: 'text'
   is_nullable: 0
 
-=head2 program
-
-  data_type: 'text'
-  is_nullable: 0
-
-=head2 index_path
+=head2 description
 
   data_type: 'text'
   is_nullable: 1
 
-=head2 arguments
+=head2 best_homolog
 
-  data_type: 'text'
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 flagged
+
+  data_type: 'boolean'
+  default_value: false
   is_nullable: 1
 
 =cut
 
 __PACKAGE__->add_columns(
-  "name",
+  "id",
   { data_type => "text", is_nullable => 0 },
-  "program",
-  { data_type => "text", is_nullable => 0 },
-  "index_path",
+  "description",
   { data_type => "text", is_nullable => 1 },
-  "arguments",
-  { data_type => "text", is_nullable => 1 },
+  "best_homolog",
+  { data_type => "integer", is_nullable => 1 },
+  "flagged",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
 
 =over 4
 
-=item * L</name>
+=item * L</id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("name");
+__PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
 
-=head2 sample_counts
+=head2 transcripts
 
 Type: has_many
 
-Related object: L<TearDrop::Model::Result::SampleCount>
+Related object: L<TearDrop::Model::Result::Transcript>
 
 =cut
 
 __PACKAGE__->has_many(
-  "sample_counts",
-  "TearDrop::Model::Result::SampleCount",
-  { "foreign.count_method" => "self.name" },
+  "transcripts",
+  "TearDrop::Model::Result::Transcript",
+  { "foreign.gene" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dONielpMbUBxKd2SQeUqYQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:14:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Fyj8sS3yBFgZrM5S9jHUqA
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

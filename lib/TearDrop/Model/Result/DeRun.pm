@@ -21,11 +21,13 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::InflateColumn::DateTime>
 
+=item * L<DBIx::Class::Helper::Row::ToJSON>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
 
 =head1 TABLE: C<de_runs>
 
@@ -57,6 +59,11 @@ __PACKAGE__->table("de_runs");
   data_type: 'text'
   is_nullable: 1
 
+=head2 path
+
+  data_type: 'text'
+  is_nullable: 1
+
 =head2 count_table_id
 
   data_type: 'integer'
@@ -78,6 +85,8 @@ __PACKAGE__->add_columns(
   "run_date",
   { data_type => "timestamp", is_nullable => 1 },
   "parameters",
+  { data_type => "text", is_nullable => 1 },
+  "path",
   { data_type => "text", is_nullable => 1 },
   "count_table_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
@@ -141,10 +150,26 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 de_run_contrasts
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-24 18:23:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+iXGi6XGb+WxMkLOT+kIJQ
+Type: has_many
 
+Related object: L<TearDrop::Model::Result::DeRunContrast>
+
+=cut
+
+__PACKAGE__->has_many(
+  "de_run_contrasts",
+  "TearDrop::Model::Result::DeRunContrast",
+  { "foreign.de_run_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:28:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FHzoJJdTXDvu7y3/ciilig
+
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

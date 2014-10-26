@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" ng-app="TearDrop">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSF.NGS TearDrop</title>
+  <link rel="stylesheet" href="[% config.base_uri %]/css/app.css"/>
+  <link rel="stylesheet" href="[% config.base_uri %]/css/bootstrap.css" media="all">
+  <link rel="stylesheet" href="[% config.base_uri %]/css/bootstrap-theme.css" media="all">
+  <link rel="stylesheet" href="[% config.base_uri %]/css/ui-grid-unstable.css">
+  <link rel="stylesheet" href="[% config.base_uri %]/css/font-awesome.css">
+</head>
+<body>
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#/">
+        CSF.NGS teardrop
+      </a>
+      <ul class="nav navbar-nav">
+       <li>
+        <a href="#/transcripts">Transcripts</a>
+       </li> 
+       <li>
+        <a href="#/deresults">DE Results</a>
+       </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid">
+ <div ng-view></div>
+</div>
+
+  <script src="[% config.base_uri %]/js/jquery.min.js"></script>
+  <script src="[% config.base_uri %]/js/angular.min.js"></script>
+  <script src="[% config.base_uri %]/js/angular-route.min.js"></script>
+  <script src="[% config.base_uri %]/js/ui-bootstrap-tpls-0.11.2.min.js"></script>
+  <script src="[% config.base_uri %]/js/ui-grid-unstable.js"></script>
+  <script src="[% config.base_uri %]/app/app.js"></script>
+  <script src="[% config.base_uri %]/app/services.js"></script>
+  <script src="[% config.base_uri %]/app/transcripts/transcripts.js"></script>
+  <script src="[% config.base_uri %]/app/deresults/deresults.js"></script>
+</body>
+</html>

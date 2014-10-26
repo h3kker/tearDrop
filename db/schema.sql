@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS db_sources CASCADE;
 CREATE TABLE db_sources (
   id serial primary key,
-  description text not null,
+  description text not null unique,
   dbtype text,
   url text,
   version text,
@@ -23,16 +23,38 @@ CREATE TABLE gene_models (
   path text
 );
 
+DROP TABLE IF EXISTS transcript_assemblies CASCADE;
+CREATE TABLE transcript_assemblies (
+  id serial primary key,
+  name text not null unique,
+  description text,
+  program text not null,
+  parameters text,
+  assembly_date timestamp,
+  path text,
+  is_primary boolean not null
+); 
+
+DROP TABLE IF EXISTS genes CASCADE;
+CREATE TABLE genes (
+  id text primary key,
+  description text,
+  best_homolog integer,
+  flagged boolean default false
+);
+
 DROP TABLE IF EXISTS transcripts CASCADE;
 CREATE TABLE transcripts (
   id text primary key,
-  gene text,
+  assembly_id integer not null references transcript_assemblies(id),
+  gene text references genes(id),
   name text,
-  sequence text,
+  nsequence text,
   organism text references organisms(name),
   best_homolog integer,
   flagged boolean default false
 );
+create index transcripts_gene_idx on transcripts(gene);
 
 DROP TABLE IF EXISTS blast_results CASCADE;
 CREATE TABLE blast_results (
@@ -51,8 +73,8 @@ CREATE TABLE blast_results (
 
 DROP TABLE IF EXISTS conditions CASCADE;
 CREATE TABLE conditions (
-  id serial primary key,
-  name text not null unique
+  name text primary key,
+  description text
 );
 
 DROP TABLE IF EXISTS samples CASCADE;
@@ -60,7 +82,7 @@ CREATE TABLE samples (
   id serial primary key,
   forskalle_id integer unique,
   description text not null,
-  condition_id integer not null references conditions(id),
+  condition text not null references conditions(name),
   replicate_number integer,
   flagged boolean default false
 );
@@ -76,46 +98,63 @@ CREATE TABLE raw_files (
   md5 text
 );
 
+DROP TABLE IF EXISTS assembled_files CASCADE;
+CREATE TABLE assembled_files (
+  assembly_id integer not null references transcript_assemblies(id),
+  raw_file_id integer not null references raw_files(id)
+);
+
 DROP TABLE IF EXISTS count_methods CASCADE;
 CREATE TABLE count_methods (
-  id serial primary key,
+  name text primary key,
   program text not null,
-  arguments text,
-  index_path text
+  index_path text,
+  arguments text
 );
 
 DROP TABLE IF EXISTS count_tables CASCADE;
 CREATE TABLE count_tables (
   id serial primary key,
-  description text not null unique,
-  count_method_id integer not null references count_methods(id),
-  subset_of integer references count_tables(id),
+  name text not null unique,
+  description text,
+  aggregate_genes bool default false,
+  subset_of integer references count_tables(id)
+);
+
+DROP TABLE IF EXISTS sample_counts CASCADE;
+CREATE TABLE sample_counts (
+  id serial primary key,
+  sample_id integer not null references samples(id),
+  count_method text not null references count_methods(name),
+  call text,
   path text not null,
+  mapped_ratio float,
   run_date timestamp
 );
 
-DROP TABLE IF EXISTS count_raw_files CASCADE;
-CREATE TABLE count_raw_files (
-  count_table_id integer not null references count_tables(id),
-  raw_file_id integer not null references raw_files(id)
-);
 
 DROP TABLE IF EXISTS raw_counts CASCADE;
 CREATE TABLE raw_counts (
   id serial primary key,
-  count_table_id integer not null references count_tables(id),
   transcript_id text not null references transcripts(id),
-  sample_id integer not null references samples(id),
+  sample_count_id integer not null references sample_counts(id),
   count float,
   tpm float,
-  include boolean default true
+  UNIQUE (transcript_id, sample_count_id)
+);
+
+DROP TABLE IF EXISTS table_counts CASCADE;
+CREATE TABLE table_counts (
+  count_table_id integer not null references count_tables(id),
+  raw_count_id integer not null references raw_counts(id),
+  UNIQUE (count_table_id, raw_count_id)
 );
 
 DROP TABLE IF EXISTS contrasts CASCADE;
 CREATE TABLE contrasts (
   id serial primary key,
-  base_condition_id integer not null references conditions(id),
-  contrast_condition_id integer not null references conditions(id)
+  base_condition text not null references conditions(name),
+  contrast_condition text not null references conditions(name)
 );
 
 DROP TABLE IF EXISTS de_runs CASCADE;
@@ -124,17 +163,31 @@ CREATE TABLE de_runs (
   description text not null unique,
   run_date timestamp,
   parameters text,
+  path text,
   count_table_id integer not null references count_tables(id)
+);
+
+DROP TABLE IF EXISTS de_run_contrasts CASCADE;
+CREATE TABLE de_run_contrasts (
+  de_run_id integer not null references de_runs(id),
+  contrast_id integer not null references contrasts(id),
+  path text not null,
+  parameters text,
+  UNIQUE(de_run_id, contrast_id)
 );
 
 DROP TABLE IF EXISTS de_results CASCADE;
 CREATE TABLE de_results (
   de_run_id integer not null references de_runs(id),
   contrast_id integer not null references contrasts(id),
+  transcript_id text not null,
   pvalue float,
   adjp float,
   base_mean float,
   log2_foldchange float,
-  flagged boolean default false
+  flagged boolean default false,
+  UNIQUE(de_run_id, contrast_id, transcript_id),
+  FOREIGN KEY (de_run_id, contrast_id) REFERENCES de_run_contrasts(de_run_id, contrast_id)
 );
+create index de_result_transcript_id_idx on de_results(transcript_id);
 
