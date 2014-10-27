@@ -94,6 +94,26 @@ __PACKAGE__->table("blast_results");
   data_type: 'text'
   is_nullable: 1
 
+=head2 nident
+
+  data_type: 'double precision'
+  is_nullable: 1
+
+=head2 staxid
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 slen
+
+  data_type: 'double precision'
+  is_nullable: 1
+
+=head2 qlen
+
+  data_type: 'double precision'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -119,6 +139,35 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "organism",
   { data_type => "text", is_nullable => 1 },
+  "nident",
+  { data_type => "double precision", is_nullable => 1 },
+  "staxid",
+  { data_type => "text", is_nullable => 1 },
+  "slen",
+  { data_type => "double precision", is_nullable => 1 },
+  "qlen",
+  { data_type => "double precision", is_nullable => 1 },
+);
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<blast_results_uniq>
+
+=over 4
+
+=item * L</transcript_id>
+
+=item * L</db_source_id>
+
+=item * L</source_sequence_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "blast_results_uniq",
+  ["transcript_id", "db_source_id", "source_sequence_id"],
 );
 
 =head1 RELATIONS
@@ -154,9 +203,10 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CGZZHUa50nXfP/CpWBJqDQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-27 18:58:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d9PAtOlvX3a6pRo7n7Xr5A
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

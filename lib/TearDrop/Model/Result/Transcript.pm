@@ -207,5 +207,10 @@ __PACKAGE__->has_many(
 
 sub _is_column_serializable { 1 };
 
+sub to_fasta {
+  my $self = shift;
+  return ">".$self->id."\n".$self->nsequence."\n";
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

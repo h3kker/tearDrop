@@ -1,7 +1,7 @@
 'use strict';
 
 // Declare app level module which depends on views, and components
-angular.module('TearDrop', [
+var tearDrop = angular.module('TearDrop', [
   'ngRoute',
   'TearDrop.transcripts',
   'TearDrop.deresults'
@@ -15,3 +15,21 @@ config(['$routeProvider', function($routeProvider) {
 }])
 .controller('RootCtrl', [function() {
 }]);
+
+
+
+tearDrop.run(function($rootScope, $timeout, $http) {
+  var workQueueStatus;
+  $rootScope.workerStatus={};
+  
+  var queryQueueStatus = function() {
+    workQueueStatus = $timeout(function() {
+      $http.get('[% config.base_uri %]/api/worker/status').success(function(d) {
+        $rootScope.workerStatus=d;
+        queryQueueStatus();
+      });
+    }, 30000);
+  }
+  queryQueueStatus();
+
+});

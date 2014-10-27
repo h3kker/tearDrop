@@ -2,6 +2,8 @@ package TearDrop;
 use Dancer ':syntax';
 
 use Dancer::Plugin::DBIC qw(schema resultset);
+use TearDrop::Worker;
+TearDrop::Worker::start_worker() if config->{'start_worker'};
 
 our $VERSION = '0.1';
 
@@ -46,6 +48,7 @@ hook before_error_render => sub {
 };
 
 get '/transcripts' => sub {
+  #new TearDrop::Task::BLAST(gene_id => 'c45045_g1', database => 'TAIR10 Proteins')->run;
   my $rs = schema->resultset('Transcript')->search(undef, { 
     page => param('page'), 
     rows => param('pagesize') || 50, 
@@ -68,7 +71,7 @@ get '/transcripts/:id' => sub {
 };
 
 get '/genes/:id' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id'));
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $ser = $rs->TO_JSON;
   $ser->{transcripts} = [ 
     $rs->search_related('transcripts')
@@ -82,6 +85,29 @@ get '/genes/:id' => sub {
     push @{$ser->{de_results}}, $d;
   }
   $ser;
+};
+
+get '/genes/:id/run_blast' => sub {
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $db = schema->resultset('DbSource')->search({
+    description => param('database') || 'RefSeq Plant'
+  })->first || send_error 'not found', 404;
+  TearDrop::Worker::enqueue(new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->description));
+};
+
+get '/genes/:id/blast_results' => sub {
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my @results;
+  my $transcripts = $rs->search_related('transcripts');
+  for my $trans ($transcripts->all) {
+    for my $bl ($trans->search_related('blast_results', undef, { prefetch => 'db_source' })) {
+      my $bl_ser = $bl->TO_JSON;
+      $bl_ser->{db_source}=$bl->db_source->description;
+      push @results, $bl_ser;
+    }
+  }
+  \@results;
+
 };
 
 get '/deruns' => sub {
@@ -136,6 +162,12 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   }
   else {
     return [ $rs->all ];
+  }
+};
+
+get '/worker/status' => sub {
+  {
+    pending => TearDrop::Worker::get_pending_count()
   }
 };
 

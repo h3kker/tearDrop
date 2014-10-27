@@ -30,6 +30,7 @@ while(<FA>) {
     if ($cur_trans) {
       print "Insert ".$cur_trans->{id}."             \r";
       $|=1;
+      schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} });
       schema->resultset('Transcript')->create($cur_trans);
     }
     my $trans_id=$1;
@@ -39,12 +40,14 @@ while(<FA>) {
       id => $trans_id,
       assembly_id => $a->id,
       gene => $gene,
-      sequence => '',
+      nsequence => '',
     }
   }
   else {
-    $cur_trans->{sequence}.=$_;
+    $cur_trans->{nsequence}.=$_;
   }
 }
 close FA;
+
+schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} });
 schema->resultset('Transcript')->create($cur_trans);

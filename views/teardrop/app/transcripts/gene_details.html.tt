@@ -12,48 +12,65 @@
   </dl>
  </div>
 </div>
-
 <div class="row">
  <div class="col-md-12">
-  <h3>DE Results</h3>
- </div>
-</div>
-<div class="row">
- <div class="col-md-12">
-  <span ng-if="gene.de_results">
-   <div ui-grid="deGridOptions" class="grid"></div>
-  </span>
-  <span ng-hide="gene.de_results">
-   <i>No DE analysis</i>
-  </span>
-
+  <button class="btn" href="[% config.base_uri %]/api/run_blast">BLAST</button> 
  </div>
 </div>
 
-<div class="row">
- <div class="col-md-12">
-  <h3>Transcripts</h3>
- </div>
-</div>
-<div ng-if="gene.transcripts">
- <div class="row" ng-repeat="transcript in gene.transcripts">
-  <div class="col-md-12">
-   <div class="panel panel-primary">
-    <div class="panel-heading">
-     <h3 class="panel-title">{{transcript.id}}</h3>
-    </div>
-    <div class="panel-body">
-     <dl>
-      <dt>Name</dt> <dd>{{transcript.name}}</dd>
-      <dt>Organism</dt> <dd>{{transcript.organism.scientific_name}}</dd>
-      <dt>Best Homolog</dt> <dd>{{transcript.best_homolog}}</dd>
-     </dl>
-     <pre>
-&gt;{{transcript.id}}
-{{transcript.nsequence}}
-     </pre>
+<tabset>
+ <tab> 
+  <tab-heading>DE Results</tab-heading>
+  <div class="row">
+   <div class="col-md-12">
+    <h3>DE Results</h3>
+   </div>
+  </div>
+  <div class="row">
+   <div class="col-md-12">
+    <span ng-if="gene.de_results">
+     <div ui-grid="deGridOptions" class="grid"></div>
+    </span>
+    <span ng-hide="gene.de_results">
+     <i>No DE analysis</i>
+    </span>
+
+   </div>
+  </div>
+ </tab>
+ <tab select="loadHomologs()">
+  <tab-heading>Homologs</tab-heading>
+  <div ui-grid="blastGridOptions" class="grid"></div>
+ </tab>
+
+ <tab>
+  <tab-heading>Transcripts</tab-heading>
+  <div class="row">
+   <div class="col-md-12">
+    <h3>Transcripts</h3>
+   </div>
+  </div>
+  <div ng-if="gene.transcripts">
+   <div class="row" ng-repeat="transcript in gene.transcripts">
+    <div class="col-md-12">
+     <div class="panel panel-primary">
+      <div class="panel-heading">
+       <h3 class="panel-title">{{transcript.id}}</h3>
+      </div>
+      <div class="panel-body">
+       <dl>
+        <dt>Name</dt> <dd>{{transcript.name}}</dd>
+        <dt>Organism</dt> <dd>{{transcript.organism.scientific_name}}</dd>
+        <dt>Best Homolog</dt> <dd>{{transcript.best_homolog}}</dd>
+       </dl>
+       <pre>
+  &gt;{{transcript.id}}
+  {{transcript.nsequence}}
+       </pre>
+      </div>
+     </div>
     </div>
    </div>
   </div>
- </div>
-</div>
+ </tab>
+</tabset>

@@ -56,6 +56,11 @@ __PACKAGE__->table("sample_counts");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 call
+
+  data_type: 'text'
+  is_nullable: 1
+
 =head2 path
 
   data_type: 'text'
@@ -69,11 +74,6 @@ __PACKAGE__->table("sample_counts");
 =head2 run_date
 
   data_type: 'timestamp'
-  is_nullable: 1
-
-=head2 call
-
-  data_type: 'text'
   is_nullable: 1
 
 =cut
@@ -90,14 +90,14 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "count_method",
   { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
+  "call",
+  { data_type => "text", is_nullable => 1 },
   "path",
   { data_type => "text", is_nullable => 0 },
   "mapped_ratio",
   { data_type => "double precision", is_nullable => 1 },
   "run_date",
   { data_type => "timestamp", is_nullable => 1 },
-  "call",
-  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -160,8 +160,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:denZLZ3zFDfyNpzwXw4gmg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-27 09:40:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SVhruQtJxhZYkrenb72Upg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

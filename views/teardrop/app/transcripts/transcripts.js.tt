@@ -65,6 +65,10 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.refresh();
 }])
 .controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
+  $scope.blastGridOptions={
+    showFooter: true,
+    rowsPerPage: 10,
+  };
   $scope.deGridOptions={
     showFooter: true,
     rowsPerPage: 10,
@@ -78,6 +82,15 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       { name: 'log2 Foldchange', field: 'log2_foldchange', aggregationType: uiGridConstants.aggregationTypes.max },
     ],
   };
+  $scope.loadHomologs = function() {
+    if ($scope.gene.blast_results==null) {
+      $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/blast_results').success(function(data) {
+        $scope.gene.blast_results=data;
+        console.log($scope.gene.blast_results);
+        $scope.blastGridOptions.data=$scope.gene.blast_results;
+      });
+    }
+  }
   $scope.refresh = function() {
     $scope.gene = null;
     $http.get('[% config.base_uri %]/api/genes/'+$routeParams.id).success(function(data) {

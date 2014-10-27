@@ -25,6 +25,9 @@
         <a href="#/deresults">DE Results</a>
        </li>
       </ul>
+      <p class="navbar-text navbar-right">
+       Pending Jobs: {{workerStatus.pending}}
+      </p>
     </div>
   </div>
 </nav>

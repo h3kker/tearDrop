@@ -45,3 +45,5 @@ plugins:
       options:
         RaiseError: 1
         PrintError: 1
+
+start_worker: 1

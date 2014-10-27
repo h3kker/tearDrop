@@ -64,9 +64,13 @@ CREATE TABLE blast_results (
   source_sequence_id text not null,
   bitscore float,
   length float,
+  nident float,
   pident float,
   ppos float,
   evalue float,
+  staxid text,
+  qlen float,
+  slen float,
   stitle text,
   organism text
 );
