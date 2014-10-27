@@ -1,40 +1,57 @@
 package TearDrop::Worker;
 
-use forks;
 use Dancer ':syntax';
 use Dancer::Plugin::DBIC 'schema';
 
 use Try::Tiny;
 use Thread::Queue;
+use Parallel::ForkManager;
 
 my $work_queue = Thread::Queue->new();
 
 my $worker;
 
 sub TearDrop::Worker::start_worker {
+  return;
   return unless config->{start_worker};
-  debug 'start worker';
-
   $worker ||= threads->create(sub {
+    debug 'start worker';
     while(defined(my $item = $work_queue->dequeue(1))) {
       debug $item;
       try {
         $item->run;
+        debug 'done';
       } catch {
         error $_;
       };
     }
+    debug 'finished';
   })->detach;
 }
 
+use Parallel::ForkManager;
+my $pm = Parallel::ForkManager->new(4);
+
 sub TearDrop::Worker::enqueue {
+  my $item = shift;
   return unless config->{start_worker};
-  $work_queue ->enqueue(shift);
+  #$work_queue->enqueue($item);
+  $pm->start and return;
+  debug $item;
+  try {
+    $item->run;
+    debug 'done';
+  } catch {
+    error $_;
+  };
+  $pm->finish;
 }
 
-sub TearDrop::Worker::get_pending_count {
+sub TearDrop::Worker::get_status {
   debug $work_queue->pending;
-  return $work_queue->pending;
+  return {
+    pending => $work_queue->pending,
+  };
 }
 
 1;
@@ -80,11 +97,12 @@ sub run {
     confess 'Need gene_id or transcript_id';
   }
 
-  my @cmd = ('ext/blast/run_blast.sh', $db_source->path, $seq_f->filename);
+  #my @cmd = ('ext/blast/run_blast.sh', $db_source->path, $seq_f->filename);
+  my @cmd = ('sleep', 10);
   my $out;
   my $err;
   my $blast = harness \@cmd, \undef, \$out, \$err;
-  $blast->run or confess "unable to run blast command: $?";
+  $blast->run or confess "unable to run blast command: $err $?";
   if ($err) {
     confess $err;
   }

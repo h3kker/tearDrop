@@ -3,13 +3,13 @@ use Dancer ':syntax';
 
 use Dancer::Plugin::DBIC qw(schema resultset);
 use TearDrop::Worker;
-TearDrop::Worker::start_worker() if config->{'start_worker'};
 
 our $VERSION = '0.1';
 
 set layout => undef;
 
 hook 'before' => sub {
+  TearDrop::Worker::start_worker() if config->{'start_worker'};
   header 'Access-Control-Allow-Origin' => '*';
 };
 
@@ -166,9 +166,7 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
 };
 
 get '/worker/status' => sub {
-  {
-    pending => TearDrop::Worker::get_pending_count()
-  }
+  TearDrop::Worker::get_status();
 };
 
 
