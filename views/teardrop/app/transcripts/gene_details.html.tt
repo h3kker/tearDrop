@@ -20,7 +20,13 @@
 </div>
 <div class="row">
  <div class="col-md-12">
-  <div ui-grid="deGridOptions" class="grid"></div>
+  <span ng-if="gene.de_results">
+   <div ui-grid="deGridOptions" class="grid"></div>
+  </span>
+  <span ng-hide="gene.de_results">
+   <i>No DE analysis</i>
+  </span>
+
  </div>
 </div>
 

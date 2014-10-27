@@ -29,7 +29,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     rowsPerPage: $rootScope.transcripts.pagingOptions.pagesize,
     columnDefs: [
       { name: 'Transcript', field: 'id' },
-      { name: 'Gene', field: 'gene', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
+      { name: 'Gene', field: 'gene.id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
       { name: 'Name', field: 'name' },
       { name: 'Organism', field: 'organism.scientific_name' },
       { name: 'Best Homolog', field: 'best_homolog' },

@@ -101,9 +101,10 @@ get '/deruns' => sub {
 get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   my %filter = (de_run_id => param('id'), 'contrast_id' => param('contrast_id'));
   my @sort;
-  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '>');
+  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '>', 'transcript_id' => 'like');
   for my $field (keys %comparisons) {
     if (exists params->{'filter.'.$field}) {
+      if ($field eq 'transcript_id') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
       $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
     }
   }
