@@ -13,8 +13,12 @@
  </div>
 </div>
 <div class="row">
- <div class="col-md-12">
-  <button class="btn" href="[% config.base_uri %]/api/run_blast">BLAST</button> 
+ <div class="col-md-1">
+  <button class="btn" ng-click="runBlast()">BLAST</button> 
+ </div>
+ <div class="col-md-4">
+  <select multiple class="form-control" ng-model="selectedDbs" ng-options="db.description+' ('+db.status+')' for db in geneDbSources">
+  </select>
  </div>
 </div>
 
@@ -40,7 +44,7 @@
  </tab>
  <tab select="loadHomologs()">
   <tab-heading>Homologs</tab-heading>
-  <div ui-grid="blastGridOptions" class="grid"></div>
+  <div ui-grid="blastGridOptions" class="grid" style="height: 700px"></div>
  </tab>
 
  <tab>

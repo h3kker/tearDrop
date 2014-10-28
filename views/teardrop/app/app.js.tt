@@ -21,15 +21,25 @@ config(['$routeProvider', function($routeProvider) {
 tearDrop.run(function($rootScope, $timeout, $http) {
   var workQueueStatus;
   $rootScope.workerStatus={};
-  
+  $rootScope.updateQueueStatus = function(success) {
+    $http.get('[% config.base_uri %]/api/worker/status').success(function(d) {
+      $rootScope.workerStatus=d;
+      if (success!=null) success(d);
+    });
+  }
   var queryQueueStatus = function() {
     workQueueStatus = $timeout(function() {
-      $http.get('[% config.base_uri %]/api/worker/status').success(function(d) {
-        $rootScope.workerStatus=d;
-        queryQueueStatus();
-      });
+      $rootScope.updateQueueStatus(queryQueueStatus);
     }, 30000);
   }
-  queryQueueStatus();
+  $rootScope.updateQueueStatus(queryQueueStatus);
+
+  $rootScope.dbSources=[];
+  $rootScope.reloadDbSources = function() {
+    $http.get('[% config.base_uri %]/api/db_sources').success(function(d) {
+      $rootScope.dbSources=d;
+    });
+  }
+  $rootScope.reloadDbSources();
 
 });

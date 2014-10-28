@@ -43,11 +43,6 @@ __PACKAGE__->table("blast_results");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 parameters
-
-  data_type: 'text'
-  is_nullable: 0
-
 =head2 db_source_id
 
   data_type: 'integer'
@@ -119,8 +114,6 @@ __PACKAGE__->table("blast_results");
 __PACKAGE__->add_columns(
   "transcript_id",
   { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
-  "parameters",
-  { data_type => "text", is_nullable => 0 },
   "db_source_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "source_sequence_id",
@@ -203,8 +196,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-27 18:58:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d9PAtOlvX3a6pRo7n7Xr5A
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-28 13:51:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lSTr2BW50r4V2KgaXL+hPQ
 
 sub _is_column_serializable { 1 };
 

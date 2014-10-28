@@ -15,7 +15,6 @@ my %tbl_src = qw/
   organisms Organism 
   transcript_assemblies TranscriptAssembly
   count_methods CountMethod
-  count_tables CountTable
 /;
 
 for my $table (qw/db_sources organisms transcript_assemblies count_methods/) {

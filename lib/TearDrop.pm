@@ -9,7 +9,6 @@ our $VERSION = '0.1';
 set layout => undef;
 
 hook 'before' => sub {
-  TearDrop::Worker::start_worker() if config->{'start_worker'};
   header 'Access-Control-Allow-Origin' => '*';
 };
 
@@ -72,10 +71,9 @@ get '/transcripts/:id' => sub {
 
 get '/genes/:id' => sub {
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $transcripts = [ $rs->search_related('transcripts')->all ];
   my $ser = $rs->TO_JSON;
-  $ser->{transcripts} = [ 
-    $rs->search_related('transcripts')
-  ];
+  $ser->{transcripts} = $transcripts;
   $ser->{de_results} = [];
   for my $der (schema->resultset('DeResult')->search({ transcript_id => $rs->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
@@ -84,15 +82,32 @@ get '/genes/:id' => sub {
     $d->{de_run}=$der->de_run->TO_JSON;
     push @{$ser->{de_results}}, $d;
   }
+  my %blast_runs;
+  for my $trans (@$transcripts) {
+    for my $brun ($trans->search_related('blast_runs')) {
+      my $brun_ser = $brun->TO_JSON;
+      $brun_ser->{db_source}=$brun->db_source->TO_JSON;
+      $blast_runs{$brun->db_source->name} ||= $brun_ser;
+      my $hit_count = schema->resultset('BlastResult')->search({
+        transcript_id => $trans->id, db_source_id => $brun->db_source_id
+      })->count;
+      $blast_runs{$brun->db_source->name}->{matched_transcripts}||=0;
+      $blast_runs{$brun->db_source->name}->{matched_transcripts}++ if $hit_count;
+      $blast_runs{$brun->db_source->name}->{hits} += $hit_count; 
+    }
+  }
+  $ser->{blast_runs}=[ values %blast_runs ];
   $ser;
 };
 
 get '/genes/:id/run_blast' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'gene not found', 404;
   my $db = schema->resultset('DbSource')->search({
-    description => param('database') || 'RefSeq Plant'
-  })->first || send_error 'not found', 404;
-  TearDrop::Worker::enqueue(new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->description));
+    name => param('database') || 'refseq_plant'
+  })->first || send_error 'db not found', 404;
+  my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
+  TearDrop::Worker::enqueue($task);
+  { pid => $task->pid, status => $task->status };
 };
 
 get '/genes/:id/blast_results' => sub {
@@ -165,8 +180,16 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   }
 };
 
+get '/db_sources' => sub {
+  [ schema->resultset('DbSource')->all ];
+};
+
 get '/worker/status' => sub {
   TearDrop::Worker::get_status();
+};
+
+get '/worker/status/:job' => sub {
+  TearDrop::Worker::get_job_status(param 'job');
 };
 
 

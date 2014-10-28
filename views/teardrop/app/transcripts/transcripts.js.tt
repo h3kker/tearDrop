@@ -64,10 +64,51 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   };
   $scope.refresh();
 }])
-.controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
+.controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', '$timeout', function($rootScope, $routeParams, $scope, $http, uiGridConstants, $timeout) {
+  $scope.geneDbSources = angular.copy($rootScope.dbSources);
+  $scope.runBlast = function() {
+    console.log($scope.selectedDbs);
+    angular.forEach($scope.selectedDbs, function(db) {
+      $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/run_blast', {
+        'params': { database: db.name }
+      }).success(function(d) {
+        db.status='started';
+        $rootScope.updateQueueStatus();
+        var queryJobStatus = function(pid) {
+          $timeout(function() {
+            $http.get('[% config.base_uri %]/api/worker/status/'+pid).success(function(jobData) {
+              angular.forEach($scope.geneDbSources, function(dbs) {
+                if (dbs.name==db.name) {
+                  dbs.status=jobData.status;
+                }
+              });
+              if (jobData.status != 'done' && jobData.status != 'failed') {
+                queryJobStatus(pid);
+              }
+              else if (jobData.status == 'done') {
+                $scope.loadHomologs(true);
+              }
+            });
+          }, 5000);
+        }
+        if (d.pid) {
+          queryJobStatus(d.pid);
+        }
+      });
+    });
+  }
   $scope.blastGridOptions={
     showFooter: true,
     rowsPerPage: 10,
+    columnDefs: [
+      { name: 'Transcript', field: 'transcript_id', width: '7%' },
+      { name: 'DB', field: 'db_source', width: '7%' },
+      { name: 'Hit', field: 'stitle', width: '30%' },
+      { name: 'e-value', field: 'evalue', width: '5%' },
+      { name: 'Match Length', field: 'length', width: '5%' },
+      { name: 'positive %', field: 'ppos', width: '5%' },
+      { name: 'identical %', field: 'pident', width: '5%' },
+    ],
   };
   $scope.deGridOptions={
     showFooter: true,
@@ -82,11 +123,15 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       { name: 'log2 Foldchange', field: 'log2_foldchange', aggregationType: uiGridConstants.aggregationTypes.max },
     ],
   };
-  $scope.loadHomologs = function() {
-    if ($scope.gene.blast_results==null) {
+  $scope.loadHomologs = function(reload) {
+    if (reload || $scope.gene.blast_results==null) {
       $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/blast_results').success(function(data) {
         $scope.gene.blast_results=data;
-        console.log($scope.gene.blast_results);
+        angular.forEach($scope.gene.blast_results, function(br) {
+          ['evalue', 'length', 'ppos', 'pident'].forEach(function(f) {
+            br[f]=parseFloat(br[f]);
+          });
+        });
         $scope.blastGridOptions.data=$scope.gene.blast_results;
       });
     }
@@ -98,6 +143,18 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       angular.forEach($scope.gene.de_results, function(de) {
         ['log2_foldchange', 'adjp', 'pvalue', 'base_mean'].forEach(function(f) {
           de[f]=parseFloat(de[f]);
+        });
+      });
+      angular.forEach($scope.gene.blast_runs, function(br) {
+        angular.forEach($scope.geneDbSources, function(db) {
+          if (db.status == null) {
+            db.status='not run';
+          }
+          if (db.name==br.db_source.name) {
+            db.status='done - '+br.hits+' hits on '+br.matched_transcripts+'/'+$scope.gene.transcripts.length+' transcripts';
+            db.hits=br.hits;
+            db.matched_transcripts=br.matched_transcripts;
+          }
         });
       });
       $scope.deGridOptions.data=$scope.gene.de_results;

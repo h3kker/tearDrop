@@ -74,6 +74,11 @@ __PACKAGE__->table("db_sources");
   data_type: 'text'
   is_nullable: 1
 
+=head2 name
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -96,6 +101,8 @@ __PACKAGE__->add_columns(
   { data_type => "timestamp", is_nullable => 1 },
   "path",
   { data_type => "text", is_nullable => 1 },
+  "name",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -124,6 +131,18 @@ __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->add_unique_constraint("db_sources_description_key", ["description"]);
 
+=head2 C<db_sources_name_unique>
+
+=over 4
+
+=item * L</name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("db_sources_name_unique", ["name"]);
+
 =head1 RELATIONS
 
 =head2 blast_results
@@ -141,9 +160,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 blast_runs
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:B6kxTDvS5SGCfxQIiwjIyw
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::BlastRun>
+
+=cut
+
+__PACKAGE__->has_many(
+  "blast_runs",
+  "TearDrop::Model::Result::BlastRun",
+  { "foreign.db_source_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-28 13:51:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W5qxoqBsWUPi8iGIXhIz3w
 
 sub _is_column_serializable { 1 };
 

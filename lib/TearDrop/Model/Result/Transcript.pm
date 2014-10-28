@@ -146,6 +146,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 blast_runs
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::BlastRun>
+
+=cut
+
+__PACKAGE__->has_many(
+  "blast_runs",
+  "TearDrop::Model::Result::BlastRun",
+  { "foreign.transcript_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 gene
 
 Type: belongs_to
@@ -202,8 +217,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:14:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tO1ivQPMUN9oHoKO+s+pcw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-28 13:51:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CUwxG8sff1eCvVYz17/8tg
 
 sub _is_column_serializable { 1 };
 

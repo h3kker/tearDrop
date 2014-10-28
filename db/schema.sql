@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS db_sources CASCADE;
 CREATE TABLE db_sources (
   id serial primary key,
+  name text not null unique,
   description text not null unique,
   dbtype text,
   url text,
@@ -56,10 +57,17 @@ CREATE TABLE transcripts (
 );
 create index transcripts_gene_idx on transcripts(gene);
 
+DROP TABLE IF EXISTS blast_runs CASCADE;
+CREATE TABLE blast_runs (
+  transcript_id text not null references transcripts(id),
+  db_source_id integer not null references db_sources(id),
+  parameters text,
+  PRIMARY KEY (transcript_id, db_source_id)
+);
+
 DROP TABLE IF EXISTS blast_results CASCADE;
 CREATE TABLE blast_results (
   transcript_id text not null references transcripts(id),
-  parameters text not null,
   db_source_id integer not null references db_sources(id),
   source_sequence_id text not null,
   bitscore float,
@@ -72,7 +80,8 @@ CREATE TABLE blast_results (
   qlen float,
   slen float,
   stitle text,
-  organism text
+  organism text,
+  FOREIGN KEY (transcript_id, db_source_id) references blast_runs (transcript_id, db_source_id)
 );
 
 DROP TABLE IF EXISTS conditions CASCADE;
