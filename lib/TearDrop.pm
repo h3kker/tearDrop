@@ -65,9 +65,49 @@ get '/transcripts' => sub {
 };
 
 get '/transcripts/:id' => sub {
-  my $rs = schema->resultset('Transcript')->find(param('id'));
+  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   $rs;
 };
+
+get '/transcripts/:id/pileup' => sub {
+  my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
+
+  my @alignments;
+  for my $taln ($assembly->search_related('transcriptome_alignments')->all) {
+    push @alignments, $taln->alignment;
+  }
+
+  use IPC::Run 'harness';
+  my @cmd = ('ext/samtools/mpileup.sh', $assembly->path, $trans->id, map { $_->bam_path } @alignments);
+  my ($out, $err);
+  my $mp = harness \@cmd, \undef, \$out, \$err;
+  $mp->run or send_error "unable to run mpileup: $err $?", 500;
+
+  debug $out;
+  my %pileups = map {
+    $_->sample->description => []
+  } @alignments;
+
+  for my $l (split "\n", $out) {
+    my @f = split "\t", $l;
+    my $i=1;
+    for my $aln (@alignments) {
+      push @{$pileups{$aln->sample->description}}, [ $f[1]+0, $f[$i*3]+0 ];
+      $i++;
+    }
+  }
+  my $ret = [ map {
+    {
+      key => $_,
+      values => [ map { 
+        [ $_->[0], $_->[1] ]
+      } @{$pileups{$_}} ],
+    }
+  } sort keys %pileups ];
+  $ret;
+};
+
 
 get '/genes/:id' => sub {
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
@@ -82,22 +122,16 @@ get '/genes/:id' => sub {
     $d->{de_run}=$der->de_run->TO_JSON;
     push @{$ser->{de_results}}, $d;
   }
-  my %blast_runs;
-  for my $trans (@$transcripts) {
-    for my $brun ($trans->search_related('blast_runs')) {
-      my $brun_ser = $brun->TO_JSON;
-      $brun_ser->{db_source}=$brun->db_source->TO_JSON;
-      $blast_runs{$brun->db_source->name} ||= $brun_ser;
-      my $hit_count = schema->resultset('BlastResult')->search({
-        transcript_id => $trans->id, db_source_id => $brun->db_source_id
-      })->count;
-      $blast_runs{$brun->db_source->name}->{matched_transcripts}||=0;
-      $blast_runs{$brun->db_source->name}->{matched_transcripts}++ if $hit_count;
-      $blast_runs{$brun->db_source->name}->{hits} += $hit_count; 
-    }
-  }
-  $ser->{blast_runs}=[ values %blast_runs ];
+  $ser->{blast_runs} = $rs->aggregate_blast_runs;
   $ser;
+};
+
+post '/genes/:id' => sub {
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $upd = params('body');
+  $rs->$_($upd->{$_}) for qw/description best_homolog rating reviewed/;
+  $rs->update;
+  forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };
 };
 
 get '/genes/:id/run_blast' => sub {
@@ -108,6 +142,11 @@ get '/genes/:id/run_blast' => sub {
   my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
   TearDrop::Worker::enqueue($task);
   { pid => $task->pid, status => $task->status };
+};
+
+get '/genes/:id/blast_runs' => sub {
+  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  $rs->aggregate_blast_runs;
 };
 
 get '/genes/:id/blast_results' => sub {
@@ -122,7 +161,6 @@ get '/genes/:id/blast_results' => sub {
     }
   }
   \@results;
-
 };
 
 get '/deruns' => sub {
@@ -140,6 +178,8 @@ get '/deruns' => sub {
 };
 
 get '/deruns/:id/contrasts/:contrast_id/results' => sub {
+  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
+  my $is_gene = $de_run->count_table->aggregate_genes;
   my %filter = (de_run_id => param('id'), 'contrast_id' => param('contrast_id'));
   my @sort;
   my %comparisons = (base_mean => '>', adjp => '<', pvalue => '>', 'transcript_id' => 'like');
@@ -169,14 +209,20 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
     page => param('page'), 
     rows => param('pagesize') || 50, 
   });
+  my @ret;
+  for my $r ($rs->all) {
+    my $ser = $r->TO_JSON;
+    $ser->{transcript}=schema->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id);
+    push @ret, $ser;
+  }
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,
-      data => [ $rs->all ],
+      data => \@ret,
     };
   }
   else {
-    return [ $rs->all ];
+    return \@ret;
   }
 };
 

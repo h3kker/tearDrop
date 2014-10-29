@@ -6,9 +6,12 @@
 
 <div class="row">
  <div class="col-md-12">
+  <p><reviewed-description ng-model="gene"></p>
   <dl>
-   <dt>Description</dt> <dd>{{gene.description}}</dd>
-   <dt>Best Homolog</dt> <dd>{{gene.best_homolog}}</dd>
+   <dt>Description</dt> <dd click-to-edit ng-model="gene.description" save-callback="saveGene"></dd>
+   <dt>Best Homolog</dt> <dd>{{gene.best_homolog || '-'}}</dd>
+   <dt>Rating</dt> <dd><rating ng-model="gene.rating" max="10" ng-click="setRating(gene.rating)"></rating></dd>
+   <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="gene.reviewed" ng-change="saveGene()"></dd>
   </dl>
  </div>
 </div>
@@ -44,7 +47,7 @@
  </tab>
  <tab select="loadHomologs()">
   <tab-heading>Homologs</tab-heading>
-  <div ui-grid="blastGridOptions" class="grid" style="height: 700px"></div>
+  <div ui-grid="blastGridOptions" class="grid-fw" ui-grid-selection></div>
  </tab>
 
  <tab>
@@ -73,6 +76,33 @@
        </pre>
       </div>
      </div>
+    </div>
+   </div>
+  </div>
+ </tab>
+ <tab select="loadAlignments()">
+  <tab-heading>Alignments</tab-heading>
+  <div class="row">
+   <div class="col-md-12">
+    <h3>Alignments</h3>
+   </div>
+  </div>
+  <div ng-if="gene.alignments">
+   <div class="row">
+    <div class="col-md-12">
+     <nvd3-stacked-area-chart data="gene.alignments"
+        noData="Inte Data"
+        width="1000"
+        height="700"
+        showXAxis="true"
+        showYAxis="true"
+        interpolate="basis-open"
+        showLegend="true"
+        forceX="[0]"
+        style="stack"
+        showControls="true">
+
+     </nvd3-stacked-area-chart>
     </div>
    </div>
   </div>

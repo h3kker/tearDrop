@@ -10,6 +10,8 @@ use Try::Tiny;
 
 my $bdir = shift @ARGV;
 
+my %wanted = map { $_ => 1 } @ARGV;
+
 my %tbl_src = qw/
   db_sources DbSource 
   organisms Organism 
@@ -17,7 +19,8 @@ my %tbl_src = qw/
   count_methods CountMethod
 /;
 
-for my $table (qw/db_sources organisms transcript_assemblies count_methods/) {
+for my $table (keys %tbl_src) {
+  next if scalar keys %wanted && !exists $wanted{$table};
   my $source_file = sprintf "%s/%s.csv" => $bdir, $table;
   unless (-f $source_file) {
     warn "File $source_file not found, skipping\n";
@@ -41,26 +44,65 @@ for my $table (qw/db_sources organisms transcript_assemblies count_methods/) {
   }
 }
 
-open(IF, "$bdir/samples.csv") or die "open $bdir/samples.csv";
-my $hline = <IF>;
-chomp $hline;
-my @header_fields = split ',', $hline;
+if (!scalar keys %wanted || exists $wanted{samples}) {
+  open(IF, "$bdir/samples.csv") or die "open $bdir/samples.csv";
+  my $hline = <IF>;
+  chomp $hline;
+  my @header_fields = split ',', $hline;
 
-my %conditions;
-while(<IF>) {
-  chomp;
-  my @f = split ',';
-  my %s = map { 
-    $header_fields[$_] => $f[$_]
-  } 0..$#header_fields;
-  unless ($conditions{$s{condition}}) {
-    try {
-      $conditions{$s{condition}} = schema->resultset('Condition')->create({
-        name => $s{condition},
-      });
-    } catch {
-      warn $_;
-    };
+  my %conditions;
+  while(<IF>) {
+    chomp;
+    my @f = split ',';
+    my %s = map { 
+      $header_fields[$_] => $f[$_]
+    } 0..$#header_fields;
+    unless ($conditions{$s{condition}}) {
+      try {
+        $conditions{$s{condition}} = schema->resultset('Condition')->create({
+          name => $s{condition},
+        });
+      } catch {
+        warn $_;
+      };
+    }
+    schema->resultset('Sample')->create(\%s);
   }
-  schema->resultset('Sample')->create(\%s);
 }
+
+if (!scalar keys %wanted || exists $wanted{alignments}) {
+  open(IF, "$bdir/alignments.csv") or die "open $bdir/alignments.csv";
+  my $hline = <IF>;
+  chomp $hline;
+  my @header_fields = split ',', $hline;
+
+  while(<IF>) {
+    chomp;
+    my @f = split ',';
+    my %s = map { 
+      $header_fields[$_] => $f[$_]
+    } 0..$#header_fields;
+    my $sample = schema->resultset('Sample')->search({ description => $s{sample_id} })->first;
+    unless($sample) {
+      warn "no such sample: ".$s{sample_id};
+      next;
+    }
+    my $alignment = schema->resultset('Alignment')->create({
+      program => $s{program},
+      sample_id => $sample->id,
+      bam_path => $s{bam_path},
+    });
+
+    my $assembly = schema->resultset($s{type} eq 'transcriptome' ? 'TranscriptAssembly' : 'Organism')->search({ name => $s{assembly} })->first;
+    unless($assembly) {
+      warn "no such assembly: ".$s{assembly};
+      next;
+    }
+    my ($k, $v) = $s{type} eq 'transcriptome' ? ('transcript_assembly_id', $assembly->id) : ('organism_name', $assembly->name);
+    schema->resultset($s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment')->create({
+      alignment_id => $alignment->id,
+      $k => $v,
+    });
+  }
+}
+

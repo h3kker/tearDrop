@@ -70,12 +70,23 @@ __PACKAGE__->table("transcripts");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 flagged
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =head2 best_homolog
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 rating
 
   data_type: 'integer'
   is_nullable: 1
 
-=head2 flagged
+=head2 reviewed
 
   data_type: 'boolean'
   default_value: false
@@ -96,9 +107,13 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "organism",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
-  "best_homolog",
-  { data_type => "integer", is_nullable => 1 },
   "flagged",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "best_homolog",
+  { data_type => "text", is_nullable => 1 },
+  "rating",
+  { data_type => "integer", is_nullable => 1 },
+  "reviewed",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
@@ -217,8 +232,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-28 13:51:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CUwxG8sff1eCvVYz17/8tg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 15:37:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RJb+PLjYY56bDbs1zwBKlg
 
 sub _is_column_serializable { 1 };
 

@@ -40,7 +40,9 @@ DROP TABLE IF EXISTS genes CASCADE;
 CREATE TABLE genes (
   id text primary key,
   description text,
-  best_homolog integer,
+  best_homolog text,
+  rating integer,
+  reviewed boolean default false,
   flagged boolean default false
 );
 
@@ -52,7 +54,9 @@ CREATE TABLE transcripts (
   name text,
   nsequence text,
   organism text references organisms(name),
-  best_homolog integer,
+  best_homolog text,
+  rating integer,
+  reviewed boolean default false,
   flagged boolean default false
 );
 create index transcripts_gene_idx on transcripts(gene);
@@ -83,6 +87,7 @@ CREATE TABLE blast_results (
   organism text,
   FOREIGN KEY (transcript_id, db_source_id) references blast_runs (transcript_id, db_source_id)
 );
+CREATE INDEX blast_result_source_sequence_id on blast_results(source_sequence_id);
 
 DROP TABLE IF EXISTS conditions CASCADE;
 CREATE TABLE conditions (
@@ -115,6 +120,34 @@ DROP TABLE IF EXISTS assembled_files CASCADE;
 CREATE TABLE assembled_files (
   assembly_id integer not null references transcript_assemblies(id),
   raw_file_id integer not null references raw_files(id)
+);
+
+DROP TABLE IF EXISTS alignments CASCADE;
+CREATE TABLE alignments (
+  id serial primary key,
+  program text not null,
+  parameters text,
+  description text,
+  alignment_date timestamp,
+  sample_id integer not null references samples(id),
+  bam_path text not null,
+  total_reads float,
+  mapped_reads float,
+  unique_reads float,
+  multiple_reads float,
+  discordant_pairs float
+);
+
+DROP TABLE IF EXISTS genome_alignments CASCADE;
+CREATE TABLE genome_alignments (
+  alignment_id integer primary key references alignments(id),
+  organism_name text not null references organisms(name)
+);
+
+DROP TABLE IF EXISTS transcriptome_alignments CASCADE;
+CREATE TABLE transcriptome_alignments (
+  alignment_id integer primary key references alignments(id),
+  transcript_assembly_id integer not null references transcript_assemblies(id)
 );
 
 DROP TABLE IF EXISTS count_methods CASCADE;

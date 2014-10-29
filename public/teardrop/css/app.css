@@ -30,5 +30,13 @@
 }
 
 .grid {
-  width: 100%;
+  width: 90%;
+}
+
+.grid-fw {
+  width: 1000px;
+}
+
+.click-to-edit input {
+  width: 450px;
 }

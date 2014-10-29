@@ -1,0 +1,73 @@
+angular.module('tearDropDirectives', []).
+  directive('clickToEdit', function() {
+    var editorTemplate = '<span class="click-to-edit">' +
+      '<span ng-hide="view.editorEnabled">' +
+        '{{value}} ' +
+        '<button class="btn btn-xs" ng-click="enableEditor()"><span class="glyphicon glyphicon-pencil"></span></button>' +
+      '</span>' +
+      '<span ng-show="view.editorEnabled">' +
+        '<input type="text" ng-model="view.editableValue">' +
+        '<span class="btn-group">'+
+         '<button class="btn btn-xs btn-success" ng-click="save()"><span class="glyphicon glyphicon-ok"></span></button>' +
+         '<button class="btn btn-xs btn-warning" ng-click="disableEditor()"><span class="glyphicon glyphicon-remove"></span></button>' +
+        '</span>'+
+       '</span>' +
+      '</span>';
+    return {
+      restrict: 'A',
+      replace: true, 
+      template: editorTemplate,
+      require: '^ngModel',
+      scope: {
+        saveCallback: '=',
+      },
+      link: function($scope, element, attr, ngModelCtrl) {
+        ngModelCtrl.$formatters.push(function(modelValue) {
+          return modelValue;
+        });
+        ngModelCtrl.$render = function() {
+          $scope.value=ngModelCtrl.$viewValue;
+        }
+        ngModelCtrl.$parsers.push(function(viewValue) {
+          return viewValue;
+        });
+        $scope.view = {
+          editableValue: $scope.value,
+          editorEnabled: false,
+        };
+        $scope.$watch('value', function() {
+          if (ngModelCtrl.$viewValue !== $scope.value) {
+            ngModelCtrl.$setViewValue($scope.value);
+            $scope.saveCallback();
+          }
+        });
+        $scope.enableEditor=function() {
+          $scope.view.editorEnabled = true;
+          $scope.view.editableValue = $scope.value;
+        }
+        $scope.disableEditor=function() {
+          $scope.view.editorEnabled = false;
+        }
+        $scope.save = function() {
+          $scope.value = $scope.view.editableValue;
+          $scope.view.editorEnabled = false;
+        }
+      },
+    };
+  })
+ .directive('reviewedDescription', function() {
+   return {
+     restrict: 'E',
+     replace: true,
+     template: '<div>'+
+       '<span ng-show="ngModel.description">{{ngModel.description}}</span>'+
+       '<span ng-show="!ngModel.description && ngModel.reviewed"><em>Unknown</em></span>'+
+       '<span ng-show="ngModel.reviewed" class="glyphicon glyphicon-ok-sign"></span>'+
+       '<span ng-hide="ngModel.reviewed" class="glyphicon glyphicon-question-sign"></span>'+
+      '</div>',
+     scope: {
+      ngModel: '=',
+     },
+   }
+ });
+

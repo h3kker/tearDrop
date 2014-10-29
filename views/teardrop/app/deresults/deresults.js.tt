@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.grid.pagination'])
+angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.grid.pagination', 'ui.grid.selection'])
 
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/deresults', {
@@ -25,12 +25,13 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
       'selectedContrast': null,
       'pagingOptions': {
         'page': 1,
-        'pagesize': 50,
+        'pagesize': 20,
       },
       'sort': [
-        { 'adjp': 'asc' },
+        { 'field': 'log2_foldchange', 'direction': 'desc' },
       ],
       'filters': {
+        'adjp': 0.1
       },
     };
   }
@@ -43,12 +44,14 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     minRowsToShow: 20,
     rowsPerPage: $rootScope.deresults.pagingOptions.pagesize,
     columnDefs: [
-      { name: 'Transcript/Gene', field: 'transcript_id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>'},
-      { name: 'Base Mean', field: 'base_mean' },
-      { name: 'p-value', field: 'pvalue' },
-      { name: 'Adjusted p-value', field: 'adjp' },
-      { name: 'Log2 FC', field: 'log2_foldchange' },
-      { name: 'Flagged', field: 'flagged' },
+      { name: 'Transcript/Gene', field: 'transcript_id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
+      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true"></rating></div>', },
+      { name: 'Description', field: 'transcript', width: '30%', cellTemplate: '<div class="ui-grid-cell-contents"><reviewed-description ng-model="MODEL_COL_FIELD"></reviewed-description></div>', },
+      { name: 'Base Mean', field: 'base_mean', width: '12%' },
+      { name: 'p-value', field: 'pvalue', width: '10%' },
+      { name: 'Adjusted p-value', field: 'adjp', width: '10%' },
+      { name: 'Log2 FC', field: 'log2_foldchange', width: '10%' },
+      { name: 'Flagged', field: 'flagged', width: '10%' },
     ],
   };
 
@@ -95,12 +98,12 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     }
   }, true);
   $scope.$watch('deresults.selectedDeRun', function(newVal, oldVal) {
-    if (newVal !== oldVal && newVal !== null && newVal.id !== oldVal.id) {
+    if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
       $scope.refresh();
     }
   }, true);
   $scope.$watch('deresults.selectedContrast', function(newVal, oldVal) {
-    if (newVal !== oldVal && newVal !== null && newVal.id !== oldVal.id) {
+    if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
       $scope.refresh();
     }
   }, true);

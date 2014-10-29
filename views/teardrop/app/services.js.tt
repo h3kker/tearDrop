@@ -1,0 +1,23 @@
+var tearDropServices = angular.module('tearDropServices', ['ngResource']);
+
+tearDropServices.factory('Gene', ['$resource',
+  function($resource){
+    var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
+      query: {method:'GET'},
+      blastResults: {method:'GET', url:'[% config.base_uri %]/api/genes/:id/blast_results', isArray: true},
+      blastRuns: {method:'GET', url:'[% config.base_uri %]/api/genes/:id/blast_runs', isArray: true},
+    });
+    angular.extend(Gene.prototype, {
+      prepare: function() {
+        this.reviewed=!!this.reviewed;
+        angular.forEach(this.de_results, function(de) {
+          ['log2_foldchange', 'adjp', 'pvalue', 'base_mean'].forEach(function(f) {
+            de[f]=parseFloat(de[f]);
+          });
+        });
+      }
+    });
+    return Gene;
+  }
+]);
+

@@ -3,6 +3,9 @@
 // Declare app level module which depends on views, and components
 var tearDrop = angular.module('TearDrop', [
   'ngRoute',
+  'nvd3ChartDirectives',
+  'tearDropServices',
+  'tearDropDirectives',
   'TearDrop.transcripts',
   'TearDrop.deresults'
 ]).

@@ -121,6 +121,21 @@ __PACKAGE__->add_unique_constraint("samples_forskalle_id_key", ["forskalle_id"])
 
 =head1 RELATIONS
 
+=head2 alignments
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::Alignment>
+
+=cut
+
+__PACKAGE__->has_many(
+  "alignments",
+  "TearDrop::Model::Result::Alignment",
+  { "foreign.sample_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 condition
 
 Type: belongs_to
@@ -167,9 +182,10 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UyJYla3vS/5JZQLblobIEw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 11:56:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wEclHE+WxNbb8g9auTEL2Q
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

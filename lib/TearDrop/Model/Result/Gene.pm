@@ -47,12 +47,23 @@ __PACKAGE__->table("genes");
   data_type: 'text'
   is_nullable: 1
 
+=head2 flagged
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =head2 best_homolog
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 rating
 
   data_type: 'integer'
   is_nullable: 1
 
-=head2 flagged
+=head2 reviewed
 
   data_type: 'boolean'
   default_value: false
@@ -65,9 +76,13 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "description",
   { data_type => "text", is_nullable => 1 },
-  "best_homolog",
-  { data_type => "integer", is_nullable => 1 },
   "flagged",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "best_homolog",
+  { data_type => "text", is_nullable => 1 },
+  "rating",
+  { data_type => "integer", is_nullable => 1 },
+  "reviewed",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
@@ -101,10 +116,31 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:14:54
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Fyj8sS3yBFgZrM5S9jHUqA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 15:37:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Jhe9M4KG7hwIfahQtE6BnA
+
+use Dancer::Plugin::DBIC 'schema';
 
 sub _is_column_serializable { 1 };
+
+sub aggregate_blast_runs {
+  my $self = shift;
+  my %blast_runs;
+  for my $trans ($self->search_related('transcripts')) {
+    for my $brun ($trans->search_related('blast_runs')) {
+      my $brun_ser = $brun->TO_JSON;
+      $brun_ser->{db_source}=$brun->db_source->TO_JSON;
+      $blast_runs{$brun->db_source->name} ||= $brun_ser;
+      my $hit_count = schema->resultset('BlastResult')->search({
+        transcript_id => $trans->id, db_source_id => $brun->db_source_id
+      })->count;
+      $blast_runs{$brun->db_source->name}->{matched_transcripts} ||= 0;
+      $blast_runs{$brun->db_source->name}->{matched_transcripts}++ if $hit_count;
+      $blast_runs{$brun->db_source->name}->{hits} += $hit_count;
+    }
+  }
+  [ values %blast_runs ];
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
