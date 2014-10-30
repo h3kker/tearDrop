@@ -123,12 +123,13 @@ sub run {
   }
   my $seq_f = File::Temp->new();
   my $kept=0;
+  my $blast_run;
   for my $trans (@transcripts) {
     if (schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id})->first) {
       debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
       next;
     }
-    schema->resultset('BlastRun')->create({
+    $blast_run = schema->resultset('BlastRun')->create({
       transcript_id => $trans->id, db_source_id => $db_source->id, parameters => 'XXX'
     });
     print $seq_f $trans->to_fasta;
@@ -165,6 +166,8 @@ sub run {
       stitle => $f[10]
     });
   }
+  $blast_run->finished(1);
+  $blast_run->update;
 }
 
 1;

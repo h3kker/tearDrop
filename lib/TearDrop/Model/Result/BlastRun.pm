@@ -54,6 +54,12 @@ __PACKAGE__->table("blast_runs");
   data_type: 'text'
   is_nullable: 1
 
+=head2 finished
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -63,6 +69,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "parameters",
   { data_type => "text", is_nullable => 1 },
+  "finished",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -112,8 +120,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-28 13:51:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hgkiaRgvqiBCOA/y8kipWQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 22:50:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2aiH5z2TAZnBIKeRjdBwgQ
 
 sub _is_column_serializable { 1 };
 

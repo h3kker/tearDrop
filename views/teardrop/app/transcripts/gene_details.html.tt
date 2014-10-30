@@ -71,8 +71,8 @@
         <dt>Best Homolog</dt> <dd>{{transcript.best_homolog}}</dd>
        </dl>
        <pre>
-  &gt;{{transcript.id}}
-  {{transcript.nsequence}}
+&gt;{{transcript.id}}
+{{transcript.nsequence}}
        </pre>
       </div>
      </div>
@@ -87,21 +87,39 @@
     <h3>Alignments</h3>
    </div>
   </div>
-  <div ng-if="gene.alignments">
+  <div class="row">
+   <div class="col-md-12">
+    Transcript: <select ng-model="alignments.viewTranscript" ng-options="transcript as transcript.id for transcript in gene.transcripts" ng-change="loadAlignments()"></select>
+   </div>
+  </div>
+  <div>
    <div class="row">
     <div class="col-md-12">
-     <nvd3-stacked-area-chart data="gene.alignments"
+     <nvd3-line-chart data="alignments[alignments.viewTranscript.id]"
+        y="getArg('mismatch_rate')"
+        width="1000"
+        height="200"
+        showXAxis="true"
+        showYAxis="true"
+        forceX="[0, alignments.viewTranscript.nsequence.length]"
+        showLegend="true">
+     </nvd3-line-chart>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <nvd3-stacked-area-chart data="alignments[alignments.viewTranscript.id]"
+        y="getArg('depth')"
         noData="Inte Data"
         width="1000"
-        height="700"
+        height="600"
         showXAxis="true"
         showYAxis="true"
         interpolate="basis-open"
         showLegend="true"
-        forceX="[0]"
+        forceX="[0, alignments.viewTranscript.nsequence.length]"
         style="stack"
         showControls="true">
-
      </nvd3-stacked-area-chart>
     </div>
    </div>

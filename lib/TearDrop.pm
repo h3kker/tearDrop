@@ -69,42 +69,53 @@ get '/transcripts/:id' => sub {
   $rs;
 };
 
+my %pileups;
 get '/transcripts/:id/pileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
   my @alignments;
   for my $taln ($assembly->search_related('transcriptome_alignments')->all) {
-    push @alignments, $taln->alignment;
+    push @alignments, $taln->alignment unless $pileups{$trans->id}->{$taln->alignment->sample->description};
   }
 
-  use IPC::Run 'harness';
-  my @cmd = ('ext/samtools/mpileup.sh', $assembly->path, $trans->id, map { $_->bam_path } @alignments);
-  my ($out, $err);
-  my $mp = harness \@cmd, \undef, \$out, \$err;
-  $mp->run or send_error "unable to run mpileup: $err $?", 500;
+  if (@alignments) {
+    use IPC::Run 'harness';
+    my @cmd = ('ext/samtools/mpileup.sh', $assembly->path, $trans->id, map { $_->bam_path } @alignments);
+    debug 'running '.join(' ', @cmd);
+    my ($out, $err);
+    my $mp = harness \@cmd, \undef, \$out, \$err;
+    $mp->run or send_error "unable to run mpileup: $err $?", 500;
 
-  debug $out;
-  my %pileups = map {
-    $_->sample->description => []
-  } @alignments;
+    #debug $out;
+    $pileups{$trans->id} = { map {
+      $_->sample->description => []
+    } @alignments };
 
-  for my $l (split "\n", $out) {
-    my @f = split "\t", $l;
-    my $i=1;
-    for my $aln (@alignments) {
-      push @{$pileups{$aln->sample->description}}, [ $f[1]+0, $f[$i*3]+0 ];
-      $i++;
+    for my $l (split "\n", $out) {
+      my @f = split "\t", $l;
+      my $i=1;
+      for my $aln (@alignments) {
+        my $mismatch = () = $f[$i*3+1] =~ m#[ACGTNacgtn]#g;
+        push @{$pileups{$trans->id}->{$aln->sample->description}}, { 
+          pos => $f[1]+0, 
+          depth => $f[$i*3]+0,
+          mismatch => $mismatch+0,
+          mismatch_rate => $f[$i*3]>0 ? $mismatch/$f[$i*3] : 0,
+        };
+        $i++;
+      }
     }
   }
+
   my $ret = [ map {
     {
       key => $_,
       values => [ map { 
-        [ $_->[0], $_->[1] ]
-      } @{$pileups{$_}} ],
+        [ $_->{pos}, { depth => $_->{depth}, mismatch => $_->{mismatch}, mismatch_rate => $_->{mismatch_rate} } ]
+      } @{$pileups{$trans->id}->{$_}} ],
     }
-  } sort keys %pileups ];
+  } sort keys %{$pileups{$trans->id}} ];
   $ret;
 };
 

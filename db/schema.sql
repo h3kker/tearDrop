@@ -66,6 +66,7 @@ CREATE TABLE blast_runs (
   transcript_id text not null references transcripts(id),
   db_source_id integer not null references db_sources(id),
   parameters text,
+  finished boolean default false,
   PRIMARY KEY (transcript_id, db_source_id)
 );
 
