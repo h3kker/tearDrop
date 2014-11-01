@@ -3,6 +3,7 @@ use Dancer ':syntax';
 
 use Dancer::Plugin::DBIC qw(schema resultset);
 use TearDrop::Worker;
+use Carp;
 
 our $VERSION = '0.1';
 
@@ -121,19 +122,24 @@ get '/transcripts/:id/pileup' => sub {
 
 
 get '/genes/:id' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
-  my $transcripts = [ $rs->search_related('transcripts')->all ];
-  my $ser = $rs->TO_JSON;
-  $ser->{transcripts} = $transcripts;
+  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $transcripts = [ $gene->search_related('transcripts')->all ];
+  my $ser = $gene->TO_JSON;
+  $ser->{transcripts} = [ map {
+    my $tser = $_->TO_JSON;
+    $tser->{tags} = [ $_->tags ];
+    $tser;
+  } @$transcripts ];
+  $ser->{tags} = [ $gene->tags ];
   $ser->{de_results} = [];
-  for my $der (schema->resultset('DeResult')->search({ transcript_id => $rs->id },
+  for my $der (schema->resultset('DeResult')->search({ transcript_id => $gene->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
     my $d = $der->TO_JSON;
     $d->{contrast}=$der->contrast->TO_JSON;
     $d->{de_run}=$der->de_run->TO_JSON;
     push @{$ser->{de_results}}, $d;
   }
-  $ser->{blast_runs} = $rs->aggregate_blast_runs;
+  $ser->{blast_runs} = $gene->aggregate_blast_runs;
   $ser;
 };
 
@@ -141,6 +147,18 @@ post '/genes/:id' => sub {
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
   $rs->$_($upd->{$_}) for qw/description best_homolog rating reviewed/;
+  my %new_tags = map { $_->{tag} => $_ } @{$upd->{tags}};
+  for my $o ($rs->tags) {
+    if ($new_tags{$o->tag}) {
+      delete $new_tags{$o->tag};
+    }
+    else {
+      $rs->remove_from_tags($o);
+    }
+  }
+  for my $n (values %new_tags) {
+    $rs->add_to_tags($n);
+  }
   $rs->update;
   forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };
 };
@@ -239,6 +257,10 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
 
 get '/db_sources' => sub {
   [ schema->resultset('DbSource')->all ];
+};
+
+get '/tags' => sub {
+  [ schema->resultset('Tag')->all ];
 };
 
 get '/worker/status' => sub {

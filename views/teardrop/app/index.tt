@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="[% config.base_uri %]/css/bootstrap-theme.css" media="all">
   <link rel="stylesheet" href="[% config.base_uri %]/css/ui-grid-unstable.css">
   <link rel="stylesheet" href="[% config.base_uri %]/css/font-awesome.css">
+  <link rel="stylesheet" href="[% config.base_uri %]/css/angular-growl.min.css">
 </head>
 <body>
 <nav class="navbar navbar-default" role="navigation">
@@ -32,6 +33,7 @@
   </div>
 </nav>
 <div class="container-fluid">
+ <div growl></div>
  <div ng-view></div>
 </div>
 
@@ -39,6 +41,7 @@
   <script src="[% config.base_uri %]/js/angular.min.js"></script>
   <script src="[% config.base_uri %]/js/angular-route.min.js"></script>
   <script src="[% config.base_uri %]/js/angular-resource.min.js"></script>
+  <script src="[% config.base_uri %]/js/angular-growl.min.js"></script>
   <script src="[% config.base_uri %]/js/ui-bootstrap-tpls-0.11.2.min.js"></script>
   <script src="[% config.base_uri %]/js/ui-grid-unstable.js"></script>
   <script src="[% config.base_uri %]/js/d3.min.js"></script>

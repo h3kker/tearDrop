@@ -4,6 +4,7 @@
 var tearDrop = angular.module('TearDrop', [
   'ngRoute',
   'nvd3ChartDirectives',
+  'angular-growl',
   'tearDropServices',
   'tearDropDirectives',
   'TearDrop.transcripts',
@@ -19,9 +20,12 @@ config(['$routeProvider', function($routeProvider) {
 .controller('RootCtrl', [function() {
 }]);
 
+tearDrop.config(['growlProvider', '$httpProvider', function(growlProvider, $httpProvider) {
+    growlProvider.globalTimeToLive(5000);
+}]);
 
 
-tearDrop.run(function($rootScope, $timeout, $http) {
+tearDrop.run(function($rootScope, $timeout, $http, growl) {
   var workQueueStatus;
   $rootScope.workerStatus={};
   $rootScope.updateQueueStatus = function(success) {
@@ -44,5 +48,24 @@ tearDrop.run(function($rootScope, $timeout, $http) {
     });
   }
   $rootScope.reloadDbSources();
+  
+  $rootScope.tags=[];
+  $rootScope.reloadTags = function() {
+    $http.get('[% config.base_uri %]/api/tags').success(function(d) {
+      $rootScope.tags=d;
+    });
+  }
+  $rootScope.reloadTags();
+
+  $rootScope.errHandler=function(err) {
+    console.log(err);
+    if (err instanceof Object) {
+      if (err.data) { growl.error(err.data.error); }
+      else { growl.error(err.error); }
+    }
+    else {
+      growl.error(err);
+    }
+  };
 
 });

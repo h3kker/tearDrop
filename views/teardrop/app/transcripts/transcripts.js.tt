@@ -51,24 +51,26 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
         $rootScope.transcripts.pagingOptions.total_items = res.total_items;
         $scope.gridOptions.data = res.data;
       }
-    );
+    ).error($rootScope.errHandler);
   }
   $scope.refresh();
 }])
-.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', function($rootScope, $routeParams, $scope, $http) {
+.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'growl', function($rootScope, $routeParams, $scope, $http) {
   $scope.refresh = function() {
     $scope.transcript=null;
     $http.get('[% config.base_uri %]/api/transcripts/'+$routeParams.id).success(function(data) {
       $scope.transcript=data;
-    });
+    }).error($rootScope.errHandler);
   };
   $scope.refresh();
 }])
 .controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', '$timeout', 'Gene', function($rootScope, $routeParams, $scope, $http, uiGridConstants, $timeout, Gene) {
+  $scope.selectedDbs=[];
+  $scope.selectedTags=[];
   $scope.geneDbSources = angular.copy($rootScope.dbSources);
-  $scope.runBlast = function() {
-    console.log($scope.selectedDbs);
-    angular.forEach($scope.selectedDbs, function(db) {
+  $scope.runBlast = function(selectedDbs) {
+    console.log(selectedDbs);
+    angular.forEach(selectedDbs, function(db) {
       $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/run_blast', {
         'params': { database: db.name }
       }).success(function(d) {
@@ -94,7 +96,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
         if (d.pid) {
           queryJobStatus(d.pid);
         }
-      });
+      }).error($rootScope.errHandler);
     });
   }
   $scope.blastGridOptions={
@@ -115,10 +117,20 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       gridApi.selection.on.rowSelectionChanged($scope,function(row){
         $scope.gene.best_homolog=row.entity.source_sequence_id;
         $scope.gene.description=row.entity.stitle;
-        $scope.gene.$save();
+        $scope.saveGene();
       });
     },
   };
+  $scope.addTags = function(selectedTags) {
+    $scope.gene.tags=$scope.gene.tags.concat(selectedTags);
+    $scope.saveGene();
+  }
+  $scope.removeTag = function(tag) {
+    $scope.gene.tags=$scope.gene.tags.filter(function(t) {
+      return t.tag!=tag.tag;
+    });
+    $scope.saveGene();
+  }
   $scope.setRating = function(val) {
     $scope.gene.rating=val;
     $scope.gene.reviewed=true;
@@ -127,7 +139,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.saveGene = function() {
     $scope.gene.$save(function(g) {
       g.prepare();
-    });
+    }, $rootScope.errHandler);
   };
   $scope.deGridOptions={
     showFooter: true,
@@ -153,7 +165,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       $scope.alignments[$scope.alignments.viewTranscript.id]=[];
       $http.get('[% config.base_uri %]/api/transcripts/'+$scope.alignments.viewTranscript.id+'/pileup').success(function(data) {
         $scope.alignments[$scope.alignments.viewTranscript.id]=data;
-      });
+      }).error($rootScope.errHandler);
     }
   }
   $scope.loadHomologs = function(reload) {
@@ -170,7 +182,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
           });
         });
         $scope.blastGridOptions.data=$scope.gene.blast_results;
-      });
+      }).error($rootScope.errHandler);
     }
   }
   $scope.refresh = function() {
@@ -181,11 +193,14 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       }
       $scope.setBlastRuns();
       $scope.deGridOptions.data=$scope.gene.de_results;
-    });
+    }, $rootScope.errHandler);
   }
   $scope.refresh();
 
   $scope.setBlastRuns = function() {
+    angular.forEach($scope.geneDbSources, function(db) {
+      db.status='not run';
+    });
     angular.forEach($scope.gene.blast_runs, function(br) {
       angular.forEach($scope.geneDbSources, function(db) {
         if (db.status == null) {

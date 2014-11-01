@@ -238,3 +238,39 @@ CREATE TABLE de_results (
 );
 create index de_result_transcript_id_idx on de_results(transcript_id);
 
+DROP TABLE IF EXISTS tags CASCADE;
+CREATE TABLE tags (
+  tag text primary key,
+  level text not null default 'info'
+);
+
+DROP TABLE IF EXISTS transcript_tags CASCADE;
+CREATE TABLE transcript_tags (
+  transcript_id text not null references transcripts(id),
+  tag text not null references tags(tag),
+  PRIMARY KEY (transcript_id, tag)
+);
+  
+DROP TABLE IF EXISTS gene_tags CASCADE;
+CREATE TABLE gene_tags (
+  gene_id text not null references genes(id),
+  tag text not null references tags(tag),
+  PRIMARY KEY (gene_id, tag)
+);
+
+INSERT INTO tags (tag, level) VALUES 
+  ('bad assembly', 'danger'),
+  ('good assembly', 'success'),
+  ('interesting', 'success'),
+  ('good coverage', 'success'),
+  ('low coverage overall', 'warning'),
+  ('low coverage 5p', 'warning'),
+  ('low coverage 3p', 'warning'),
+  ('low coverage dip', 'warning'),
+  ('low coverage multiple dips', 'warning'),
+  ('many errors', 'warning'),
+  ('good homologs', 'success'),
+  ('bad homolog support', 'warning'),
+  ('no annotations', 'warning'),
+  ('no homologs', 'danger')
+;
