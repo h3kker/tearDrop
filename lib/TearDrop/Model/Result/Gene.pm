@@ -100,6 +100,21 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
 
+=head2 gene_tags
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::GeneTag>
+
+=cut
+
+__PACKAGE__->has_many(
+  "gene_tags",
+  "TearDrop::Model::Result::GeneTag",
+  { "foreign.gene_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 transcripts
 
 Type: has_many
@@ -115,9 +130,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tags
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 15:37:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Jhe9M4KG7hwIfahQtE6BnA
+Type: many_to_many
+
+Composing rels: L</gene_tags> -> tag
+
+=cut
+
+__PACKAGE__->many_to_many("tags", "gene_tags", "tag");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-01 11:06:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tzOLaDw/VqGZAsGpTylGCA
 
 use Dancer::Plugin::DBIC 'schema';
 
