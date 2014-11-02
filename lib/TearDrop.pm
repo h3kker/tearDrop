@@ -73,18 +73,31 @@ get '/transcripts/:id' => sub {
 my %genomePileups;
 get '/transcripts/:id/genomePileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
+  my $context=200;
   my $best_location = $trans->search_related('transcript_mappings', {}, { order_by => { -desc => 'match_ratio' } })->first; 
   send_error 'no valid genome mapping!', 500 unless $best_location;
   my $genome = $best_location->genome_mapping->organism_name;
+
+  my $others = $best_location->genome_mapping->search_related('transcript_mappings', {
+    -or => [
+      tstart => { '>',  $best_location->tstart-$context, '<', $best_location->tend+$context },
+      tend => { '<', $best_location->tend+$context, '>', $best_location->tstart-$context },
+      -and => { tstart => { '<', $best_location->tstart-$context }, tend => { '>', $best_location->tend+$context }},
+    ]
+  });
+  debug map { $_->transcript->id } $others->all;
+
+
 
   my @alignments;
   for my $galn ($genome->search_related('genome_alignments')->all) {
     push @alignments, $galn->alignment unless $genomePileups{$trans->id}->{$galn->alignment->sample->description};
   }
 
+
   if (@alignments) {
     use IPC::Run 'harness';
-    my @cmd = ('ext/samtools/mpileup.sh', $genome->genome_path, sprintf("%s:%d-%d", $best_location->tid, $best_location->tstart-500, $best_location->tend+500), map { $_->bam_path } @alignments);
+    my @cmd = ('ext/samtools/mpileup.sh', $genome->genome_path, sprintf("%s:%d-%d", $best_location->tid, $best_location->tstart-$context, $best_location->tend+$context), map { $_->bam_path } @alignments);
     debug 'running '.join(' ', @cmd);
     my ($out, $err);
     my $mp = harness \@cmd, \undef, \$out, \$err;
@@ -101,6 +114,7 @@ get '/transcripts/:id/genomePileup' => sub {
       for my $aln (@alignments) {
         my $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
         my $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
+        $depth+=$mismatch;
         push @{$genomePileups{$trans->id}->{$aln->sample->description}}, { 
           pos => $f[1]+0, 
           depth => $depth,
@@ -111,13 +125,16 @@ get '/transcripts/:id/genomePileup' => sub {
       }
     }
   }
+  use POSIX 'ceil';
+  my $aggregate_to=1000;
+  my $aggregate_factor=ceil(($best_location->tend-$best_location->tstart+$context*2)/$aggregate_to);
 
   my $ret = [ map {
     {
       key => $_,
       values => [ map { 
         [ $_->{pos}, { depth => $_->{depth}, mismatch => $_->{mismatch}, mismatch_rate => $_->{mismatch_rate} } ]
-      } @{$genomePileups{$trans->id}->{$_}} ],
+      } grep { $_->{pos} % $aggregate_factor == 0 } @{$genomePileups{$trans->id}->{$_}} ],
     }
   } sort keys %{$genomePileups{$trans->id}} ];
   $ret;
@@ -150,12 +167,17 @@ get '/transcripts/:id/pileup' => sub {
       my @f = split "\t", $l;
       my $i=1;
       for my $aln (@alignments) {
-        my $mismatch = () = $f[$i*3+1] =~ m#[ACGTNacgtn]#g;
+        my $depth=0; my $mismatch=0;
+        if (defined $f[$i*3+1]) {
+          $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
+          $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
+          $depth+=$mismatch;
+        }
         push @{$pileups{$trans->id}->{$aln->sample->description}}, { 
           pos => $f[1]+0, 
-          depth => $f[$i*3]+0,
+          depth => $depth,
           mismatch => $mismatch+0,
-          mismatch_rate => $f[$i*3]>0 ? $mismatch/$f[$i*3] : 0,
+          mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
         };
         $i++;
       }
@@ -173,6 +195,52 @@ get '/transcripts/:id/pileup' => sub {
   $ret;
 };
 
+get '/genes' => sub {
+  my %filter = ();
+  my @sort;
+  my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=');
+  for my $field (keys %comparisons) {
+    if (exists params->{'filter.'.$field}) {
+      if ($comparisons{$field} eq 'like') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
+      $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
+    }
+  }
+  for my $k (keys %{params()}) {
+    if ($k=~ m/sort-(\d+)-(.+)/) {
+      $sort[$1]={ '-'.param($k) => $2 };
+    }
+  }
+  unless (scalar @sort) {
+    @sort = ({ -asc => 'id' });
+  }
+  debug \@sort;
+  my $rs = schema->resultset('Gene')->search(\%filter, { 
+    order_by => \@sort,
+    page => param('page'), 
+    rows => param('pagesize') || 50, 
+  });
+  my @ret;
+  for my $r ($rs->all) {
+    my $ser = $r->TO_JSON;
+    $ser->{transcripts} = [ map {
+      my $tser = $_->TO_JSON;
+      $tser->{tags} = [ $_->tags ];
+      $tser->{transcript_mappings} = [ $_->transcript_mappings ];
+      $tser;
+    } $r->search_related('transcripts')->all ];
+    $ser->{tags} = [ $r->tags ];
+    push @ret, $ser;
+  }
+  if (param('page')) {
+    return {
+      total_items => $rs->pager->total_entries,
+      data => \@ret,
+    };
+  }
+  else {
+    return \@ret;
+  }
+};
 
 get '/genes/:id' => sub {
   my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
@@ -181,6 +249,7 @@ get '/genes/:id' => sub {
   $ser->{transcripts} = [ map {
     my $tser = $_->TO_JSON;
     $tser->{tags} = [ $_->tags ];
+    $tser->{transcript_mappings} = [ $_->transcript_mappings ];
     $tser;
   } @$transcripts ];
   $ser->{tags} = [ $gene->tags ];

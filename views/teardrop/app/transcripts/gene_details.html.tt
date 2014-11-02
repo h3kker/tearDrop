@@ -51,6 +51,11 @@
    <tab select="loadHomologs()">
     <tab-heading>Homologs</tab-heading>
     <div class="row">
+     <div class="col-md-12">
+      <h3>Homology Searches</h3>
+     </div>
+    </div>
+    <div class="row">
      <div class="col-md-4">
       <select multiple class="form-control" ng-model="selectedDbs" ng-options="db.description+' ('+db.status+')' for db in geneDbSources">
       </select>
@@ -81,15 +86,34 @@
          <h3 class="panel-title">{{transcript.id}}</h3>
         </div>
         <div class="panel-body">
-         <dl>
-          <dt>Name</dt> <dd>{{transcript.name}}</dd>
-          <dt>Organism</dt> <dd>{{transcript.organism.scientific_name}}</dd>
-          <dt>Best Homolog</dt> <dd>{{transcript.best_homolog}}</dd>
-         </dl>
-         <pre>
-  &gt;{{transcript.id}}
-  {{transcript.nsequence}}
-         </pre>
+         <div class="row">
+          <div class="col-md-12">
+           <dl>
+            <dt>Name</dt> <dd>{{transcript.name}}</dd>
+            <dt>Organism</dt> <dd>{{transcript.organism.scientific_name}}</dd>
+            <dt>Best Homolog</dt> <dd>{{transcript.best_homolog}}</dd>
+           </dl>
+          </div>
+         </div>
+         <div class="row">
+          <div class="col-md-12">
+           <h4>Genome Mappings</h4>
+           <ol>
+            <li ng-repeat="map in transcript.transcript_mappings | orderBy:'match_ratio'">
+             {{map.tid}} {{map.tstart | number}}-{{map.tend | number}} ({{map.match_ratio*100}}%)
+            </li>
+           </ol>
+          </div>
+         </div>
+         <div class="row">
+          <div class="col-md-12">
+           <h4>Sequence</h4>
+           <pre>
+&gt;{{transcript.id}}
+{{transcript.nsequence}}
+           </pre>
+          </div>
+         </div>
         </div>
        </div>
       </div>
@@ -130,7 +154,6 @@
           height="600"
           showXAxis="true"
           showYAxis="true"
-          interpolate="basis-open"
           showLegend="true"
           style="stack"
           showControls="true">
@@ -174,7 +197,6 @@
           height="600"
           showXAxis="true"
           showYAxis="true"
-          interpolate="basis-open"
           showLegend="true"
           forceX="[0, alignments.viewTranscript.nsequence.length]"
           style="stack"

@@ -19,9 +19,12 @@
         CSF.NGS teardrop
       </a>
       <ul class="nav navbar-nav">
-       <li>
-        <a href="#/transcripts">Transcripts</a>
-       </li> 
+       <li class="dropdown">
+        <a href="#/genes" class="dropdown-toggle" data-toggle="dropdown">Transcripts <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+         <li><a href="#/transcripts">Transcripts</a></li> 
+         <li><a href="#/genes">Genes</a></li> 
+        </ul>
        <li>
         <a href="#/deresults">DE Results</a>
        </li>
