@@ -156,8 +156,8 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       { name: 'log2 Foldchange', field: 'log2_foldchange', aggregationType: uiGridConstants.aggregationTypes.max },
     ],
   };
-  $scope.alignments={};
   $scope.getArg = function(arg) { return function(d) { return d[1][arg] } };
+  $scope.alignments={};
   $scope.loadAlignments = function(reload) {
     console.log('loadAlignments '+$scope.alignments.viewTranscript.id);
     if ($scope.alignments.viewTranscript==null) return;
@@ -165,6 +165,17 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       $scope.alignments[$scope.alignments.viewTranscript.id]=[];
       $http.get('[% config.base_uri %]/api/transcripts/'+$scope.alignments.viewTranscript.id+'/pileup').success(function(data) {
         $scope.alignments[$scope.alignments.viewTranscript.id]=data;
+      }).error($rootScope.errHandler);
+    }
+  }
+  $scope.genomeAlignments={};
+  $scope.loadGenomeAlignments = function(reload) {
+    console.log('loadGenomeAlignments '+$scope.genomeAlignments.viewTranscript.id);
+    if ($scope.genomeAlignments.viewTranscript==null) return;
+    if (reload || $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]==null) {
+      $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]=[];
+      $http.get('[% config.base_uri %]/api/transcripts/'+$scope.alignments.viewTranscript.id+'/genomePileup').success(function(data) {
+        $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]=data;
       }).error($rootScope.errHandler);
     }
   }

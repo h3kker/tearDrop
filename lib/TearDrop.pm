@@ -70,6 +70,59 @@ get '/transcripts/:id' => sub {
   $rs;
 };
 
+my %genomePileups;
+get '/transcripts/:id/genomePileup' => sub {
+  my $trans = schema->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
+  my $best_location = $trans->search_related('transcript_mappings', {}, { order_by => { -desc => 'match_ratio' } })->first; 
+  send_error 'no valid genome mapping!', 500 unless $best_location;
+  my $genome = $best_location->genome_mapping->organism_name;
+
+  my @alignments;
+  for my $galn ($genome->search_related('genome_alignments')->all) {
+    push @alignments, $galn->alignment unless $genomePileups{$trans->id}->{$galn->alignment->sample->description};
+  }
+
+  if (@alignments) {
+    use IPC::Run 'harness';
+    my @cmd = ('ext/samtools/mpileup.sh', $genome->genome_path, sprintf("%s:%d-%d", $best_location->tid, $best_location->tstart-500, $best_location->tend+500), map { $_->bam_path } @alignments);
+    debug 'running '.join(' ', @cmd);
+    my ($out, $err);
+    my $mp = harness \@cmd, \undef, \$out, \$err;
+    $mp->run or send_error "unable to run mpileup: $err $?", 500;
+
+    #debug $out;
+    $genomePileups{$trans->id} = { map {
+      $_->sample->description => []
+    } @alignments };
+
+    for my $l (split "\n", $out) {
+      my @f = split "\t", $l;
+      my $i=1;
+      for my $aln (@alignments) {
+        my $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
+        my $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
+        push @{$genomePileups{$trans->id}->{$aln->sample->description}}, { 
+          pos => $f[1]+0, 
+          depth => $depth,
+          mismatch => $mismatch+0,
+          mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
+        };
+        $i++;
+      }
+    }
+  }
+
+  my $ret = [ map {
+    {
+      key => $_,
+      values => [ map { 
+        [ $_->{pos}, { depth => $_->{depth}, mismatch => $_->{mismatch}, mismatch_rate => $_->{mismatch_rate} } ]
+      } @{$genomePileups{$trans->id}->{$_}} ],
+    }
+  } sort keys %{$genomePileups{$trans->id}} ];
+  $ret;
+};
+
 my %pileups;
 get '/transcripts/:id/pileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;

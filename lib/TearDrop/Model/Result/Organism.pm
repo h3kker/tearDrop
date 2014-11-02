@@ -114,6 +114,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 genome_mappings
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::GenomeMapping>
+
+=cut
+
+__PACKAGE__->has_many(
+  "genome_mappings",
+  "TearDrop::Model::Result::GenomeMapping",
+  { "foreign.organism_name" => "self.name" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 transcripts
 
 Type: has_many
@@ -130,8 +145,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 11:56:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l9xdq/YQ4987KuEP/m7hvA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-02 18:46:59
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qLMe5bGuIeDjWNOkZ39AJQ
 
 sub _is_column_serializable { 1 };
 

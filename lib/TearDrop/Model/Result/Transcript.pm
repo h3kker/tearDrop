@@ -231,6 +231,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 transcript_mappings
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::TranscriptMapping>
+
+=cut
+
+__PACKAGE__->has_many(
+  "transcript_mappings",
+  "TearDrop::Model::Result::TranscriptMapping",
+  { "foreign.transcript_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 transcript_tags
 
 Type: has_many
@@ -257,8 +272,8 @@ Composing rels: L</transcript_tags> -> tag
 __PACKAGE__->many_to_many("tags", "transcript_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-01 11:06:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5uiTehgrNTZAwe+pLXgP9g
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-02 18:46:59
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GUU2VyHaGQIlfa+0R5/8Ng
 
 sub _is_column_serializable { 1 };
 

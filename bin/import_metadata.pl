@@ -70,6 +70,43 @@ if (!scalar keys %wanted || exists $wanted{samples}) {
   }
 }
 
+if (!scalar keys %wanted || exists $wanted{genome_mappings}) {
+  open(IF, "$bdir/genome_mappings.csv") or die "open $bdir/genome_mappings.csv";
+  my $hline = <IF>;
+  chomp $hline;
+  my @header_fields = split ',', $hline;
+  while(<IF>) {
+    chomp;
+    my @f = split ',';
+    my %s = map {
+      $header_fields[$_] => $f[$_]
+    } 0..$#header_fields;
+    my $organism = schema->resultset('Organism')->find($s{genome});
+    unless ($organism) {
+      warn "no such genome: ".$s{genome};
+      next;
+    }
+    my $transcripts = schema->resultset('TranscriptAssembly')->search({ name => $s{assembly}})->first;
+    unless ($transcripts) {
+      warn "no such transcript assembly: ".$s{assembly};
+      next;
+    }
+    my $genome_mapping = schema->resultset('GenomeMapping')->search({
+      path => $s{path}
+    })->first;
+    unless($genome_mapping) {
+      $genome_mapping = schema->resultset('GenomeMapping')->create({
+        program => $s{program},
+        parameters => $s{parameters},
+        transcript_assembly_id => $transcripts->id,
+        organism_name => $organism->name,
+        path => $s{path},
+      });
+    }
+    $genome_mapping->import_file;
+  }
+}
+
 if (!scalar keys %wanted || exists $wanted{alignments}) {
   open(IF, "$bdir/alignments.csv") or die "open $bdir/alignments.csv";
   my $hline = <IF>;
@@ -82,16 +119,20 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
     my %s = map { 
       $header_fields[$_] => $f[$_]
     } 0..$#header_fields;
+
     my $sample = schema->resultset('Sample')->search({ description => $s{sample_id} })->first;
     unless($sample) {
       warn "no such sample: ".$s{sample_id};
       next;
     }
-    my $alignment = schema->resultset('Alignment')->create({
-      program => $s{program},
-      sample_id => $sample->id,
-      bam_path => $s{bam_path},
-    });
+    my $alignment = schema->resultset('Alignment')->search({ bam_path => $s{bam_path} })->first;
+    unless($alignment) {
+      $alignment = schema->resultset('Alignment')->create({
+        program => $s{program},
+        sample_id => $sample->id,
+        bam_path => $s{bam_path},
+      });
+    }
 
     my $assembly = schema->resultset($s{type} eq 'transcriptome' ? 'TranscriptAssembly' : 'Organism')->search({ name => $s{assembly} })->first;
     unless($assembly) {
@@ -99,7 +140,8 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       next;
     }
     my ($k, $v) = $s{type} eq 'transcriptome' ? ('transcript_assembly_id', $assembly->id) : ('organism_name', $assembly->name);
-    schema->resultset($s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment')->create({
+    my $res = $s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment';
+    schema->resultset($res)->find_or_create({
       alignment_id => $alignment->id,
       $k => $v,
     });

@@ -151,6 +151,38 @@ CREATE TABLE transcriptome_alignments (
   transcript_assembly_id integer not null references transcript_assemblies(id)
 );
 
+DROP TABLE IF EXISTS genome_mappings CASCADE;
+CREATE TABLE genome_mappings (
+  id serial primary key,
+  program text not null,
+  parameters text,
+  description text,
+  alignment_date timestamp,
+  transcript_assembly_id integer not null references transcript_assemblies(id),
+  organism_name text not null references organisms(name),
+  path text not null
+);
+
+DROP TABLE IF EXISTS transcript_mappings CASCADE;
+CREATE TABLE transcript_mappings (
+  transcript_id text not null references transcripts(id),
+  genome_mapping_id integer not null references genome_mappings(id),
+  matches integer,
+  match_ratio float,
+  mismatches integer,
+  rep_matches integer,
+  strand text,
+  qstart integer,
+  qend integer,
+  tid text,
+  tsize integer,
+  tstart integer,
+  tend integer,
+  blocksizes text,
+  qstarts text,
+  tstarts text
+);
+
 DROP TABLE IF EXISTS count_methods CASCADE;
 CREATE TABLE count_methods (
   name text primary key,

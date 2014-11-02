@@ -148,6 +148,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 genome_mappings
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::GenomeMapping>
+
+=cut
+
+__PACKAGE__->has_many(
+  "genome_mappings",
+  "TearDrop::Model::Result::GenomeMapping",
+  { "foreign.transcript_assembly_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 transcriptome_alignments
 
 Type: has_many
@@ -179,8 +194,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 11:56:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lFRZfah+8SLTOTce4qucsQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-02 19:09:29
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7CkDGdL5V+EFz4ceMGZQGQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
