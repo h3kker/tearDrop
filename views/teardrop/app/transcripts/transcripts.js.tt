@@ -245,7 +245,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     multiSelect: false,
     enableRowSelection: true,
     columnDefs: [
-      { name: 'DE Run', field: 'de_run.description' },
+      { name: 'DE Run', field: 'de_run', cellTemplate: '<div class=:ui-grid-cell-contents"><a href="#/deresults/{{MODEL_COL_FIELD.id}}/{{row.entity.contrast.id}}">{{MODEL_COL_FIELD.description}}</a></idv>', },
       { name: 'Base Cond', field: 'contrast.base_condition.name', },
       { name: 'Contrast Cond', field: 'contrast.contrast_condition.name', },
       { name: 'Base Mean', field: 'base_mean', aggregationType: uiGridConstants.aggregationTypes.avg },

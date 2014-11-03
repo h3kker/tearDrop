@@ -3,13 +3,17 @@
 angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.grid.pagination', 'ui.grid.selection'])
 
 .config(['$routeProvider', function($routeProvider) {
+  $routeProvider.when('/deresults/:run/:contrast', {
+    templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
+    controller: 'DeResultsCtrl'
+  });
   $routeProvider.when('/deresults', {
     templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
     controller: 'DeResultsCtrl'
   });
 }])
 
-.controller('DeResultsCtrl', ['$rootScope', '$scope', '$http', 'uiGridConstants', function($rootScope, $scope, $http, uiGridConstants) {
+.controller('DeResultsCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
 
   $scope.deRuns=[];
   $http.get('[% config.base_uri %]/api/deruns').success(function(data) {
@@ -17,6 +21,20 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     if ($rootScope.deresults.selectedDeRun==null) {
       $rootScope.deresults.selectedDeRun=$scope.deRuns[0];
       $rootScope.deresults.selectedContrast=$scope.deRuns[0].contrasts[0];
+    }
+    if ($routeParams.run != null && $routeParams.contrast != null) {
+      angular.forEach($scope.deRuns, function(r) {
+        if (r.id==$routeParams.run) {
+          $rootScope.deresults.selectedDeRun=r;
+          angular.forEach(r.contrasts, function(c) {
+            if (c.id==$routeParams.contrast) {
+              $rootScope.deresults.selectedContrast=c;
+              return;
+            }
+          });
+          return;
+        }
+      });
     }
     $scope.$watch('deresults.selectedDeRun', function(newVal, oldVal) {
       if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
@@ -55,7 +73,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     rowsPerPage: $rootScope.deresults.pagingOptions.pagesize,
     columnDefs: [
       { name: 'Transcript/Gene', field: 'transcript_id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
-      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true"></rating></div>', },
+      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="glyphicon-off"></rating></div>', },
       { name: 'Description', field: 'transcript', width: '30%', cellTemplate: '<div class="ui-grid-cell-contents"><reviewed-description ng-model="MODEL_COL_FIELD"></reviewed-description></div>', },
       { name: 'Base Mean', field: 'base_mean', width: '12%' },
       { name: 'p-value', field: 'pvalue', width: '10%' },
