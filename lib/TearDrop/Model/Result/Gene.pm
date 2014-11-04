@@ -146,7 +146,27 @@ __PACKAGE__->many_to_many("tags", "gene_tags", "tag");
 
 use Dancer::Plugin::DBIC 'schema';
 
+use Moo;
+use namespace::clean;
+
 sub _is_column_serializable { 1 };
+
+around set_tags => sub {
+  my ($orig, $self, @upd_tags) = @_;
+  my %new_tags = map { $_->{tag} => $_ } @upd_tags;
+  for my $o ($self->tags) {
+    if ($new_tags{$o->tag}) {
+      delete $new_tags{$o->tag};
+    }
+    else {
+      $self->remove_from_tags($o);
+    }
+  }
+  for my $n (values %new_tags) {
+    my $ntag = schema->resultset('Tag')->find_or_create($n);
+    $self->add_to_tags($ntag);
+  }
+};
 
 sub aggregate_blast_runs {
   my $self = shift;

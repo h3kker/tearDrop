@@ -69,7 +69,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     minRowsToShow: 20,
     columnDefs: [
       { name: 'Transcript/Gene', field: 'transcript_id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
-      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="glyphicon-off"></rating></div>', },
+      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="\'none\'"></rating></div>', },
       { name: 'Description', field: 'transcript', width: '30%', cellTemplate: '<div class="ui-grid-cell-contents"><reviewed-description ng-model="MODEL_COL_FIELD"></reviewed-description></div>', },
       { name: 'Base Mean', field: 'base_mean', width: '12%' },
       { name: 'p-value', field: 'pvalue', width: '10%' },

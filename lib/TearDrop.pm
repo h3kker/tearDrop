@@ -133,9 +133,12 @@ get '/transcripts/:id/genomePileup' => sub {
       my @f = split "\t", $l;
       my $i=1;
       for my $aln (@alignments) {
-        my $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
-        my $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
-        $depth+=$mismatch;
+        my $depth=0; my $mismatch=0;
+        if (defined $f[$i*3+1]) {
+          $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
+          $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
+          $depth+=$mismatch;
+        }
         push @{$genomePileups{$trans->id}->{$aln->sample->description}}, { 
           pos => $f[1]+0, 
           depth => $depth,
@@ -230,6 +233,9 @@ get '/genes' => sub {
       $filter{$s_field} = { $comparisons{$field} => param('filter.'.$field) };
     }
   }
+  if (param('tags')) {
+    $filter{'gene_tags.tag'} = ref params->{tags} eq 'ARRAY' ? params->{tags} : [ params->{tags} ];
+  }
   for my $k (keys %{params()}) {
     if ($k=~ m/sort-(\d+)-(.+)/) {
       my $f='me.'.$2;
@@ -301,21 +307,13 @@ get '/genes/:id' => sub {
 };
 
 post '/genes/:id' => sub {
+  my %tags = map {
+    $_->tag => 1,
+  } schema->resultset('Tag')->all;
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
   $rs->$_($upd->{$_}) for qw/description best_homolog rating reviewed/;
-  my %new_tags = map { $_->{tag} => $_ } @{$upd->{tags}};
-  for my $o ($rs->tags) {
-    if ($new_tags{$o->tag}) {
-      delete $new_tags{$o->tag};
-    }
-    else {
-      $rs->remove_from_tags($o);
-    }
-  }
-  for my $n (values %new_tags) {
-    $rs->add_to_tags($n);
-  }
+  $rs->set_tags(@{$upd->{tags}});
   $rs->update;
   forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };
 };

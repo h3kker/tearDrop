@@ -2,6 +2,11 @@
 
 <div class="row">
  <div class="col-md-12">
+  <form class="form-inline" role="form"> 
+   <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag in tags"></select>
+   <button class="btn btn-sm" ng-click="genes.addTag(selectedTag)">Add</button>
+  </form>
+  <span ng-repeat="tag in genes.selectedTags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="genes.removeTag(tag)"></i></span>
   <paged-grid param="genes" grid-options="gridOptions" refresh="refresh"></paged-grid>
  </div>
 </div>

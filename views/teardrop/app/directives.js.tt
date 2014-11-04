@@ -10,6 +10,19 @@ angular.module('tearDropDirectives', []).
         param: '=',
       },
       link: function($scope, element, attr) {
+        if ($scope.param.selectedTags==null) $scope.param.selectedTags=[];
+        angular.extend($scope.param, {
+          addTag: function(newTag) {
+            $scope.param.selectedTags.push(newTag);
+            $scope.param.doRefresh();
+          },
+          removeTag: function(oldTag) {
+            $scope.param.selectedTags=$scope.param.selectedTags.filter(function(t) {
+              return t.tag!==oldTag.tag;
+            });
+            $scope.param.doRefresh();
+          },
+        });
         angular.extend($scope.gridOptions, {
           enableFiltering: true,
           useExternalFiltering: true,
@@ -56,6 +69,12 @@ angular.module('tearDropDirectives', []).
         }
         $scope.param.doRefresh = function(force) {
           var p = angular.copy($scope.param.pagingOptions);
+          if ($scope.param.selectedTags.length>0) {
+            p.tags=[];
+            angular.forEach($scope.param.selectedTags, function(v) {
+              p.tags.push(v.tag);
+            });
+          }
           angular.forEach($scope.param.filters, function(v,k) {
             p['filter.'+k]=v;
           });

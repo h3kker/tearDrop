@@ -64,6 +64,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.refresh();
 }])
 .controller('GenesCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+
   if ($rootScope.genes == null) {
     $rootScope.genes={
       'pagingOptions': {
@@ -154,7 +155,12 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       });
     },
   };
+  $scope.newTag={ tag: '', level: 'info' };
   $scope.addTags = function(selectedTags) {
+    if ($scope.newTag !== null && $scope.newTag.tag !== '') {
+      selectedTags.push($scope.newTag);
+      $scope.newTag={ tag: '', level: 'info' };
+    }
     $scope.gene.tags=$scope.gene.tags.concat(selectedTags);
     $scope.saveGene();
   }

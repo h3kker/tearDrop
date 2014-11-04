@@ -14,8 +14,18 @@
    <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="gene.reviewed" ng-change="saveGene()"></dd>
   </dl>
  </div>
- <div class="col-md-4">
-  <select multiple class="form-control" ng-model="selectedTags" ng-options="tag.tag for tag in tags"></select>
+ <div class="col-md-3">
+  <h5>Tags</h5>
+  <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag for tag in tags"></select>
+  <form class="form-inline" role="form">
+   <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
+   <select ng-model="newTag.level" class="form-control input-sm">
+    <option value="info">Info</option>
+    <option value="success">Good</option>
+    <option value="warning">Not so good</option>
+    <option value="danger">Bad!</option>
+   </select>
+  </form>
   <button class="btn btn-sm" ng-click="addTags(selectedTags)">Add</button>
  </div>
 </div>
