@@ -1,5 +1,5 @@
 angular.module('tearDropDirectives', []).
-  directive('pagedGrid', function(uiGridConstants) {
+  directive('pagedGrid', function(uiGridConstants, $timeout) {
     return {
       restrict: 'E',
       replace: true,
@@ -47,7 +47,10 @@ angular.module('tearDropDirectives', []).
                 }
               });
             });
-            $scope.param.doRefresh();
+            if ($scope.loading !== null) $timeout.cancel($scope.loading);
+            $scope.loading=$timeout(function() {
+              $scope.param.doRefresh();
+            }, 250);
           });
 
         }

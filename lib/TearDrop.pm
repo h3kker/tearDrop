@@ -53,7 +53,9 @@ get '/transcripts' => sub {
   my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=', 'organism.scientific_name' => 'like');
   for my $field (keys %comparisons) {
     if (exists params->{'filter.'.$field}) {
-      if ($comparisons{$field} eq 'like') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
+      if ($comparisons{$field} eq 'like') { 
+        params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; 
+      }
       $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
     }
   }
@@ -220,36 +222,50 @@ get '/genes' => sub {
   my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=');
   for my $field (keys %comparisons) {
     if (exists params->{'filter.'.$field}) {
-      if ($comparisons{$field} eq 'like') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
-      $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
+      my $s_field='me.'.$field;
+      if ($comparisons{$field} eq 'like') { 
+        params->{'filter.'.$field}='%'.lc(params->{'filter.'.$field}).'%'; 
+        $s_field='LOWER('.$s_field.')';
+      }
+      $filter{$s_field} = { $comparisons{$field} => param('filter.'.$field) };
     }
   }
   for my $k (keys %{params()}) {
     if ($k=~ m/sort-(\d+)-(.+)/) {
-      $sort[$1]={ '-'.param($k) => $2 };
+      my $f='me.'.$2;
+      $sort[$1]={ '-'.param($k) => $f };
     }
   }
   unless (scalar @sort) {
-    @sort = ({ -asc => 'id' });
+    @sort = ({ -asc => 'me.id' });
   }
   debug \@sort;
+  debug \%filter;
   my $rs = schema->resultset('Gene')->search(\%filter, { 
     order_by => \@sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
+    prefetch => [ 
+      { 'transcripts' => [ 
+          { 'transcript_tags' => [ 'tag' ] }, 
+          #{ 'transcript_mappings' => [ 'genome_mapping' ] } 
+      ]}, 
+      { 'gene_tags' => [ 'tag' ] } ]
   });
+  debug 'done';
   my @ret;
   for my $r ($rs->all) {
     my $ser = $r->TO_JSON;
     $ser->{transcripts} = [ map {
       my $tser = $_->TO_JSON;
       $tser->{tags} = [ $_->tags ];
-      $tser->{transcript_mappings} = [ $_->transcript_mappings ];
+      #$tser->{transcript_mappings} = [ $_->transcript_mappings ];
       $tser;
     } $r->search_related('transcripts')->all ];
     $ser->{tags} = [ $r->tags ];
     push @ret, $ser;
   }
+  debug 'fetched';
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,
@@ -352,7 +368,7 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   my $is_gene = $de_run->count_table->aggregate_genes;
   my %filter = (de_run_id => param('id'), 'contrast_id' => param('contrast_id'));
   my @sort;
-  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '>', 'transcript_id' => 'like');
+  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
   for my $field (keys %comparisons) {
     if (exists params->{'filter.'.$field}) {
       if ($field eq 'transcript_id') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
