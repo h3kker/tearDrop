@@ -1,4 +1,77 @@
 angular.module('tearDropDirectives', []).
+  directive('pagedGrid', function(uiGridConstants) {
+    return {
+      restrict: 'E',
+      replace: true,
+      template: '<div><pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination><div ui-grid="gridOptions" class="grid"></div></div>',
+      scope: {
+        gridOptions: '=',
+        refresh: '=',
+        param: '=',
+      },
+      link: function($scope, element, attr) {
+        angular.extend($scope.gridOptions, {
+          enableFiltering: true,
+          useExternalFiltering: true,
+          useExternalSorting: true,
+          rowsPerPage: $scope.param.pagingOptions.pagesize,
+        });
+        angular.forEach($scope.gridOptions.columnDefs, function(col) {
+          if ($scope.param.filters !== null && $scope.param.filters[col.field]) {
+            col.filter={ term: $scope.param.filters[col.field] };
+          }
+          angular.forEach($scope.param.sort, function(v,k) {
+            if (v.field==col.field) {
+              col.sort={ priority: k, direction: v.direction=='asc' ? uiGridConstants.ASC : uiGridConstants.DESC };
+            }
+          });
+        });
+        $scope.gridOptions.onRegisterApi = function(gridApi) {
+          gridApi.core.on.sortChanged($scope, function(grid, sortColumns) {
+            $scope.param.sort=[];
+            angular.forEach(sortColumns, function(col) {
+              $scope.param.sort.push({
+                field: col.field,
+                direction: col.sort.direction==uiGridConstants.DESC ? 'desc' : 'asc',
+              });
+            });
+            $scope.param.doRefresh();
+          });
+          gridApi.core.on.filterChanged($scope, function() {
+            var grid = this.grid;
+            $scope.param.filters={};
+            angular.forEach(grid.columns, function(col) {
+              angular.forEach(col.filters, function(f) {
+                if (f.term !== null && f.term !== '') {
+                  $scope.param.filters[col.field]=f.term;
+                }
+              });
+            });
+            $scope.param.doRefresh();
+          });
+
+        }
+        $scope.param.doRefresh = function(force) {
+          var p = angular.copy($scope.param.pagingOptions);
+          angular.forEach($scope.param.filters, function(v,k) {
+            p['filter.'+k]=v;
+          });
+          angular.forEach($scope.param.sort, function(v,k) {
+            p['sort-'+k+'-'+v.field]=v.direction;
+          });
+          if (force || $scope.curParams===null || !angular.equals(p, $scope.curParams)) {
+            $scope.curParams=p;
+            $scope.refresh(p);
+          }
+        }
+        $scope.$watch('param.pagingOptions', function (newVal, oldVal) {
+          if (newVal !== oldVal && newVal.page !== oldVal.page) {
+            $scope.param.doRefresh();
+          }
+        }, true);
+      },
+    }
+  }).
   directive('clickToEdit', function() {
     var editorTemplate = '<span class="click-to-edit">' +
       '<span ng-hide="view.editorEnabled">' +

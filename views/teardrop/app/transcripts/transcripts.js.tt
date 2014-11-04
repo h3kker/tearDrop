@@ -21,16 +21,21 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   });
 }])
 .controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
-  $rootScope.transcripts={
-    'pagingOptions': {
-      'page': 1,
-      'pagesize': 50,
-    }
-  };
+  if ($rootScope.transcripts==null) {
+    $rootScope.transcripts={
+      'pagingOptions': {
+        'page': 1,
+        'pagesize': 50,
+      },
+      'sort': [
+        { 'field': 'id', 'direction': 'asc' },
+      ],
+      'filters': {
+      },
+    };
+  }
   $scope.gridOptions={
-    showFooter: true,
     minRowsToShow: 20,
-    rowsPerPage: $rootScope.transcripts.pagingOptions.pagesize,
     columnDefs: [
       { name: 'Transcript', field: 'id' },
       { name: 'Gene', field: 'gene.id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
@@ -40,24 +45,14 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ],
   };
 
-  $scope.gridOptions.onRegisterApi = function(gridApi) {
-    $scope.gridApi = gridApi;
-  };
-
-  $scope.$watch('transcripts.pagingOptions', function (newVal, oldVal) {
-    if (newVal !== oldVal && newVal.page !== oldVal.page) {
-      $scope.refresh();
-    }
-  }, true);
-  $scope.refresh = function() {
-    $http.get('[% config.base_uri %]/api/transcripts', { 'params': $rootScope.transcripts.pagingOptions }).success(
+  $scope.refresh = function(p) {
+    $http.get('[% config.base_uri %]/api/transcripts', { 'params': p }).success(
       function(res) {
         $rootScope.transcripts.pagingOptions.total_items = res.total_items;
         $scope.gridOptions.data = res.data;
       }
     ).error($rootScope.errHandler);
   }
-  $scope.refresh();
 }])
 .controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'growl', function($rootScope, $routeParams, $scope, $http) {
   $scope.refresh = function() {
@@ -68,8 +63,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   };
   $scope.refresh();
 }])
-.controller('GenesCtrl', ['$rootScope', '$scope', '$http', 'uiGridConstants', function($rootScope, $scope, $http, uiGridConstants) {
-
+.controller('GenesCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
   if ($rootScope.genes == null) {
     $rootScope.genes={
       'pagingOptions': {
@@ -84,12 +78,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     };
   }
   $scope.gridOptions = {
-    showFooter: true,
-    enableFiltering: true,
-    useExternalFiltering: true,
-    useExternalSorting: true,
     minRowsToShow: 20,
-    rowsPerPage: $rootScope.genes.pagingOptions.pagesize,
     columnDefs: [
      { name: 'Id', field: 'id', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
      { name: 'Rating', field: 'rating', width: '12%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true"></rating></div>', },
@@ -99,67 +88,13 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
      { name: 'Transcripts', field: 'transcripts.length', width: '5%' },
     ],
   };
-
-  angular.forEach($scope.gridOptions.columnDefs, function(col) {
-    if ($rootScope.genes.filters[col.field]) {
-      col.filter={ term: $rootScope.genes.filters[col.field] };
-    }
-    $rootScope.genes.sort.forEach(function(v, k) {
-      if (v.field==col.field) {
-        col.sort={ priority: k, direction: v.direction=='asc' ? uiGridConstants.ASC : uiGridConstants.DESC };
+  $scope.refresh = function(p) {
+    $http.get('[% config.base_uri %]/api/genes', { 'params': p }).success(
+      function(res) {
+        $rootScope.genes.pagingOptions.total_items = res.total_items;
+        $scope.gridOptions.data = res.data;
       }
-    });
-  });
-
-  $scope.gridOptions.onRegisterApi = function(gridApi) {
-    $scope.gridApi = gridApi;
-    $scope.gridApi.core.on.sortChanged($scope, function(grid, sortColumns) {
-      $rootScope.genes.sort=[];
-      angular.forEach(sortColumns, function(col) {
-        $rootScope.genes.sort.push({
-          field: col.field,
-          direction: col.sort.direction==uiGridConstants.DESC ? 'desc' : 'asc',
-        });
-      });
-      $scope.refresh();
-    });
-    $scope.gridApi.core.on.filterChanged( $scope, function() {
-      var grid = this.grid;
-      $rootScope.genes.filters={};
-      angular.forEach(grid.columns, function(col) {
-        angular.forEach(col.filters, function(f) {
-          if (f.term != null && f.term !== '') {
-            $rootScope.genes.filters[col.field]=f.term;
-          }
-        });
-      });
-      $scope.refresh();
-    });
-  };
-
-  $scope.$watch('genes.pagingOptions', function (newVal, oldVal) {
-    if (newVal !== oldVal && newVal.page !== oldVal.page) {
-      $scope.refresh();
-    }
-  }, true);
-
-  $scope.refresh = function() {
-    var p = angular.copy($rootScope.genes.pagingOptions);
-    angular.forEach($rootScope.genes.filters, function(v,k) {
-      p['filter.'+k]=v;
-    });
-    angular.forEach($rootScope.genes.sort, function(v,k) {
-      p['sort-'+k+'-'+v.field]=v.direction;
-    });
-    if ($scope.curParams===null || !angular.equals(p, $scope.curParams)) {
-      $scope.curParams=angular.copy(p);
-      $http.get('[% config.base_uri %]/api/genes', { 'params': p }).success(
-        function(res) {
-          $rootScope.genes.pagingOptions.total_items = res.total_items;
-          $scope.gridOptions.data = res.data;
-        }
-      );
-    }
+    ).error($rootScope.errHandler);
   }
 }])
 .controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', '$timeout', 'Gene', function($rootScope, $routeParams, $scope, $http, uiGridConstants, $timeout, Gene) {

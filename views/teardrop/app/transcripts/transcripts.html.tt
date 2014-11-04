@@ -1,3 +1,7 @@
 <h1>Transcripts</h1>
- <pagination items-per-page="transcripts.pagingOptions.pagesize" total-items="transcripts.pagingOptions.total_items" ng-model="transcripts.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination>
- <div ui-grid="gridOptions" class="grid"></div>
+
+<div class="row">
+ <div class="col-md-12">
+  <paged-grid param="transcripts" grid-options="gridOptions" refresh="refresh"></paged-grid>
+ </div>
+</div>

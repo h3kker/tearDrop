@@ -48,12 +48,31 @@ hook before_error_render => sub {
 };
 
 get '/transcripts' => sub {
-  #new TearDrop::Task::BLAST(gene_id => 'c45045_g1', database => 'TAIR10 Proteins')->run;
-  my $rs = schema->resultset('Transcript')->search(undef, { 
+  my %filter = ();
+  my @sort;
+  my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=', 'organism.scientific_name' => 'like');
+  for my $field (keys %comparisons) {
+    if (exists params->{'filter.'.$field}) {
+      if ($comparisons{$field} eq 'like') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
+      $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
+    }
+  }
+  for my $k (keys %{params()}) {
+    if ($k=~ m/sort-(\d+)-(.+)/) {
+      $sort[$1]={ '-'.param($k) => $2 };
+    }
+  }
+  unless (scalar @sort) {
+    @sort = ({ -asc => 'id' });
+  }
+  debug \@sort;
+  my $rs = schema->resultset('Transcript')->search(\%filter, { 
+    order_by => \@sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
-    prefetch => 'organism' 
+    prefetch => 'organism',
   });
+  #new TearDrop::Task::BLAST(gene_id => 'c45045_g1', database => 'TAIR10 Proteins')->run;
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,

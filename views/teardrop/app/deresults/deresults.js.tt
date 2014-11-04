@@ -15,6 +15,22 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
 
 .controller('DeResultsCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
 
+  if ($rootScope.deresults == null) {
+    $rootScope.deresults={
+      'selectedDeRun': null,
+      'selectedContrast': null,
+      'pagingOptions': {
+        'page': 1,
+        'pagesize': 20,
+      },
+      'sort': [
+        { 'field': 'log2_foldchange', 'direction': 'desc' },
+      ],
+      'filters': {
+        'adjp': 0.1
+      },
+    };
+  }
   $scope.deRuns=[];
   $http.get('[% config.base_uri %]/api/deruns').success(function(data) {
     $scope.deRuns=data;
@@ -38,39 +54,19 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     }
     $scope.$watch('deresults.selectedDeRun', function(newVal, oldVal) {
       if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
-        $scope.refresh();
+        $rootScope.deresults.doRefresh(true);
       }
     }, true);
     $scope.$watch('deresults.selectedContrast', function(newVal, oldVal) {
       if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
-        $scope.refresh();
+        $rootScope.deresults.doRefresh(true);
       }
     }, true);
-  });
-  if ($rootScope.deresults == null) {
-    $rootScope.deresults={
-      'selectedDeRun': null,
-      'selectedContrast': null,
-      'pagingOptions': {
-        'page': 1,
-        'pagesize': 20,
-      },
-      'sort': [
-        { 'field': 'log2_foldchange', 'direction': 'desc' },
-      ],
-      'filters': {
-        'adjp': 0.1
-      },
-    };
-  }
+    $rootScope.deresults.doRefresh(true);
+  }).error($rootScope.errHandler);
 
   $scope.gridOptions = {
-    showFooter: true,
-    enableFiltering: true,
-    useExternalFiltering: true,
-    useExternalSorting: true,
     minRowsToShow: 20,
-    rowsPerPage: $rootScope.deresults.pagingOptions.pagesize,
     columnDefs: [
       { name: 'Transcript/Gene', field: 'transcript_id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
       { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="glyphicon-off"></rating></div>', },
@@ -83,67 +79,14 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     ],
   };
 
-  angular.forEach($scope.gridOptions.columnDefs, function(col) {
-    if ($rootScope.deresults.filters[col.field]) {
-      col.filter={ term: $rootScope.deresults.filters[col.field] };
-    }
-    $rootScope.deresults.sort.forEach(function(v, k) {
-      if (v.field==col.field) {
-        col.sort={ priority: k, direction: v.direction=='asc' ? uiGridConstants.ASC : uiGridConstants.DESC };
-      }
-    });
-  });
-
-  $scope.gridOptions.onRegisterApi = function(gridApi) {
-    $scope.gridApi = gridApi;
-    $scope.gridApi.core.on.sortChanged($scope, function(grid, sortColumns) {
-      $rootScope.deresults.sort=[];
-      angular.forEach(sortColumns, function(col) {
-        $rootScope.deresults.sort.push({
-          field: col.field,
-          direction: col.sort.direction==uiGridConstants.DESC ? 'desc' : 'asc',
-        });
-      });
-      $scope.refresh();
-    });
-    $scope.gridApi.core.on.filterChanged( $scope, function() {
-      var grid = this.grid;
-      $rootScope.deresults.filters={};
-      angular.forEach(grid.columns, function(col) {
-        angular.forEach(col.filters, function(f) {
-          if (f.term != null && f.term !== '') {
-            $rootScope.deresults.filters[col.field]=f.term;
-          }
-        });
-      });
-      $scope.refresh();
-    });
-  };
-
-  $scope.$watch('deresults.pagingOptions', function (newVal, oldVal) {
-    if (newVal !== oldVal && newVal.page !== oldVal.page) {
-      $scope.refresh();
-    }
-  }, true);
-  $scope.refresh = function() {
-    if ($rootScope.deresults.selectedDeRun==null || $rootScope.deresults.selectedContrast==null) return;
-    var p = angular.copy($rootScope.deresults.pagingOptions);
-    angular.forEach($rootScope.deresults.filters, function(v,k) {
-      p['filter.'+k]=v;
-    });
-    angular.forEach($rootScope.deresults.sort, function(v,k) {
-      p['sort-'+k+'-'+v.field]=v.direction;
-    });
-    p.selectedRun=$rootScope.deresults.selectedDeRun.id;
-    p.selectedContrast=$rootScope.deresults.selectedContrast.id;
-    if ($scope.curParams===null || !angular.equals(p, $scope.curParams)) {
-      $scope.curParams=angular.copy(p);
+  $scope.refresh = function(p) {
+    if ($rootScope.deresults.selectedDeRun!==null && $rootScope.deresults.selectedContrast!==null) {
       $http.get('[% config.base_uri %]/api/deruns/'+$rootScope.deresults.selectedDeRun.id+'/contrasts/'+$rootScope.deresults.selectedContrast.id+'/results', { 'params': p }).success(
         function(res) {
           $rootScope.deresults.pagingOptions.total_items = res.total_items;
           $scope.gridOptions.data = res.data;
         }
-      );
+      ).error($rootScope.errHandler);
     }
   }
 }]);

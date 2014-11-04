@@ -9,9 +9,8 @@
  </div>
 </div>
 
-<div class="row" ng-if="deresults.selectedDeRun && deresults.selectedContrast">
+<div class="row">
  <div class="col-md-12">
-  <pagination items-per-page="deresults.pagingOptions.pagesize" total-items="deresults.pagingOptions.total_items" ng-model="deresults.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination>
-  <div ui-grid="gridOptions" class="grid"></div>
+  <paged-grid param="deresults" grid-options="gridOptions" refresh="refresh"></paged-grid>
  </div>
 </div>
