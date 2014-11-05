@@ -1,4 +1,4 @@
-package TearDrop::Task::MPileup;
+package TearDrop::Task::Mpileup;
 
 use warnings;
 use strict;

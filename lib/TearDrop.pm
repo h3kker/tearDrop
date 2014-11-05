@@ -146,7 +146,7 @@ get '/transcripts/:id/genomePileup' => sub {
   });
   debug map { $_->transcript->id } $others->all;
 
-  return TearDrop::Task::MPileup->new(
+  return TearDrop::Task::Mpileup->new(
     reference_path => $genome->genome_path,
     region => $best_location->tid, start => $best_location->tstart, end => $best_location->tend,
     context => $context,
@@ -160,7 +160,7 @@ get '/transcripts/:id/pileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
-  return TearDrop::Task::MPileup->new(
+  return TearDrop::Task::Mpileup->new(
     reference_path => $assembly->path,
     region => $trans->id,
     effective_size => length($trans->nsequence),

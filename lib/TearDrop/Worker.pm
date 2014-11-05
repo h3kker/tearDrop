@@ -10,7 +10,7 @@ use Try::Tiny;
 use Parallel::ForkManager;
 
 use TearDrop::Task::BLAST;
-use TearDrop::Task::MPileup;
+use TearDrop::Task::Mpileup;
 
 my $pm = Parallel::ForkManager->new(4);
 
