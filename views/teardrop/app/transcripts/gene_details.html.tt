@@ -85,7 +85,9 @@
     <tab-heading>Transcripts</tab-heading>
     <div class="row">
      <div class="col-md-12">
-      <h3>Transcripts</h3>
+      <h3>Transcripts
+      <a role="button" class="btn btn-default btn-xs" href="[% config.base_uri %]/api/genes/{{gene.id}}/fasta">Get FASTA file</a>
+      </h3>
      </div>
     </div>
     <div ng-if="gene.transcripts">

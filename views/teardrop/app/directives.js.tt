@@ -1,9 +1,9 @@
 angular.module('tearDropDirectives', []).
-  directive('pagedGrid', function(uiGridConstants, $timeout) {
+  directive('pagedGrid', function(uiGridConstants, $timeout, $location) {
     return {
       restrict: 'E',
       replace: true,
-      template: '<div><pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination><div ui-grid="gridOptions" class="grid"></div></div>',
+      template: '<div><button ng-click="param.getFasta()" class="btn btn-xs">Get FASTA file</button><pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination><div ui-grid="gridOptions" class="grid"></div></div>',
       scope: {
         gridOptions: '=',
         refresh: '=',
@@ -67,8 +67,8 @@ angular.module('tearDropDirectives', []).
           });
 
         }
-        $scope.param.doRefresh = function(force) {
-          var p = angular.copy($scope.param.pagingOptions);
+        $scope.param.generateUrlParams = function(p) {
+          if (p==null) p={};
           if ($scope.param.selectedTags.length>0) {
             p.tags=[];
             angular.forEach($scope.param.selectedTags, function(v) {
@@ -81,6 +81,10 @@ angular.module('tearDropDirectives', []).
           angular.forEach($scope.param.sort, function(v,k) {
             p['sort-'+k+'-'+v.field]=v.direction;
           });
+          return p;
+        }
+        $scope.param.doRefresh = function(force) {
+          var p = $scope.param.generateUrlParams(angular.copy($scope.param.pagingOptions));
           if (force || $scope.curParams===null || !angular.equals(p, $scope.curParams)) {
             $scope.curParams=p;
             $scope.refresh(p);

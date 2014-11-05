@@ -187,5 +187,15 @@ sub aggregate_blast_runs {
   [ values %blast_runs ];
 }
 
+sub to_fasta {
+  my $self = shift;
+  my @ret;
+  for my $t ($self->transcripts) {
+    $t->name($self->description) unless $t->name;
+    push @ret, $t->to_fasta;
+  }
+  join("\n", @ret);
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

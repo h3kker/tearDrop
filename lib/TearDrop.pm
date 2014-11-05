@@ -283,6 +283,12 @@ get '/genes' => sub {
   }
 };
 
+get '/genes/:id/fasta' => sub {
+  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  content_type 'text/plain';
+  $gene->to_fasta;
+};
+
 get '/genes/:id' => sub {
   my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $transcripts = [ $gene->search_related('transcripts')->all ];
@@ -361,35 +367,61 @@ get '/deruns' => sub {
   \@ret;
 };
 
-get '/deruns/:id/contrasts/:contrast_id/results' => sub {
-  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
-  my $is_gene = $de_run->count_table->aggregate_genes;
-  my %filter = (de_run_id => param('id'), 'contrast_id' => param('contrast_id'));
-  my @sort;
-  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
-  for my $field (keys %comparisons) {
+sub parse_params {
+  my ($comparisons, $filters, $sort) = @_;
+  for my $field (keys %$comparisons) {
     if (exists params->{'filter.'.$field}) {
-      if ($field eq 'transcript_id') { params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; }
-      $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
+      my $s_field=$field;
+      if ($comparisons->{$field} eq 'like') { 
+        params->{'filter.'.$field}='%'.lc(params->{'filter.'.$field}).'%'; 
+        $s_field='LOWER('.$s_field.')';
+      }
+      $filters->{$s_field} = { $comparisons->{$field} => param('filter.'.$field) };
+    }
+  }
+  for my $k (keys %{params()}) {
+    if ($k=~ m/sort-(\d+)-(.+)/) {
+      $sort->[$1]={ '-'.param($k) => $2 };
     }
   }
   if (exists params->{'filter.log2_foldchange'}) {
-    $filter{log2_foldchange} = [
+    $filters->{log2_foldchange} = [
       { '<', params->{'filter.log2_foldchange'}*-1 },
       { '>', params->{'filter.log2_foldchange'} },
     ];
   }
-  for my $k (keys %{params()}) {
-    if ($k=~ m/sort-(\d+)-(.+)/) {
-      $sort[$1]={ '-'.param($k) => $2 };
-    }
+}
+
+get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
+  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
+  my $is_gene = $de_run->count_table->aggregate_genes;
+  my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
+  my $sort = [{ -asc => 'adjp' }];
+  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
+  parse_params(\%comparisons, $filters, $sort);
+  my $rs = schema->resultset('DeResult')->search($filters, { 
+    order_by => $sort,
+  });
+  my @f;
+  for my $r ($rs->all) {
+    push @f, schema->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id)->to_fasta;
   }
-  unless (scalar @sort) {
-    @sort = ({ -asc => 'adjp' });
-  }
-  debug \@sort;
-  my $rs = schema->resultset('DeResult')->search(\%filter, { 
-    order_by => \@sort,
+  content_type 'text/plain';
+  join "\n", @f;
+};
+
+
+get '/deruns/:id/contrasts/:contrast_id/results' => sub {
+  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
+  my $is_gene = $de_run->count_table->aggregate_genes;
+  my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
+  my $sort = [{ -asc => 'adjp' }];
+  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
+  parse_params(\%comparisons, $filters, $sort);
+  debug $filters;
+  debug $sort;
+  my $rs = schema->resultset('DeResult')->search($filters, { 
+    order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
   });

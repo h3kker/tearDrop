@@ -13,10 +13,17 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
   });
 }])
 
-.controller('DeResultsCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, uiGridConstants) {
+.controller('DeResultsCtrl', ['$rootScope', '$routeParams', '$scope', '$http', '$location', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, $location, uiGridConstants) {
 
   if ($rootScope.deresults == null) {
     $rootScope.deresults={
+      'getFasta': function() {
+        if (this.selectedDeRun!==null && this.selectedContrast!==null) {
+          $location.search(this.generateUrlParams());
+          var search = $location.url().replace(/.+\?/, '');
+          window.location.href='[% config.base_uri %]/api/deruns/'+this.selectedDeRun.id+'/contrasts/'+this.selectedContrast.id+'/results/fasta?'+search;
+        }
+      },
       'selectedDeRun': null,
       'selectedContrast': null,
       'pagingOptions': {
@@ -69,13 +76,13 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     minRowsToShow: 20,
     columnDefs: [
       { name: 'Transcript/Gene', field: 'transcript_id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
-      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="\'none\'"></rating></div>', },
-      { name: 'Description', field: 'transcript', width: '30%', cellTemplate: '<div class="ui-grid-cell-contents"><reviewed-description ng-model="MODEL_COL_FIELD"></reviewed-description></div>', },
+      { name: 'Rating', field: 'transcript.rating', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="\'none\'"></rating></div>', enableSorting: false, enableFiltering: false, },
+      { name: 'Description', field: 'transcript', width: '30%', cellTemplate: '<div class="ui-grid-cell-contents"><reviewed-description ng-model="MODEL_COL_FIELD"></reviewed-description></div>', enableSorting: false, enableFiltering: false, },
       { name: 'Base Mean', field: 'base_mean', width: '12%' },
       { name: 'p-value', field: 'pvalue', width: '10%' },
       { name: 'Adjusted p-value', field: 'adjp', width: '10%' },
       { name: 'Log2 FC', field: 'log2_foldchange', width: '10%' },
-      { name: 'Flagged', field: 'flagged', width: '10%' },
+      //{ name: 'Flagged', field: 'flagged', width: '10%' },
     ],
   };
 
