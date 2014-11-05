@@ -175,5 +175,14 @@ __PACKAGE__->belongs_to(
 
 sub _is_column_serializable { 1 };
 
+sub comparisons {
+  {
+    base_mean => { cmp => '>', column => 'me.base_mean' }, 
+    adjp => { cmp => '<', column => 'me.adjp' }, 
+    pvalue => { cmp => '<', column => 'me.pvalue' }, 
+    'transcript_id' => { cmp => 'like', column => 'me.transcript_id' },
+  };
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

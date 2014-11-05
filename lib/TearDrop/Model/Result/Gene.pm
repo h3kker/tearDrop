@@ -197,5 +197,31 @@ sub to_fasta {
   join("\n", @ret);
 }
 
+sub comparisons {
+  {
+    rating => { cmp => '>', column => 'me.rating' }, id => { cmp => 'like', column => 'me.id' },
+    description => { cmp => 'like', column => 'me.description' }, 'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 'reviewed' => { cmp => '=', column => 'me.reviewed' },
+    'tags' => { cmp => 'IN', column => 'gene_tags.tag' },
+    'organism' => { cmp => 'like', column => 'transcripts.organism' },
+  };
+}
+
+sub organism {
+  my $self = shift;
+  my %organisms;
+  for my $t ($self->transcripts) {
+    next unless $t->organism;
+    $organisms{$t->organism->scientific_name}++;
+  }
+  [
+    map { 
+      {
+        scientific_name => $_,
+        count => $organisms{$_},
+      }
+    } keys %organisms
+  ];
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -47,34 +47,51 @@ hook before_error_render => sub {
   }
 };
 
-get '/transcripts' => sub {
-  my %filter = ();
-  my @sort;
-  my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=', 'organism.scientific_name' => 'like');
-  for my $field (keys %comparisons) {
+sub parse_params {
+  my ($comparisons, $filters, $sort) = @_;
+  if ($comparisons->isa('DBIx::Class::ResultSet')) {
+    $comparisons = $comparisons->result_class->new->comparisons;
+  }
+  for my $field (keys %$comparisons) {
     if (exists params->{'filter.'.$field}) {
-      if ($comparisons{$field} eq 'like') { 
-        params->{'filter.'.$field}='%'.params->{'filter.'.$field}.'%'; 
+      my $col=$comparisons->{$field}{column};
+      if ($comparisons->{$field}{cmp} eq 'like') { 
+        params->{'filter.'.$field}='%'.lc(params->{'filter.'.$field}).'%'; 
+        $col='LOWER('.$col.')';
       }
-      $filter{$field} = { $comparisons{$field} => param('filter.'.$field) };
+      if ($comparisons->{$field}{cmp} eq 'IN') {
+        $filters->{$col} = ref params->{'filter.'.$field} eq 'ARRAY' ? params->{'filter.'.$field} : [ params->{'filter.'.$field} ];
+      }
+      $filters->{$col} = { $comparisons->{$field}{cmp} => param('filter.'.$field) };
     }
   }
   for my $k (keys %{params()}) {
     if ($k=~ m/sort-(\d+)-(.+)/) {
-      $sort[$1]={ '-'.param($k) => $2 };
+      $sort->[$1]={ '-'.param($k) => 'me.'.$2 };
     }
   }
-  unless (scalar @sort) {
-    @sort = ({ -asc => 'id' });
+  if (exists params->{'filter.log2_foldchange'}) {
+    $filters->{log2_foldchange} = [
+      { '<', params->{'filter.log2_foldchange'}*-1 },
+      { '>', params->{'filter.log2_foldchange'} },
+    ];
   }
-  debug \@sort;
-  my $rs = schema->resultset('Transcript')->search(\%filter, { 
-    order_by => \@sort,
+}
+
+
+get '/transcripts' => sub {
+  my $filter = {};
+  my $sort = [ { -asc => 'me.id' } ];
+  
+  parse_params(schema->resultset('Transcript'), $filter, $sort);
+  debug $sort;
+  debug $filter;
+  my $rs = schema->resultset('Transcript')->search($filter, { 
+    order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
-    prefetch => 'organism',
+    prefetch => [ 'organism', { 'transcript_tags' => [ 'tag' ] } ]
   });
-  #new TearDrop::Task::BLAST(gene_id => 'c45045_g1', database => 'TAIR10 Proteins')->run;
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,
@@ -84,6 +101,27 @@ get '/transcripts' => sub {
   else {
     return [ $rs->all ];
   }
+};
+
+get '/transcripts/fasta' => sub {
+  my $filter = {};
+  my $sort = [ { -asc => 'me.id' } ];
+  
+  parse_params(schema->resultset('Transcript'), $filter, $sort);
+  debug $sort;
+  debug $filter;
+  my $rs = schema->resultset('Transcript')->search($filter, { 
+    order_by => $sort,
+    prefetch => [ 'organism', { 'transcript_tags' => [ 'tag' ] } ]
+  });
+
+  my @ret;
+  for my $t ($rs->all) {
+    push @ret, $t->to_fasta;
+  }
+
+  content_type 'text/plain';
+  join "\n", @ret;
 };
 
 get '/transcripts/:id' => sub {
@@ -108,60 +146,13 @@ get '/transcripts/:id/genomePileup' => sub {
   });
   debug map { $_->transcript->id } $others->all;
 
-
-
-  my @alignments;
-  for my $galn ($genome->search_related('genome_alignments')->all) {
-    push @alignments, $galn->alignment unless $genomePileups{$trans->id}->{$galn->alignment->sample->description};
-  }
-
-
-  if (@alignments) {
-    use IPC::Run 'harness';
-    my @cmd = ('ext/samtools/mpileup.sh', $genome->genome_path, sprintf("%s:%d-%d", $best_location->tid, $best_location->tstart-$context, $best_location->tend+$context), map { $_->bam_path } @alignments);
-    debug 'running '.join(' ', @cmd);
-    my ($out, $err);
-    my $mp = harness \@cmd, \undef, \$out, \$err;
-    $mp->run or send_error "unable to run mpileup: $err $?", 500;
-
-    #debug $out;
-    $genomePileups{$trans->id} = { map {
-      $_->sample->description => []
-    } @alignments };
-
-    for my $l (split "\n", $out) {
-      my @f = split "\t", $l;
-      my $i=1;
-      for my $aln (@alignments) {
-        my $depth=0; my $mismatch=0;
-        if (defined $f[$i*3+1]) {
-          $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
-          $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
-          $depth+=$mismatch;
-        }
-        push @{$genomePileups{$trans->id}->{$aln->sample->description}}, { 
-          pos => $f[1]+0, 
-          depth => $depth,
-          mismatch => $mismatch+0,
-          mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
-        };
-        $i++;
-      }
-    }
-  }
-  use POSIX 'ceil';
-  my $aggregate_to=1000;
-  my $aggregate_factor=ceil(($best_location->tend-$best_location->tstart+$context*2)/$aggregate_to);
-
-  my $ret = [ map {
-    {
-      key => $_,
-      values => [ map { 
-        [ $_->{pos}, { depth => $_->{depth}, mismatch => $_->{mismatch}, mismatch_rate => $_->{mismatch_rate} } ]
-      } grep { $_->{pos} % $aggregate_factor == 0 } @{$genomePileups{$trans->id}->{$_}} ],
-    }
-  } sort keys %{$genomePileups{$trans->id}} ];
-  $ret;
+  return TearDrop::Task::MPileup->new(
+    reference_path => $genome->genome_path,
+    region => $best_location->tid, start => $best_location->tstart, end => $best_location->tend,
+    context => $context,
+    type => 'genome',
+    alignments => [ map { $_->alignment } $genome->search_related('genome_alignments')->all ],
+  )->run;
 };
 
 my %pileups;
@@ -169,86 +160,26 @@ get '/transcripts/:id/pileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
-  my @alignments;
-  for my $taln ($assembly->search_related('transcriptome_alignments')->all) {
-    push @alignments, $taln->alignment unless $pileups{$trans->id}->{$taln->alignment->sample->description};
-  }
+  return TearDrop::Task::MPileup->new(
+    reference_path => $assembly->path,
+    region => $trans->id,
+    effective_size => length($trans->nsequence),
+    context => 0,
+    type => 'transcript',
+    alignments => [ map { $_->alignment } $assembly->search_related('transcriptome_alignments')->all ],
+  )->run;
 
-  if (@alignments) {
-    use IPC::Run 'harness';
-    my @cmd = ('ext/samtools/mpileup.sh', $assembly->path, $trans->id, map { $_->bam_path } @alignments);
-    debug 'running '.join(' ', @cmd);
-    my ($out, $err);
-    my $mp = harness \@cmd, \undef, \$out, \$err;
-    $mp->run or send_error "unable to run mpileup: $err $?", 500;
-
-    #debug $out;
-    $pileups{$trans->id} = { map {
-      $_->sample->description => []
-    } @alignments };
-
-    for my $l (split "\n", $out) {
-      my @f = split "\t", $l;
-      my $i=1;
-      for my $aln (@alignments) {
-        my $depth=0; my $mismatch=0;
-        if (defined $f[$i*3+1]) {
-          $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
-          $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
-          $depth+=$mismatch;
-        }
-        push @{$pileups{$trans->id}->{$aln->sample->description}}, { 
-          pos => $f[1]+0, 
-          depth => $depth,
-          mismatch => $mismatch+0,
-          mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
-        };
-        $i++;
-      }
-    }
-  }
-
-  my $ret = [ map {
-    {
-      key => $_,
-      values => [ map { 
-        [ $_->{pos}, { depth => $_->{depth}, mismatch => $_->{mismatch}, mismatch_rate => $_->{mismatch_rate} } ]
-      } @{$pileups{$trans->id}->{$_}} ],
-    }
-  } sort keys %{$pileups{$trans->id}} ];
-  $ret;
 };
 
 get '/genes' => sub {
-  my %filter = ();
-  my @sort;
-  my %comparisons = (rating => '>', id => 'like', description => 'like', 'best_homolog' => 'like', 'reviewed' => '=');
-  for my $field (keys %comparisons) {
-    if (exists params->{'filter.'.$field}) {
-      my $s_field='me.'.$field;
-      if ($comparisons{$field} eq 'like') { 
-        params->{'filter.'.$field}='%'.lc(params->{'filter.'.$field}).'%'; 
-        $s_field='LOWER('.$s_field.')';
-      }
-      $filter{$s_field} = { $comparisons{$field} => param('filter.'.$field) };
-    }
-  }
-  if (param('tags')) {
-    $filter{'gene_tags.tag'} = ref params->{tags} eq 'ARRAY' ? params->{tags} : [ params->{tags} ];
-  }
-  for my $k (keys %{params()}) {
-    if ($k=~ m/sort-(\d+)-(.+)/) {
-      my $f='me.'.$2;
-      $sort[$1]={ '-'.param($k) => $f };
-    }
-  }
-  unless (scalar @sort) {
-    @sort = ({ -asc => 'me.id' });
-  }
-  debug \@sort;
-  debug \%filter;
-  my $rs = schema->resultset('Gene')->search(\%filter, { 
-    order_by => \@sort,
+  my $filter = {};
+  my $sort = [ { -asc => 'me.id' } ];
+
+  parse_params(schema->resultset('Gene'), $filter, $sort);
+  debug $sort;
+  debug $filter;
+  my $rs = schema->resultset('Gene')->search($filter, { 
+    order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
     prefetch => [ 
@@ -262,6 +193,7 @@ get '/genes' => sub {
   my @ret;
   for my $r ($rs->all) {
     my $ser = $r->TO_JSON;
+    $ser->{organism}=$r->organism;
     $ser->{transcripts} = [ map {
       my $tser = $_->TO_JSON;
       $tser->{tags} = [ $_->tags ];
@@ -281,6 +213,30 @@ get '/genes' => sub {
   else {
     return \@ret;
   }
+};
+
+get '/genes/fasta' => sub {
+  my $filter = {};
+  my $sort = [ { -asc => 'me.id' } ];
+
+  parse_params(schema->resultset('Gene'), $filter, $sort);
+  debug $sort;
+  debug $filter;
+  my $rs = schema->resultset('Gene')->search($filter, { 
+    order_by => $sort,
+    prefetch => [ 
+      { 'transcripts' => [ 
+          { 'transcript_tags' => [ 'tag' ] }, 
+      ]}, 
+      { 'gene_tags' => [ 'tag' ] } ]
+  });
+  debug 'done';
+  my @ret;
+  for my $g ($rs->all) {
+    push @ret, $g->to_fasta;
+  }
+  content_type 'text/plain';
+  join "\n", @ret;
 };
 
 get '/genes/:id/fasta' => sub {
@@ -367,38 +323,12 @@ get '/deruns' => sub {
   \@ret;
 };
 
-sub parse_params {
-  my ($comparisons, $filters, $sort) = @_;
-  for my $field (keys %$comparisons) {
-    if (exists params->{'filter.'.$field}) {
-      my $s_field=$field;
-      if ($comparisons->{$field} eq 'like') { 
-        params->{'filter.'.$field}='%'.lc(params->{'filter.'.$field}).'%'; 
-        $s_field='LOWER('.$s_field.')';
-      }
-      $filters->{$s_field} = { $comparisons->{$field} => param('filter.'.$field) };
-    }
-  }
-  for my $k (keys %{params()}) {
-    if ($k=~ m/sort-(\d+)-(.+)/) {
-      $sort->[$1]={ '-'.param($k) => $2 };
-    }
-  }
-  if (exists params->{'filter.log2_foldchange'}) {
-    $filters->{log2_foldchange} = [
-      { '<', params->{'filter.log2_foldchange'}*-1 },
-      { '>', params->{'filter.log2_foldchange'} },
-    ];
-  }
-}
-
 get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
   my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
   my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
-  parse_params(\%comparisons, $filters, $sort);
+  parse_params(schema->resultset('DeResult'), $filters, $sort);
   my $rs = schema->resultset('DeResult')->search($filters, { 
     order_by => $sort,
   });
@@ -416,8 +346,7 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  my %comparisons = (base_mean => '>', adjp => '<', pvalue => '<', 'transcript_id' => 'like');
-  parse_params(\%comparisons, $filters, $sort);
+  parse_params(schema->resultset('DeResult'), $filters, $sort);
   debug $filters;
   debug $sort;
   my $rs = schema->resultset('DeResult')->search($filters, { 

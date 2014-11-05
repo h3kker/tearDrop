@@ -1,5 +1,5 @@
 angular.module('tearDropDirectives', []).
-  directive('pagedGrid', function(uiGridConstants, $timeout, $location) {
+  directive('pagedGrid', function(uiGridConstants, $timeout, $location, $rootScope) {
     return {
       restrict: 'E',
       replace: true,
@@ -11,10 +11,14 @@ angular.module('tearDropDirectives', []).
       },
       link: function($scope, element, attr) {
         if ($scope.param.selectedTags==null) $scope.param.selectedTags=[];
+        if ($scope.param.sort==null) $scope.param.sort=[];
+        if ($scope.param.filters==null) $scope.param.filters={};
         angular.extend($scope.param, {
           addTag: function(newTag) {
-            $scope.param.selectedTags.push(newTag);
-            $scope.param.doRefresh();
+            if (!$scope.param.selectedTags.some(function(t) { return t.tag==newTag.tag })) {
+              $scope.param.selectedTags.push(newTag);
+              $scope.param.doRefresh();
+            }
           },
           removeTag: function(oldTag) {
             $scope.param.selectedTags=$scope.param.selectedTags.filter(function(t) {
@@ -23,6 +27,32 @@ angular.module('tearDropDirectives', []).
             $scope.param.doRefresh();
           },
         });
+        angular.forEach($location.search(), function(v,k) {
+          if (k==='page' || k==='pagesize') {
+            $scope.param.pagingOptions[k]=v;
+          }
+          if (k.match(/^sort-/)) {
+            var s=k.split('-');
+            $scope.param.sort[s[1]]={ field: s[2], direction: v };
+          }
+          if (k.match(/^filter\./)) {
+            var s=k.split('.');
+            if (s[1]==='tags') {
+              angular.forEach(v, function(wanted) {
+                angular.forEach($rootScope.tags, function(tag) {
+                  if (tag.tag===wanted) {
+                    if (!$scope.param.selectedTags.some(function(t) { return t.tag==wanted })) {
+                      $scope.param.selectedTags.push(tag);
+                    }
+                  }
+                });
+              });
+            }
+            else {
+              $scope.param.filters[s[1]]=v;
+            }
+          }
+        });
         angular.extend($scope.gridOptions, {
           enableFiltering: true,
           useExternalFiltering: true,
@@ -30,7 +60,7 @@ angular.module('tearDropDirectives', []).
           rowsPerPage: $scope.param.pagingOptions.pagesize,
         });
         angular.forEach($scope.gridOptions.columnDefs, function(col) {
-          if ($scope.param.filters !== null && $scope.param.filters[col.field]) {
+          if ($scope.param.filters != null && $scope.param.filters[col.field]) {
             col.filter={ term: $scope.param.filters[col.field] };
           }
           angular.forEach($scope.param.sort, function(v,k) {
@@ -70,9 +100,9 @@ angular.module('tearDropDirectives', []).
         $scope.param.generateUrlParams = function(p) {
           if (p==null) p={};
           if ($scope.param.selectedTags.length>0) {
-            p.tags=[];
+            p['filter.tags']=[];
             angular.forEach($scope.param.selectedTags, function(v) {
-              p.tags.push(v.tag);
+              p['filter.tags'].push(v.tag);
             });
           }
           angular.forEach($scope.param.filters, function(v,k) {
@@ -81,6 +111,7 @@ angular.module('tearDropDirectives', []).
           angular.forEach($scope.param.sort, function(v,k) {
             p['sort-'+k+'-'+v.field]=v.direction;
           });
+          $location.search(p);
           return p;
         }
         $scope.param.doRefresh = function(force) {
@@ -154,7 +185,37 @@ angular.module('tearDropDirectives', []).
       },
     };
   })
- .directive('reviewedDescription', function() {
+  .directive('organismCounts', function() {
+    return {
+      restrict: 'E',
+      replace: true,
+      template: '<div>'+
+         '<span ng-repeat="org in ngModel | orderBy:\'count\'">{{org.scientific_name}}: {{org.count}}</span>'+
+        '</div>',
+      scope: {
+        ngModel: '=',
+      },
+    }
+  })
+  .directive('prettyFoldchange', function() {
+    return {
+      restrict: 'E',
+      template: '<span ng-style="fcStyle">{{ngModel.log2_foldchange}}</span>',
+      transclude: true,
+      scope: {
+        ngModel: '=',
+      },
+      link: function($scope, element, attr) {
+        var hue=Math.max(120, Math.min(360, 240-$scope.ngModel.log2_foldchange/5*120));
+        var alpha=Math.max(0.5, Math.min(1, -1*Math.log10($scope.ngModel.adjp)/2));
+        console.log(hue+','+alpha);
+        $scope.fcStyle={
+          'color': 'hsla('+hue+',60%,70%,'+alpha+')',
+        };
+      },
+    }
+  })
+  .directive('reviewedDescription', function() {
    return {
      restrict: 'E',
      replace: true,

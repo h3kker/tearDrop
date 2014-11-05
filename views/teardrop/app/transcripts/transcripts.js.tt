@@ -5,11 +5,13 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/transcripts', {
     templateUrl: '[% config.base_uri %]/app/transcripts/transcripts.html',
-    controller: 'TranscriptsCtrl'
+    controller: 'TranscriptsCtrl',
+    reloadOnSearch: false,
   });
   $routeProvider.when('/genes', {
     templateUrl: '[% config.base_uri %]/app/transcripts/genes.html',
-    controller: 'GenesCtrl'
+    controller: 'GenesCtrl',
+    reloadOnSearch: false,
   });
   $routeProvider.when('/genes/:id', {
     templateUrl: '[% config.base_uri %]/app/transcripts/gene_details.html',
@@ -20,12 +22,16 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     controller: 'TranscriptsDetailCtrl'
   });
 }])
-.controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+.controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', '$location', function($rootScope, $scope, $http, $location) {
   if ($rootScope.transcripts==null) {
     $rootScope.transcripts={
       'pagingOptions': {
         'page': 1,
         'pagesize': 50,
+      },
+      'getFasta': function() {
+        var search = $location.url().replace(/.+\?/, '');
+        window.location.href='[% config.base_uri %]/api/transcripts/fasta?'+search;
       },
       'sort': [
         { 'field': 'id', 'direction': 'asc' },
@@ -63,7 +69,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   };
   $scope.refresh();
 }])
-.controller('GenesCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
+.controller('GenesCtrl', ['$rootScope', '$scope', '$http', '$location', function($rootScope, $scope, $http, $location) {
 
   if ($rootScope.genes == null) {
     $rootScope.genes={
@@ -71,22 +77,29 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
         'page': 1,
         'pagesize': 20,
       },
+      'getFasta': function() {
+        var search = $location.url().replace(/.+\?/, '');
+        window.location.href='[% config.base_uri %]/api/genes/fasta?'+search;
+      },
+      /*
       'sort': [
         { 'field': 'id', 'direction': 'asc' },
       ],
       'filters': {
       },
+      */
     };
   }
   $scope.gridOptions = {
     minRowsToShow: 20,
     columnDefs: [
-     { name: 'Id', field: 'id', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
-     { name: 'Rating', field: 'rating', width: '12%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true"></rating></div>', },
-     { name: 'Description', field: 'description', width: '50%' },
-     { name: 'Best Homolog', field: 'best_homolog', width: '20%' },
+     { name: 'Id', field: 'id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
+     { name: 'Rating', field: 'rating', width: '9%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="\'none\'"></rating></div>', },
+     { name: 'Description', field: 'description', width: '40%', },
+     { name: 'Organisms', field: 'organism', width: '13%', cellTemplate: '<div class="ui-grid-cell-contents"><organism-counts ng-model="MODEL_COL_FIELD"></organism-counts></div>',  },
+     { name: 'Best Homolog', field: 'best_homolog', width: '15%' },
      { name: 'Reviewed', field: 'reviewed', width: '5%' },
-     { name: 'Transcripts', field: 'transcripts.length', width: '5%' },
+     { name: 'Transcripts', field: 'transcripts.length', width: '5%', enableFiltering: false, enableSorting: false, },
     ],
   };
   $scope.refresh = function(p) {
@@ -95,7 +108,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
         $rootScope.genes.pagingOptions.total_items = res.total_items;
         $scope.gridOptions.data = res.data;
       }
-    ).error($rootScope.errHandler);
+    ).error($scope.errHandler);
   }
 }])
 .controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', '$timeout', 'Gene', function($rootScope, $routeParams, $scope, $http, uiGridConstants, $timeout, Gene) {
@@ -178,6 +191,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.saveGene = function() {
     $scope.gene.$save(function(g) {
       g.prepare();
+      $rootScope.reloadTags();
     }, $rootScope.errHandler);
   };
   $scope.deGridOptions={
@@ -186,16 +200,23 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     multiSelect: false,
     enableRowSelection: true,
     columnDefs: [
-      { name: 'DE Run', field: 'de_run', cellTemplate: '<div class=:ui-grid-cell-contents"><a href="#/deresults/{{MODEL_COL_FIELD.id}}/{{row.entity.contrast.id}}">{{MODEL_COL_FIELD.description}}</a></idv>', },
+      { name: 'DE Run', field: 'de_run', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/deresults/{{MODEL_COL_FIELD.id}}/{{row.entity.contrast.id}}">{{MODEL_COL_FIELD.description}}</a></div>', },
       { name: 'Base Cond', field: 'contrast.base_condition.name', },
       { name: 'Contrast Cond', field: 'contrast.contrast_condition.name', },
-      { name: 'Base Mean', field: 'base_mean', aggregationType: uiGridConstants.aggregationTypes.avg },
+      { name: 'Base Mean', field: 'base_mean', 
+          aggregationType: uiGridConstants.aggregationTypes.avg },
       { name: 'p-value', field: 'pvalue', aggregationType: uiGridConstants.aggregationTypes.min },
-      { name: 'Adjusted p-value', field: 'adjp', aggregationType: uiGridConstants.aggregationTypes.min },
-      { name: 'log2 Foldchange', field: 'log2_foldchange', aggregationType: uiGridConstants.aggregationTypes.max },
+      { name: 'Adjusted p-value', field: 'adjp', 
+          aggregationType: uiGridConstants.aggregationTypes.min, 
+      },
+      { name: 'log2 Foldchange', field: 'log2_foldchange', 
+          aggregationType: uiGridConstants.aggregationTypes.max,
+          cellTemplate: '<div class="ui-grid-cell-contents"><pretty-foldchange ng-model="row.entity">{{COL_FIELD CUSTOM_FILTERS}}</pretty-foldchange></div>',
+      },
     ],
   };
-  $scope.getArg = function(arg) { return function(d) { return d[1][arg] } };
+  var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
+  $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
   $scope.alignments={};
   $scope.loadAlignments = function(reload) {
     console.log('loadAlignments '+$scope.alignments.viewTranscript.id);

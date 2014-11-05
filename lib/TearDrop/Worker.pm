@@ -1,10 +1,16 @@
 package TearDrop::Worker;
 
+use warnings;
+use strict;
+
 use Dancer ':syntax';
 use Dancer::Plugin::DBIC 'schema';
 
 use Try::Tiny;
 use Parallel::ForkManager;
+
+use TearDrop::Task::BLAST;
+use TearDrop::Task::MPileup;
 
 my $pm = Parallel::ForkManager->new(4);
 
@@ -74,100 +80,6 @@ sub TearDrop::Worker::get_job_status {
       status => $jobs{$pid}->status,
     }
   }
-}
-
-1;
-
-package TearDrop::Task::BLAST;
-
-use Dancer ':moose';
-use Dancer::Plugin::DBIC;
-use Mouse;
-use Carp;
-use File::Temp ();
-use IPC::Run 'harness';
-
-has 'transcript_id' => ( is => 'rw', isa => 'Str' );
-has 'gene_id' => ( is => 'rw', isa => 'Str' );
-has 'sequences' => ( is => 'rw', isa => 'HashRef[Str]' );
-
-has 'database' => ( is => 'rw', isa => 'Str' );
-
-has 'replace' => ( is => 'rw', isa => 'Bool', default => 0 );
-
-has 'pid' => ( is => 'rw', isa => 'Int | Undef' );
-has 'status' => ( is => 'rw', isa => 'Str | Undef' );
-
-sub run {
-  my $self = shift;
-
-  my $db_source = schema->resultset('DbSource')->search({ name => $self->database })->first;
-  unless($db_source) {
-    confess 'Unknown database source '.$self->database;
-  }
-  my @transcripts;
-  if ($self->gene_id) {
-    my $gene = schema->resultset('Gene')->find($self->gene_id);
-    confess 'Unknown gene '.$self->gene_id unless defined $gene;
-    for my $trans ($gene->search_related('transcripts')->all) {
-      push @transcripts, $trans;
-    }
-  }
-  elsif ($self->transcript_id) {
-    my $trans = schema->resultset('Transcript')->find($self->transcript_id);
-    confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
-    push @transcripts, $trans;
-  }
-  else {
-    confess 'Need gene_id or transcript_id';
-  }
-  my $seq_f = File::Temp->new();
-  my $kept=0;
-  my $blast_run;
-  for my $trans (@transcripts) {
-    if (schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id})->first) {
-      debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
-      next;
-    }
-    $blast_run = schema->resultset('BlastRun')->create({
-      transcript_id => $trans->id, db_source_id => $db_source->id, parameters => 'XXX'
-    });
-    print $seq_f $trans->to_fasta;
-    $kept++;
-  }
-  unless ($kept) {
-    debug 'no transcripts to blast, finished';
-    return;
-  }
-
-  my @cmd = ('ext/blast/run_blast.sh', $db_source->path, $seq_f->filename);
-  #my @cmd = ('sleep', 10);
-  my $out;
-  my $err;
-  my $blast = harness \@cmd, \undef, \$out, \$err;
-  $blast->run or confess "unable to run blast command: $err $?";
-  if ($err) {
-    confess $err;
-  }
-  for my $l (split "\n", $out) {
-    my @f = split "\t", $l;
-    schema->resultset('BlastResult')->find_or_create({
-      transcript_id => $f[0],
-      db_source_id => $db_source->id,
-      source_sequence_id => $f[1],
-      bitscore => $f[2],
-      length => $f[4],
-      nident => $f[5],
-      pident => $f[6],
-      ppos => $f[7],
-      evalue => $f[8],
-      slen => $f[9],
-      qlen => $f[3],
-      stitle => $f[10]
-    });
-  }
-  $blast_run->finished(1);
-  $blast_run->update;
 }
 
 1;

@@ -5,11 +5,13 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/deresults/:run/:contrast', {
     templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
-    controller: 'DeResultsCtrl'
+    controller: 'DeResultsCtrl',
+    reloadOnSearch: false,
   });
   $routeProvider.when('/deresults', {
     templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
-    controller: 'DeResultsCtrl'
+    controller: 'DeResultsCtrl',
+    reloadOnSearch: false,
   });
 }])
 
@@ -19,7 +21,6 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     $rootScope.deresults={
       'getFasta': function() {
         if (this.selectedDeRun!==null && this.selectedContrast!==null) {
-          $location.search(this.generateUrlParams());
           var search = $location.url().replace(/.+\?/, '');
           window.location.href='[% config.base_uri %]/api/deruns/'+this.selectedDeRun.id+'/contrasts/'+this.selectedContrast.id+'/results/fasta?'+search;
         }
@@ -81,7 +82,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
       { name: 'Base Mean', field: 'base_mean', width: '12%' },
       { name: 'p-value', field: 'pvalue', width: '10%' },
       { name: 'Adjusted p-value', field: 'adjp', width: '10%' },
-      { name: 'Log2 FC', field: 'log2_foldchange', width: '10%' },
+      { name: 'Log2 FC', field: 'log2_foldchange', width: '10%', cellTemplate: '<div class="ui-grid-cell-contents"><pretty-foldchange ng-model="row.entity">{{COL_FIELD CUSTOM_FILTERS}}</pretty-foldchange></div>', },
       //{ name: 'Flagged', field: 'flagged', width: '10%' },
     ],
   };

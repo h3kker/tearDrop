@@ -279,7 +279,20 @@ sub _is_column_serializable { 1 };
 
 sub to_fasta {
   my $self = shift;
-  return ">".$self->id.($self->name ? " [".$self->name."]":"")."\n".$self->nsequence;
+  return ">".$self->id.($self->name ? " ".$self->name:"")."\n".$self->nsequence;
+}
+
+sub comparisons {
+  {
+    rating => { cmp => '>', column => 'me.rating' }, 
+    id => { cmp => 'like', column => 'me.id' },
+    name => { cmp => 'like', column => 'me.name' }, 
+    description => { cmp => 'like', column => 'me.description' }, 
+    'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 
+    'reviewed' => { cmp => '=', column => 'me.reviewed' },
+    'tags' => { cmp => 'IN', column => 'transcript_tags.tag' },
+    'organism.scientific_name' => { cmp => 'like', column => 'organism.scientific_name' },
+  };
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
