@@ -60,7 +60,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ).error($rootScope.errHandler);
   }
 }])
-.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'growl', function($rootScope, $routeParams, $scope, $http) {
+.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', function($rootScope, $routeParams, $scope, $http) {
   $scope.refresh = function() {
     $scope.transcript=null;
     $http.get('[% config.base_uri %]/api/transcripts/'+$routeParams.id).success(function(data) {
@@ -95,7 +95,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     columnDefs: [
      { name: 'Id', field: 'id', width: '8%', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>', },
      { name: 'Rating', field: 'rating', width: '9%', cellTemplate: '<div class="ui-grid-cell-contents"><rating ng-model="MODEL_COL_FIELD" max="10" readonly="true" state-off="\'none\'"></rating></div>', },
-     { name: 'Description', field: 'description', width: '40%', },
+     { name: 'Name', field: 'name', width: '40%', },
      { name: 'Organisms', field: 'organism', width: '13%', cellTemplate: '<div class="ui-grid-cell-contents"><organism-counts ng-model="MODEL_COL_FIELD"></organism-counts></div>',  },
      { name: 'Best Homolog', field: 'best_homolog', width: '15%' },
      { name: 'Reviewed', field: 'reviewed', width: '5%' },
@@ -163,7 +163,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     onRegisterApi: function(gridApi) {
       gridApi.selection.on.rowSelectionChanged($scope,function(row){
         $scope.gene.best_homolog=row.entity.source_sequence_id;
-        $scope.gene.description=row.entity.stitle;
+        $scope.gene.name=row.entity.stitle;
         $scope.saveGene();
       });
     },
@@ -200,7 +200,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     multiSelect: false,
     enableRowSelection: true,
     columnDefs: [
-      { name: 'DE Run', field: 'de_run', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/deresults/{{MODEL_COL_FIELD.id}}/{{row.entity.contrast.id}}">{{MODEL_COL_FIELD.description}}</a></div>', },
+      { name: 'DE Run', field: 'de_run', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/deresults/{{MODEL_COL_FIELD.id}}/{{row.entity.contrast.id}}">{{MODEL_COL_FIELD.name}}</a></div>', },
       { name: 'Base Cond', field: 'contrast.base_condition.name', },
       { name: 'Contrast Cond', field: 'contrast.contrast_condition.name', },
       { name: 'Base Mean', field: 'base_mean', 

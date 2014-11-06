@@ -47,7 +47,7 @@ __PACKAGE__->table("de_runs");
 =head2 description
 
   data_type: 'text'
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 run_date
 
@@ -70,6 +70,11 @@ __PACKAGE__->table("de_runs");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 name
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -81,7 +86,7 @@ __PACKAGE__->add_columns(
     sequence          => "de_runs_id_seq",
   },
   "description",
-  { data_type => "text", is_nullable => 0 },
+  { data_type => "text", is_nullable => 1 },
   "run_date",
   { data_type => "timestamp", is_nullable => 1 },
   "parameters",
@@ -90,6 +95,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "count_table_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  "name",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -106,17 +113,17 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<de_runs_description_key>
+=head2 C<de_runs_name_key>
 
 =over 4
 
-=item * L</description>
+=item * L</name>
 
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("de_runs_description_key", ["description"]);
+__PACKAGE__->add_unique_constraint("de_runs_name_key", ["name"]);
 
 =head1 RELATIONS
 
@@ -166,8 +173,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 23:28:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FHzoJJdTXDvu7y3/ciilig
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:07
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lr/y0Tjm7KbNDNJTFyFVpw
 
 sub _is_column_serializable { 1 };
 

@@ -2,7 +2,7 @@
 
 <div class="row">
  <div class="col-md-12">
-  <select ng-model="deresults.selectedDeRun" ng-options="run.description for run in deRuns"></select>
+  <select ng-model="deresults.selectedDeRun" ng-options="run.name for run in deRuns"></select>
   <span ng-if="deresults.selectedDeRun">
    <select ng-model="deresults.selectedContrast" ng-options="con.base_condition.name+' <-> '+con.contrast_condition.name for con in deresults.selectedDeRun.contrasts"></select>
   </span>

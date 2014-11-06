@@ -60,6 +60,48 @@ __PACKAGE__->table("blast_runs");
   default_value: false
   is_nullable: 1
 
+=head2 run_date
+
+  data_type: 'timestamp'
+  default_value: current_timestamp
+  is_nullable: 1
+  original: {default_value => \"now()"}
+
+=head2 qseq
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 sseq
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 qstart
+
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 qend
+
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 sstart
+
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 send
+
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 gaps
+
+  data_type: 'integer'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -71,6 +113,27 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "finished",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "run_date",
+  {
+    data_type     => "timestamp",
+    default_value => \"current_timestamp",
+    is_nullable   => 1,
+    original      => { default_value => \"now()" },
+  },
+  "qseq",
+  { data_type => "text", is_nullable => 1 },
+  "sseq",
+  { data_type => "text", is_nullable => 1 },
+  "qstart",
+  { data_type => "integer", is_nullable => 1 },
+  "qend",
+  { data_type => "integer", is_nullable => 1 },
+  "sstart",
+  { data_type => "integer", is_nullable => 1 },
+  "send",
+  { data_type => "integer", is_nullable => 1 },
+  "gaps",
+  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -120,8 +183,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 22:50:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2aiH5z2TAZnBIKeRjdBwgQ
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:07
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oYpbfpAk8f5qWXo6KngFSw
 
 sub _is_column_serializable { 1 };
 

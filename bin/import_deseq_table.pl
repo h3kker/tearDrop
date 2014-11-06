@@ -33,7 +33,7 @@ unless($con) {
 }
 
 my $de = schema->resultset('DeRun')->search({
-  description => $name,
+  name => $name,
 })->first;
 if($de) {
   warn "DE run $name exists, overwriting...";
@@ -42,6 +42,7 @@ if($de) {
 }
 else {
   $de = schema->resultset('DeRun')->create({
+    name => $name,
     description => $name,
     count_table_id => $count_table->id
   });

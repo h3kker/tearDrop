@@ -120,7 +120,7 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       $header_fields[$_] => $f[$_]
     } 0..$#header_fields;
 
-    my $sample = schema->resultset('Sample')->search({ description => $s{sample_id} })->first;
+    my $sample = schema->resultset('Sample')->search({ name => $s{sample_id} })->first;
     unless($sample) {
       warn "no such sample: ".$s{sample_id};
       next;

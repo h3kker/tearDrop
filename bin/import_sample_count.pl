@@ -13,7 +13,7 @@ my ($method, $sample, $table_path) = @ARGV;
 die "Usage $0 [method] [sample] [path]" unless $method && $sample && $table_path;
 
 my $m = schema->resultset('CountMethod')->find($method) || die "Unknown count method: $method";
-my $s = schema->resultset('Sample')->search({ description => $sample })->first || die "Unknown sample: $sample";
+my $s = schema->resultset('Sample')->search({ name => $sample })->first || die "Unknown sample: $sample";
 
 my $count = schema->resultset('SampleCount')->search({ sample_id => $s->id, count_method => $m->name })->first;
 if ($count) {

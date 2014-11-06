@@ -274,7 +274,7 @@ post '/genes/:id' => sub {
   } schema->resultset('Tag')->all;
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
-  $rs->$_($upd->{$_}) for qw/description best_homolog rating reviewed/;
+  $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
   $rs->set_tags(@{$upd->{tags}});
   $rs->update;
   forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };

@@ -70,12 +70,6 @@ __PACKAGE__->table("transcripts");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 flagged
-
-  data_type: 'boolean'
-  default_value: false
-  is_nullable: 1
-
 =head2 best_homolog
 
   data_type: 'text'
@@ -90,6 +84,11 @@ __PACKAGE__->table("transcripts");
 
   data_type: 'boolean'
   default_value: false
+  is_nullable: 1
+
+=head2 description
+
+  data_type: 'text'
   is_nullable: 1
 
 =cut
@@ -107,14 +106,14 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "organism",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
-  "flagged",
-  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
   "best_homolog",
   { data_type => "text", is_nullable => 1 },
   "rating",
   { data_type => "integer", is_nullable => 1 },
   "reviewed",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "description",
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -272,8 +271,8 @@ Composing rels: L</transcript_tags> -> tag
 __PACKAGE__->many_to_many("tags", "transcript_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-02 18:46:59
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GUU2VyHaGQIlfa+0R5/8Ng
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LD1cL5MN/ZHhpiox6g+3bw
 
 sub _is_column_serializable { 1 };
 

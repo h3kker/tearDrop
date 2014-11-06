@@ -71,6 +71,11 @@ __PACKAGE__->table("samples");
   default_value: false
   is_nullable: 1
 
+=head2 name
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -91,6 +96,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
   "flagged",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "name",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -118,6 +125,18 @@ __PACKAGE__->set_primary_key("id");
 =cut
 
 __PACKAGE__->add_unique_constraint("samples_forskalle_id_key", ["forskalle_id"]);
+
+=head2 C<samples_name_key>
+
+=over 4
+
+=item * L</name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("samples_name_key", ["name"]);
 
 =head1 RELATIONS
 
@@ -182,8 +201,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 11:56:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wEclHE+WxNbb8g9auTEL2Q
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YsELS7ISQCagh0bCWro6mQ
 
 sub _is_column_serializable { 1 };
 

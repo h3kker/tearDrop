@@ -8,6 +8,7 @@
  <div class="col-md-6">
   <p><reviewed-description ng-model="gene"></p>
   <dl>
+   <dt>Name</dt> <dd click-to-edit ng-model="gene.name" save-callback="saveGene"></dd>
    <dt>Description</dt> <dd click-to-edit ng-model="gene.description" save-callback="saveGene"></dd>
    <dt>Best Homolog</dt> <dd>{{gene.best_homolog || '-'}}</dd>
    <dt>Rating</dt> <dd><rating ng-model="gene.rating" max="10" ng-click="setRating(gene.rating)"></rating></dd>

@@ -39,11 +39,11 @@ CREATE TABLE transcript_assemblies (
 DROP TABLE IF EXISTS genes CASCADE;
 CREATE TABLE genes (
   id text primary key,
+  name text,
   description text,
   best_homolog text,
   rating integer,
-  reviewed boolean default false,
-  flagged boolean default false
+  reviewed boolean default false
 );
 
 DROP TABLE IF EXISTS transcripts CASCADE;
@@ -52,12 +52,12 @@ CREATE TABLE transcripts (
   assembly_id integer not null references transcript_assemblies(id),
   gene text references genes(id),
   name text,
+  description text,
   nsequence text,
   organism text references organisms(name),
   best_homolog text,
   rating integer,
-  reviewed boolean default false,
-  flagged boolean default false
+  reviewed boolean default false
 );
 create index transcripts_gene_idx on transcripts(gene);
 
@@ -65,6 +65,7 @@ DROP TABLE IF EXISTS blast_runs CASCADE;
 CREATE TABLE blast_runs (
   transcript_id text not null references transcripts(id),
   db_source_id integer not null references db_sources(id),
+  run_date timestamp default current_timestamp,
   parameters text,
   finished boolean default false,
   PRIMARY KEY (transcript_id, db_source_id)
@@ -85,6 +86,13 @@ CREATE TABLE blast_results (
   qlen float,
   slen float,
   stitle text,
+  qseq text,
+  sseq text,
+  qstart integer,
+  qend integer,
+  sstart integer,
+  send integer,
+  gaps integer,
   organism text,
   FOREIGN KEY (transcript_id, db_source_id) references blast_runs (transcript_id, db_source_id)
 );
@@ -100,6 +108,7 @@ DROP TABLE IF EXISTS samples CASCADE;
 CREATE TABLE samples (
   id serial primary key,
   forskalle_id integer unique,
+  name text not null unique,
   description text not null,
   condition text not null references conditions(name),
   replicate_number integer,
@@ -239,7 +248,8 @@ CREATE TABLE contrasts (
 DROP TABLE IF EXISTS de_runs CASCADE;
 CREATE TABLE de_runs (
   id serial primary key,
-  description text not null unique,
+  name text not null unique,
+  description text,
   run_date timestamp,
   parameters text,
   path text,

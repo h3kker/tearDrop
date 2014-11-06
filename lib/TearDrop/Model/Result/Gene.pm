@@ -47,12 +47,6 @@ __PACKAGE__->table("genes");
   data_type: 'text'
   is_nullable: 1
 
-=head2 flagged
-
-  data_type: 'boolean'
-  default_value: false
-  is_nullable: 1
-
 =head2 best_homolog
 
   data_type: 'text'
@@ -69,6 +63,11 @@ __PACKAGE__->table("genes");
   default_value: false
   is_nullable: 1
 
+=head2 name
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -76,14 +75,14 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "description",
   { data_type => "text", is_nullable => 1 },
-  "flagged",
-  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
   "best_homolog",
   { data_type => "text", is_nullable => 1 },
   "rating",
   { data_type => "integer", is_nullable => 1 },
   "reviewed",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "name",
+  { data_type => "text", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -141,8 +140,8 @@ Composing rels: L</gene_tags> -> tag
 __PACKAGE__->many_to_many("tags", "gene_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-01 11:06:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tzOLaDw/VqGZAsGpTylGCA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KEGDjz+ZonkOORlt/Had2A
 
 use Dancer::Plugin::DBIC 'schema';
 
@@ -191,7 +190,7 @@ sub to_fasta {
   my $self = shift;
   my @ret;
   for my $t ($self->transcripts) {
-    $t->name($self->description) unless $t->name;
+    $t->name($self->name) unless $t->name;
     push @ret, $t->to_fasta;
   }
   join("\n", @ret);
@@ -200,7 +199,10 @@ sub to_fasta {
 sub comparisons {
   {
     rating => { cmp => '>', column => 'me.rating' }, id => { cmp => 'like', column => 'me.id' },
-    description => { cmp => 'like', column => 'me.description' }, 'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 'reviewed' => { cmp => '=', column => 'me.reviewed' },
+    name => { cmp => 'like', column => 'me.name' }, 
+    description => { cmp => 'like', column => 'me.description' }, 
+    'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 
+    'reviewed' => { cmp => '=', column => 'me.reviewed' },
     'tags' => { cmp => 'IN', column => 'gene_tags.tag' },
     'organism' => { cmp => 'like', column => 'transcripts.organism' },
   };
