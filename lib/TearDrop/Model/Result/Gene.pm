@@ -225,5 +225,28 @@ sub organism {
   ];
 }
 
+sub mappings {
+  my $self = shift;
+
+  my @mappings;
+  for my $t ($self->transcripts) {
+    for my $loc ($t->search_related('transcript_mappings')->all) {
+      my $ovl=0;
+      for my $m (@mappings) {
+        if ($loc->tstart <= $m->tstart && $loc->tend > $m->tend) {
+          $ovl=1;
+          $m->tstart($loc->tstart);
+        }
+        if ($loc->tend >= $m->tend && $loc->tstart < $m->tend) {
+          $ovl=1;
+          $m->tend($loc->tend);
+        }
+      }
+      push @mappings, $loc unless $ovl;
+    }
+  }
+  [ sort { $a->tid eq $b->tid ? $a->tstart <=> $b->tstart : $a->tid cmp $b->tid } @mappings ];
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
