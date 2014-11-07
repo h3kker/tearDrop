@@ -70,6 +70,9 @@ sub run {
     push @blast_runs, schema->resultset('BlastRun')->update_or_create({
       transcript_id => $trans->id, db_source_id => $db_source->id, parameters => join(" ", @cmd), finished => 0
     });
+    schema->resultset('BlastResult')->search({
+      transcript_id => $trans->id, db_source_id => $db_source->id
+    })->delete;
     print $seq_f $trans->to_fasta."\n";
     $kept++;
   }

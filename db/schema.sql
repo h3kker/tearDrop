@@ -94,7 +94,8 @@ CREATE TABLE blast_results (
   send integer,
   gaps integer,
   organism text,
-  FOREIGN KEY (transcript_id, db_source_id) references blast_runs (transcript_id, db_source_id)
+  FOREIGN KEY (transcript_id, db_source_id) references blast_runs (transcript_id, db_source_id),
+  PRIMARY KEY (transcript_id, db_source_id, source_sequence_id)
 );
 CREATE INDEX blast_result_source_sequence_id on blast_results(source_sequence_id);
 
