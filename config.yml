@@ -39,7 +39,7 @@ session: "YAML"
 plugins:
   DBIC:
     default:
-      dsn: dbi:Pg:dbname=teardrop
+      dsn: dbi:Pg:dbname=teardrop;host=jenkins
       schema_class: TearDrop::Model
       user: teardrop
       options:

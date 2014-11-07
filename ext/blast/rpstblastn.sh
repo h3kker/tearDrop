@@ -23,7 +23,7 @@ if [ -z "$max_target_seqs" ]; then
   max_target_seqs=20
 fi
 
-/usr/local/ncbi/blast/bin/rpstblastn -db $db_path \
+rpstblastn -db $db_path \
   -num_threads 4 \
   -evalue $evalue \
   -max_target_seqs $max_target_seqs \
