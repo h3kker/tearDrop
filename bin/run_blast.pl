@@ -18,7 +18,7 @@ for my $g (schema->resultset('Gene')->search({ id => 'c45045_g1' })->all) {
       return if $g->reviewed;
       for my $t ($g->transcripts) {
         next if $t->reviewed;
-        my $best_homolog = $t->search_related('blast_results', undef, { order_by => { -desc => [ 'evalue', 'pident' ] }})->first;
+        my $best_homolog = $t->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ] })->first;
         next unless $best_homolog;
         if (!defined $t->best_homolog || $t->best_homolog ne $best_homolog->stitle) {
           debug 'setting '.$t->id.' best homolog '.$best_homolog->stitle.' (evalue '.$best_homolog->evalue.')';

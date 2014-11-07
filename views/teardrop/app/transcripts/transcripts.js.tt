@@ -234,14 +234,14 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       }).error($rootScope.errHandler);
     }
   }
-  $scope.genomeAlignments={};
-  $scope.loadGenomeAlignments = function(reload) {
-    if ($scope.genomeAlignments.viewTranscript==null) return;
-    console.log('loadGenomeAlignments '+$scope.genomeAlignments.viewTranscript.id);
-    if (reload || $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]==null) {
-      $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]=[];
-      $http.get('[% config.base_uri %]/api/transcripts/'+$scope.genomeAlignments.viewTranscript.id+'/genomePileup').success(function(data) {
-        $scope.genomeAlignments[$scope.genomeAlignments.viewTranscript.id]=data;
+  $scope.loadGenomeAlignments = function(map, reload) {
+    if (map==null) return;
+    console.log('loadGenomeAlignments');
+    console.log(map);
+    if (reload || map.alignment==null) {
+      map.alignment=[];
+      $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params:{tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+        map.alignment=data;
       }).error($rootScope.errHandler);
     }
   }

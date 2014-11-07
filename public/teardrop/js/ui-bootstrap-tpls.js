@@ -232,7 +232,9 @@ angular.module('ui.bootstrap.accordion', ['ui.bootstrap.collapse'])
     scope: {
       heading: '@',               // Interpolate the heading attribute onto this scope
       isOpen: '=?',
-      isDisabled: '=?'
+      isDisabled: '=?',
+      onOpen: '&open', //This callback is called in contentHeadingTransclude
+                          //once it inserts the tab's content into the dom
     },
     controller: function() {
       this.setHeading = function(element) {
@@ -244,6 +246,7 @@ angular.module('ui.bootstrap.accordion', ['ui.bootstrap.collapse'])
 
       scope.$watch('isOpen', function(value) {
         if ( value ) {
+          scope.onOpen();
           accordionCtrl.closeOthers(scope);
         }
       });

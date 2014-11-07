@@ -129,7 +129,6 @@ get '/transcripts/:id' => sub {
   $rs;
 };
 
-my %genomePileups;
 get '/transcripts/:id/genomePileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
   my $context=200;
@@ -155,7 +154,6 @@ get '/transcripts/:id/genomePileup' => sub {
   )->run;
 };
 
-my %pileups;
 get '/transcripts/:id/pileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
@@ -239,12 +237,6 @@ get '/genes/fasta' => sub {
   join "\n", @ret;
 };
 
-get '/genes/:id/fasta' => sub {
-  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
-  content_type 'text/plain';
-  $gene->to_fasta;
-};
-
 get '/genes/:id' => sub {
   my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $transcripts = [ $gene->search_related('transcripts')->all ];
@@ -255,6 +247,7 @@ get '/genes/:id' => sub {
     $tser->{transcript_mappings} = [ $_->transcript_mappings ];
     $tser;
   } @$transcripts ];
+  $ser->{mappings} = $gene->mappings;
   $ser->{tags} = [ $gene->tags ];
   $ser->{de_results} = [];
   for my $der (schema->resultset('DeResult')->search({ transcript_id => $gene->id },
@@ -278,6 +271,12 @@ post '/genes/:id' => sub {
   $rs->set_tags(@{$upd->{tags}});
   $rs->update;
   forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };
+};
+
+get '/genes/:id/fasta' => sub {
+  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  content_type 'text/plain';
+  $gene->to_fasta;
 };
 
 get '/genes/:id/run_blast' => sub {
@@ -374,6 +373,39 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   else {
     return \@ret;
   }
+};
+
+get '/genome_mappings/:id/pileup' => sub {
+  my $context=param('context')||100;
+  unless(param('tid') && param('tstart') && param('tend')) {
+    send_error 'need start/end coordinates', 500;
+  }
+  if (param('tend')-param('tstart') + $context*2 > 50000) {
+    send_error 'refusing to extract more than 50kb', 500;
+  }
+  my $gm = schema->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
+
+  my $genome = $gm->organism_name;
+
+  my $others = $gm->search_related('transcript_mappings', {
+    -and => [
+      tid => params->{tid},
+      -or => [
+        tstart => { '>',  params->{tstart}-$context, '<', params->{tend}+$context },
+        tend => { '<', params->{tend}+$context, '>', params->{tstart}-$context },
+        -and => { tstart => { '<', params->{tstart}-$context }, tend => { '>', params->{tend}+$context }},
+      ]
+    ]
+  });
+  debug map { $_->transcript->id } $others->all;
+
+  return TearDrop::Task::Mpileup->new(
+    reference_path => $genome->genome_path,
+    region => params->{tid}, start => params->{tstart}, end => params->{tend},
+    context => $context,
+    type => 'genome',
+    alignments => [ map { $_->alignment } $genome->search_related('genome_alignments')->all ],
+  )->run;
 };
 
 get '/db_sources' => sub {
