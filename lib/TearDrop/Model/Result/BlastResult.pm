@@ -191,9 +191,7 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_nullable => 1 },
 );
 
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<blast_results_uniq>
+=head1 PRIMARY KEY
 
 =over 4
 
@@ -207,10 +205,7 @@ __PACKAGE__->add_columns(
 
 =cut
 
-__PACKAGE__->add_unique_constraint(
-  "blast_results_uniq",
-  ["transcript_id", "db_source_id", "source_sequence_id"],
-);
+__PACKAGE__->set_primary_key("transcript_id", "db_source_id", "source_sequence_id");
 
 =head1 RELATIONS
 
@@ -245,8 +240,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:19:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Agdl936dTrqY3gbmUGbldg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-07 18:01:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QQQGIf7OCeb2IHfJx9/LDw
 
 sub _is_column_serializable { 1 };
 

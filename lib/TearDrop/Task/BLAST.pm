@@ -109,7 +109,7 @@ sub run {
       sstart => $f[14],
       send => $f[15],
       stitle => $f[16]
-    }, { key => 'blast_results_uniq' });
+    });
   }
   for my $r (@blast_runs) {
     $r->finished(1);
