@@ -7,6 +7,8 @@ use Dancer ':moose';
 use Dancer::Plugin::DBIC;
 use Mouse;
 
+extends 'TearDrop::Task';
+
 use Carp;
 use IPC::Run 'harness';
 use POSIX 'ceil';
@@ -40,11 +42,6 @@ has 'alignments' => ( is => 'rw', isa => 'ArrayRef', default => sub { [] }, trai
     alignments_count => 'count',
   },
 );
-
-has 'result' => ( is => 'rw', isa => 'ArrayRef | Undef' );
-
-has 'pid' => ( is => 'rw', isa => 'Int | Undef' );
-has 'status' => ( is => 'rw', isa => 'Str | Undef' );
 
 my %cache;
 
@@ -110,12 +107,12 @@ sub run {
   my $aggregate_factor = ceil($self->effective_size/$self->aggregate_to);
   $self->result([ map {
     { 
-      key => $_->sample->description,
+      key => $_->sample->name,
       values => [ map {
         [ $_->{pos}, $_->{depth}, $_->{mismatch}, $_->{mismatch_rate} ],
       } grep { $_->{pos} % $aggregate_factor == 0 } @{$cache->{$_->bam_path}} ],
     }
-  } sort { $a->sample->description cmp $b->sample->description } @{$self->alignments} ]);
+  } sort { $a->sample->name cmp $b->sample->name } @{$self->alignments} ]);
 }
 
 1;

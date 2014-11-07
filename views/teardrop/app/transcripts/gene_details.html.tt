@@ -92,6 +92,28 @@
      </div>
     </div>
     <div ng-if="gene.transcripts">
+     <div class="row" ng-if="gene.transcripts.length>1">
+      <div class="col-md-12">
+       <accordion>
+        <accordion-group is-open="showMsa">
+         <accordion-heading>
+          Multiple Sequence Alignment
+          <button class="btn btn-sm" ng-click="loadTranscriptMsa()">Load</button>
+         </accordion-heading>
+          <nvd3-stacked-area-chart data="transcriptMSA"
+            noData="Inte Data"
+            width="1000"
+            height="200"
+            showXAxis="true"
+            showYAxis="true"
+            showLegend="true"
+            style="stack"
+            showControls="true">
+          </nvd3-stacked-area-chart>
+        </accordion-group>
+       </accordion>
+      </div>
+     </div>
      <div class="row" ng-repeat="transcript in gene.transcripts">
       <div class="col-md-12">
        <div class="panel panel-primary">

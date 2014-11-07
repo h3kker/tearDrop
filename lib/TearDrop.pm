@@ -290,6 +290,11 @@ get '/genes/:id/run_blast' => sub {
   { pid => $task->pid, status => $task->status };
 };
 
+get '/genes/:id/transcripts/msa' => sub {
+  my $gene = schema->resultset('Gene')->find(param 'id') || send_error 'not found', 404;
+  TearDrop::Task::MAFFT->new(transcripts => [ $gene->transcripts ], algorithm => 'FFT-NS-i')->run;
+};
+
 get '/genes/:id/blast_runs' => sub {
   my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   $rs->aggregate_blast_runs;

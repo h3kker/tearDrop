@@ -67,41 +67,6 @@ __PACKAGE__->table("blast_runs");
   is_nullable: 1
   original: {default_value => \"now()"}
 
-=head2 qseq
-
-  data_type: 'text'
-  is_nullable: 1
-
-=head2 sseq
-
-  data_type: 'text'
-  is_nullable: 1
-
-=head2 qstart
-
-  data_type: 'integer'
-  is_nullable: 1
-
-=head2 qend
-
-  data_type: 'integer'
-  is_nullable: 1
-
-=head2 sstart
-
-  data_type: 'integer'
-  is_nullable: 1
-
-=head2 send
-
-  data_type: 'integer'
-  is_nullable: 1
-
-=head2 gaps
-
-  data_type: 'integer'
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -120,20 +85,6 @@ __PACKAGE__->add_columns(
     is_nullable   => 1,
     original      => { default_value => \"now()" },
   },
-  "qseq",
-  { data_type => "text", is_nullable => 1 },
-  "sseq",
-  { data_type => "text", is_nullable => 1 },
-  "qstart",
-  { data_type => "integer", is_nullable => 1 },
-  "qend",
-  { data_type => "integer", is_nullable => 1 },
-  "sstart",
-  { data_type => "integer", is_nullable => 1 },
-  "send",
-  { data_type => "integer", is_nullable => 1 },
-  "gaps",
-  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -183,8 +134,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oYpbfpAk8f5qWXo6KngFSw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:19:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eV5ff0xZC97ROcBaMXEF4w
 
 sub _is_column_serializable { 1 };
 

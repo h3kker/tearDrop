@@ -3,11 +3,14 @@ package TearDrop::Task::BLAST;
 use warnings;
 use strict;
 
-use Dancer ':moose';
+
+use Dancer qw/:moose !status/;
 use Dancer::Plugin::DBIC;
 use Mouse;
+
+extends 'TearDrop::Task';
+
 use Carp;
-use File::Temp ();
 use IPC::Run 'harness';
 
 has 'transcript_id' => ( is => 'rw', isa => 'Str' );
@@ -21,8 +24,13 @@ has 'database' => ( is => 'rw', isa => 'Str' );
 
 has 'replace' => ( is => 'rw', isa => 'Bool', default => 0 );
 
-has 'pid' => ( is => 'rw', isa => 'Int | Undef' );
-has 'status' => ( is => 'rw', isa => 'Str | Undef' );
+has 'dbtype_query_scripts' => ( is => 'rw', isa => 'HashRef', default => sub {
+    { 
+      blastp => 'ext/blast/blastx.sh',
+      rpsblast => 'ext/blast/rpstblastn.sh',
+    }
+  },
+);
 
 sub run {
   my $self = shift;
@@ -31,6 +39,8 @@ sub run {
   unless($db_source) {
     confess 'Unknown database source '.$self->database;
   }
+  my $exe = $self->dbtype_query_scripts->{$db_source->dbtype} || confess "don't know how to handle ".$db_source->dbtype." databases!";
+
   my @transcripts;
   if ($self->gene_id) {
     my $gene = schema->resultset('Gene')->find($self->gene_id);
@@ -47,18 +57,18 @@ sub run {
   else {
     confess 'Need gene_id or transcript_id';
   }
-  my $seq_f = File::Temp->new();
+  my $seq_f = $self->tmpfile;
   my $kept=0;
-  my $blast_run;
-  my @cmd = ('ext/blast/blastx.sh', $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
+  my @blast_runs;
+  my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
   #my @cmd = ('sleep', 10);
   for my $trans (@transcripts) {
-    if (schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id})->first) {
+    if (!$self->replace && schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id})->first) {
       debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
       next;
     }
-    $blast_run = schema->resultset('BlastRun')->create({
-      transcript_id => $trans->id, db_source_id => $db_source->id, parameters => join(" ", @cmd)
+    push @blast_runs, schema->resultset('BlastRun')->update_or_create({
+      transcript_id => $trans->id, db_source_id => $db_source->id, parameters => join(" ", @cmd), finished => 0
     });
     print $seq_f $trans->to_fasta."\n";
     $kept++;
@@ -77,7 +87,7 @@ sub run {
   }
   for my $l (split "\n", $out) {
     my @f = split "\t", $l;
-    schema->resultset('BlastResult')->find_or_create({
+    schema->resultset('BlastResult')->update_or_create({
       transcript_id => $f[0],
       db_source_id => $db_source->id,
       source_sequence_id => $f[1],
@@ -96,10 +106,12 @@ sub run {
       sstart => $f[14],
       send => $f[15],
       stitle => $f[16]
-    });
+    }, { key => 'blast_results_uniq' });
   }
-  $blast_run->finished(1);
-  $blast_run->update;
+  for my $r (@blast_runs) {
+    $r->finished(1);
+    $r->update;
+  }
 }
 
 1;

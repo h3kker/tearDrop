@@ -216,6 +216,12 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ],
   };
   var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
+  $scope.loadTranscriptMsa = function() {
+    $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/transcripts/msa').success(function(d) {
+      $scope.transcriptMSA=d;
+    }).error($rootScope.errHandler);
+  }
+
   $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
   $scope.alignments={};
   $scope.loadAlignments = function(reload) {
@@ -259,9 +265,6 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.refresh = function() {
     $scope.gene = Gene.get({id: $routeParams.id}, function(data) {
       $scope.gene.prepare();
-      if ($scope.viewTranscript==null) {
-        $scope.alignments.viewTranscript=$scope.gene.transcripts[0];
-      }
       $scope.setBlastRuns();
       $scope.deGridOptions.data=$scope.gene.de_results;
     }, $rootScope.errHandler);

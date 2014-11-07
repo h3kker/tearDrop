@@ -10,6 +10,7 @@ use Try::Tiny;
 use Parallel::ForkManager;
 
 use TearDrop::Task::BLAST;
+use TearDrop::Task::MAFFT;
 use TearDrop::Task::Mpileup;
 
 my $pm = Parallel::ForkManager->new(4);
@@ -60,6 +61,10 @@ sub TearDrop::Worker::enqueue {
   };
   debug 'process finished';
   $pm->finish;
+}
+
+sub TearDrop::Worker::wait {
+  $pm->wait_all_children;
 }
 
 sub TearDrop::Worker::get_status {
