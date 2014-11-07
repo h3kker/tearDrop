@@ -170,8 +170,9 @@ around set_tags => sub {
 sub aggregate_blast_runs {
   my $self = shift;
   my %blast_runs;
-  for my $trans ($self->search_related('transcripts')) {
-    for my $brun ($trans->search_related('blast_runs', { finished => 1 })) {
+  for my $trans ($self->search_related('transcripts', undef, { prefetch => 'blast_runs' })) {
+    for my $brun ($trans->blast_runs) {
+      next unless $brun->finished;
       my $brun_ser = $brun->TO_JSON;
       $brun_ser->{db_source}=$brun->db_source->TO_JSON;
       $blast_runs{$brun->db_source->name} ||= $brun_ser;

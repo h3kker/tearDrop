@@ -163,7 +163,7 @@
     <div class="row">
      <div class="col-md-12">
       <accordion>
-       <accordion-group ng-repeat="map in gene.mappings" open="loadGenomeAlignments(map)" is-open="gene.mappings.length==1">
+       <accordion-group ng-repeat="map in gene.mappings" open="loadGenomeAlignments(map)">
         <accordion-heading>
          {{map.tid}}: {{map.tstart | number}} - {{map.tend | number}}
         </accordion-heading>
