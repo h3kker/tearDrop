@@ -30,10 +30,14 @@ $pm->run_on_finish(sub {
     debug "setting $pid to failed";
     $job->pid(undef);
     $job->status('failed');
-    $status{failed}->{$pid} = $job;
+    $status{failed}++;
   }
   else {
     $job->status('done');
+  }
+  $jobs{$pid} = {
+    pid => $job->pid,
+    status => $job->status,
   }
 });
 $pm->run_on_start(sub {
@@ -71,7 +75,7 @@ sub TearDrop::Worker::get_status {
   $pm->wait_children;
   return {
     pending => scalar @{$status{queue}},
-    failed => scalar keys %{$status{failed}},
+    failed => $status{failed},
     running => scalar keys %{$status{running}},
   };
 }
@@ -81,8 +85,8 @@ sub TearDrop::Worker::get_job_status {
   $pm->wait_children;
   if ($jobs{$pid}) {
     return {
-      pid => $jobs{$pid}->pid,
-      status => $jobs{$pid}->status,
+      pid => $jobs{$pid}->{pid},
+      status => $jobs{$pid}->{status},
     }
   }
 }

@@ -115,6 +115,9 @@ sub run {
     $r->finished(1);
     $r->update;
   }
+  if ($self->has_post_processing) {
+    $self->post_processing->($self);
+  }
 }
 
 1;
