@@ -1,0 +1,22 @@
+<div>
+  <div class="row">
+   <div class="col-md-4">
+    <select multiple class="form-control" ng-model="selectedDbs" ng-options="db.description+' ('+db.status+')' for db in dbSources">
+    </select>
+   </div>
+   <div class="col-md-1">
+    <button class="btn" ng-click="runBlast(selectedDbs)" ng-disabled="selectedDbs.length==0">Run BLAST</button>
+   </div>
+   <div class="col-md-3 col-md-offset-1">
+    <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | filter:{ category: 'homology' } | orderBy:'tag'"></select>
+   </div>
+   <div class="col-md-1">
+    <button class="btn btn-sm" ng-click="ngModel.addTags(selectedTags)">Add</button>
+   </div>
+  </div>
+  <div class="row">
+   <div class="col-md-12">
+    <div ui-grid="gridOptions" class="grid-fw" ui-grid-selection></div>
+   </div>
+  </div>
+</div>

@@ -15,38 +15,20 @@
 <nav class="navbar navbar-default" role="navigation">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#/">
+      <a class="navbar-brand" href="[% config.base_uri %]/#/">
         CSF.NGS teardrop
       </a>
-      <ul class="nav navbar-nav">
-       <li class="dropdown">
-        <a href="#/genes" class="dropdown-toggle" data-toggle="dropdown">Transcripts <span class="caret"></span></a>
-        <ul class="dropdown-menu" role="menu">
-         <li><a href="#/transcripts">Transcripts</a></li> 
-         <li><a href="#/genes">Genes</a></li> 
-        </ul>
-       <li>
-        <a href="#/deresults">DE Results</a>
-       </li>
-      </ul>
-      <p class="navbar-text navbar-right">
-       Pending Jobs: <span class="label label-success">{{workerStatus.running}}</span>/<span class="label label-warning">{{workerStatus.pending}}</span>/<span class="label label-danger">{{workerStatus.failed}}</span>
-      </p>
     </div>
   </div>
 </nav>
 <div class="container-fluid">
- <div growl></div>
- <div ng-view></div>
+[% roadmap %]
 </div>
-<br>
 <footer>
  <div class="row">
   <div class="col-md-12">
     <div class="well well-sm">
-     Very Alpha! - 
-     Contact <a href="mailto:heinz.ekker@csf.ac.at">heinz.ekker@csf.ac.at</a> -
-     <a href="[% config.base_uri %]/roadmap">Development Roadmap</a>
+     Contact <a href="mailto:heinz.ekker@csf.ac.at">heinz.ekker@csf.ac.at</a>
     </div>
   </div>
  </div>

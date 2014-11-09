@@ -1,13 +1,56 @@
 var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 
-tearDropServices.factory('Gene', ['$resource',
-  function($resource){
+var objPrototype = {
+      save: function(postUpdate) {
+        this.$save(function(t) {
+          t.prepare();
+          if (postUpdate!=null) {
+            postUpdate();
+          }
+        }, this.$rootScope.errHandler);
+      },
+      setRating: function(rating) {
+        this.rating=val;
+        this.reviewed=true;
+        this.save();
+      },
+      addTags: function(selectedTags, newTag) {
+        if (newTag != null && newTag.tag !== '') {
+          selectedTags.push(newTag);
+        }
+        this.tags = this.tags.concat(selectedTags);
+        var that=this;
+        this.save(function(t) {
+          if (newTag != null && newTag.tag !== '') {
+            newTag.tag='';
+            that.$rootScope.reloadTags();
+          }
+        });
+      },
+      removeTag: function(tag) {
+        this.tags=this.tags.filter(function(t) {
+          return t.tag!=tag.tag;
+        });
+        this.save();
+      },
+      setBlastResults: function(data) {
+        this.blast_results=data;
+        angular.forEach(this.blast_results, function(br) {
+          ['evalue', 'length', 'ppos', 'pident'].forEach(function(f) {
+            br[f]=parseFloat(br[f]);
+          })
+        });
+      },
+};
+
+tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http',
+  function($resource, $rootScope, $http){
     var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
       query: {method:'GET'},
-      blastResults: {method:'GET', url:'[% config.base_uri %]/api/genes/:id/blast_results', isArray: true},
-      blastRuns: {method:'GET', url:'[% config.base_uri %]/api/genes/:id/blast_runs', isArray: true},
     });
-    angular.extend(Gene.prototype, {
+    angular.extend(Gene.prototype, objPrototype, {
+      '$rootScope': $rootScope,
+      type: 'gene',
       prepare: function() {
         this.reviewed=!!this.reviewed;
         angular.forEach(this.de_results, function(de) {
@@ -15,9 +58,51 @@ tearDropServices.factory('Gene', ['$resource',
             de[f]=parseFloat(de[f]);
           });
         });
-      }
+      },
+      loadBlastResults: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/blast_results').success(function(data) {
+          that.setBlastResults(data);
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
+      loadBlastRuns: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/blast_runs').success(function(data) {
+          that.blast_runs=data;
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
     });
     return Gene;
+  }
+]).factory('Transcript', ['$resource', '$rootScope', '$http',
+  function($resource, $rootScope, $http) {
+    var Transcript = $resource('[% config.base_uri %]/api/transcripts/:id', {id:'@id'}, {
+      query: {method:'GET'},
+    });
+    angular.extend(Transcript.prototype, objPrototype, {
+      '$rootScope': $rootScope,
+      type: 'transcript',
+      prepare: function() {
+        this.reviewed=!!this.reviewed;
+      },
+      loadBlastResults: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/blast_results').success(function(data) {
+          that.setBlastResults(data);
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
+      loadBlastRuns: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/blast_runs').success(function(data) {
+          that.blast_runs=data;
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
+    });
+    return Transcript;
   }
 ]);
 

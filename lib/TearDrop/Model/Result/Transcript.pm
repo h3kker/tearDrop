@@ -274,7 +274,29 @@ __PACKAGE__->many_to_many("tags", "transcript_tags", "tag");
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LD1cL5MN/ZHhpiox6g+3bw
 
+use Dancer::Plugin::DBIC 'schema';
+
+use Moo;
+use namespace::clean;
+
 sub _is_column_serializable { 1 };
+
+around set_tags => sub {
+  my ($orig, $self, @upd_tags) = @_;
+  my %new_tags = map { $_->{tag} => $_ } @upd_tags;
+  for my $o ($self->tags) {
+    if ($new_tags{$o->tag}) {
+      delete $new_tags{$o->tag};
+    }
+    else {
+      $self->remove_from_tags($o);
+    }
+  }
+  for my $n (values %new_tags) {
+    my $ntag = schema->resultset('Tag')->find_or_create($n);
+    $self->add_to_tags($ntag);
+  }
+};
 
 sub to_fasta {
   my $self = shift;

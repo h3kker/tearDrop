@@ -1,0 +1,96 @@
+<div class="row">
+ <div class="col-md-12">
+  <h1>Transcript {{transcript.id}}</h1>
+ </div>
+</div>
+
+<div class="row">
+ <div class="col-md-6">
+  <p><reviewed description ng-model="transcript"></p>
+  <dt>Name</dt> <dd click-to-edit ng-model="transcript.name" save-callback="transcript.save"></dd>
+  <dt>Description</dt> <dd click-to-edit ng-model="transcript.description" save-callback="transcript.save"></dd>
+  <dt>Best Homolog</dt> <dd>{{transcript.best_homolog || '-'}}</dd>
+  <dt>Gene</dt> <dd><a href="#/genes/{{transcript.gene.id}}">{{transcript.gene.id}}</a></dd>
+  <dt>Rating</dt> <dd><rating ng-model="transcript.rating" max="10" ng-click="transcript.setRating(transcript.rating)"></rating></dd>
+  <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="transcript.reviewed" ng-change="transcript.save()"></dd>
+ </div>
+
+ <div class="col-md-3">
+  <h5>Tags</h5>
+  <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag for tag
+ in tags"></select>
+  <form class="form-inline" role="form">
+   <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
+   <select ng-model="newTag.level" class="form-control input-sm">
+    <option value="info">Info</option>
+    <option value="success">Good</option>
+    <option value="warning">Not so good</option>
+    <option value="danger">Bad!</option>
+   </select>
+  </form>
+  <button class="btn btn-sm" ng-click="transcript.addTags(selectedTags, newTag)">Add</button>
+ </div>
+</div>
+
+<div class="row">
+ <div class="col-md-12">
+  <span ng-repeat="tag in transcript.tags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="transcript.removeTag(tag)"></i></span>
+ </div>
+</div>
+
+<div class="row">
+ <div class="col-md-12">
+  <tabset>
+   <tab>
+    <tab-heading>Sequence</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>Sequence</h3>
+      <pre>
+&gt;{{transcript.id}}
+{{transcript.nsequence}}
+      </pre>
+     </div>
+    </div>
+   </tab> 
+   <tab disabled="transcript.de_results.length==0">
+    <tab-heading>DE Results</tab-heading>
+   </tab>
+   <tab>
+    <tab-heading>Homologs</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>Homology Searches</h3>
+     </div>
+    </div>     
+     <blast-grid ng-model="transcript" grid-options="blastGridOptions"></blast-grid>
+   </tab>
+   <tab>
+    <tab-heading>Genome Aligments</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>Genome Alignments</h3>
+     </div>
+     <div class="row">
+      <div class="col-md-12">
+       <genome-alignments mappings="transcript.transcript_mappings"></genome-alignments>
+      </div>
+     </div>
+    </div>
+   </tab>
+   <tab select="transcript.loadAlignment()">
+    <tab-heading>Transcript Alignment</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>Transcript Alignment</h3>
+     </div>
+     <div class="row">
+      <div class="col-md-12">
+       <transcript-alignment transcript="transcript"></transcript-alignment>
+      </div>
+     </div>
+    </div>
+   </tab>
+  </tabset>
+ </div>
+</div>

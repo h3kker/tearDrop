@@ -2,7 +2,11 @@ package TearDrop;
 use Dancer ':syntax';
 
 use Dancer::Plugin::DBIC qw(schema resultset);
+use Dancer::FileUtils qw/path read_file_content/;
+
 use TearDrop::Worker;
+
+use Text::Markdown 'markdown';
 use Carp;
 
 our $VERSION = '0.1';
@@ -26,6 +30,13 @@ prefix config->{base_uri};
 get '/' => sub {
   schema->resultset('Sample');
   template 'teardrop/app/index';
+};
+
+get '/roadmap' => sub {
+  my $todo = read_file_content(path('doc', 'todo.md'));
+  $todo =~ s|DONE(.*)$|<span class="text-muted"><i class="glyphicon glyphicon-ok"></i>$1</span>|mg;
+  $todo =~ s|XXX(.*)$|<span class="bg-danger"><i class="glyphicon glyphicon-fire text-danger"></i>$1</span>|mg;
+  template 'teardrop/roadmap', { roadmap => markdown $todo };
 };
 
 prefix config->{base_uri}.'/api';
@@ -126,8 +137,70 @@ get '/transcripts/fasta' => sub {
 
 get '/transcripts/:id' => sub {
   my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
-  $rs;
+  my $tser = $rs->TO_JSON;
+  $tser->{tags} = [ $rs->tags ];
+  $tser->{transcript_mappings} = [ $rs->transcript_mappings ];
+  $tser->{de_results} = [];
+  for my $der (schema->resultset('DeResult')->search({ transcript_id => $rs->id },
+    { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
+    my $d = $der->TO_JSON;
+    $d->{contrast}=$der->contrast->TO_JSON;
+    $d->{de_run}=$der->de_run->TO_JSON;
+    push @{$tser->{de_results}}, $d;
+  }
+  $tser;
 };
+
+post '/transcripts/:id' => sub {
+  my %tags = map {
+    $_->tag => 1,
+  } schema->resultset('Tag')->all;
+  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $upd = params('body');
+  $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
+  $rs->set_tags(@{$upd->{tags}});
+  $rs->update;
+  forward config->{base_uri}.'/api/transcripts/'.$rs->id, {}, { method => 'GET' };
+};
+
+get '/transcripts/:id/blast_results' => sub {
+  my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my @results;
+  for my $bl ($trans->search_related('blast_results', undef, { prefetch => 'db_source' })) {
+    my $bl_ser = $bl->TO_JSON;
+    $bl_ser->{db_source}=$bl->db_source->description;
+    push @results, $bl_ser;
+  }
+  \@results;
+};
+
+get '/transcripts/:id/run_blast' => sub {
+  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'transcript not found', 404;
+  my $db = schema->resultset('DbSource')->search({
+    name => param('database') || 'refseq_plant'
+  })->first || send_error 'db not found', 404;
+  my $task = new TearDrop::Task::BLAST(transcript_id => $rs->id, database => $db->name);
+  TearDrop::Worker::enqueue($task);
+  { pid => $task->pid, status => $task->status };
+};
+
+
+get '/transcripts/:id/blast_runs' => sub {
+  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my %blast_runs;
+  for my $br ($rs->blast_runs) {
+    next unless $br->finished;
+    my $br_ser = $br->TO_JSON;
+    $br_ser->{db_source}=$br->db_source->TO_JSON;
+    $blast_runs{$br->db_source->name} ||= $br_ser;
+    my $hit_count = schema->resultset('BlastResult')->search({
+      transcript_id => $rs->id, db_source_id => $br->db_source_id
+    })->count;
+    $blast_runs{$br->db_source->name}->{hits} += $hit_count;
+  }
+  [ values %blast_runs ];
+};
+
 
 get '/transcripts/:id/genomePileup' => sub {
   my $trans = schema->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;

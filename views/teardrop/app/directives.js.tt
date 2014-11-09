@@ -1,4 +1,107 @@
 angular.module('tearDropDirectives', []).
+  directive('blastGrid', function(uiGridConstants, $rootScope, $http, $timeout) {
+    return {
+      restrict: 'E',
+      replace: true,
+      templateUrl: '[% config.base_uri %]/app/partials/homologies.html',
+      scope: {
+        gridOptions: '=',
+        ngModel: '=',
+      },
+      link: function($scope, element, attr) {
+        $scope.tags=$rootScope.tags;
+        $scope.selectedDbs=[];
+        $scope.dbSources=angular.copy($rootScope.dbSources);
+        angular.extend($scope.gridOptions, {
+          showFooter: true,
+          enableFiltering: true,
+          minRowsToShow: 50,
+          multiSelect: false,
+          columnDefs: [
+            { name: 'Transcript', field: 'transcript_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS } },
+            { name: 'DB', field: 'db_source', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }},
+            { name: 'Hit', field: 'stitle', width: '40%', filter: { condition: uiGridConstants.filter.CONTAINS }},
+            { name: 'e-value', field: 'evalue', width: '10%', sort: { priority: 0, direction: uiGridConstants.ASC }, filter: { condition: uiGridConstants.filter.LESS_THAN } },
+            { name: 'Match Length', field: 'length', width: '10%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+            { name: 'positive %', field: 'ppos', width: '10%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+            { name: 'identical %', field: 'pident', width: '10%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+          ],
+        });
+        $scope.gridOptions.onRegisterApi = function(gridApi) {
+          gridApi.selection.on.rowSelectionChanged($scope,function(row){
+            $scope.gene.best_homolog=row.entity.source_sequence_id;
+            $scope.gene.name=row.entity.stitle;
+            $scope.saveGene();
+          });
+        };
+        $scope.runBlast = function(selectedDbs) {
+          console.log(selectedDbs);
+          angular.forEach(selectedDbs, function(db) {
+            $http.get('[% config.base_uri %]/api/'+$scope.ngModel.type+'s/'+$scope.ngModel.id+'/run_blast', {
+              'params': { database: db.name }
+            }).success(function(d) {
+              db.status='started';
+              $rootScope.updateQueueStatus();
+              var queryJobStatus = function(pid) {
+                $timeout(function() {
+                  $http.get('[% config.base_uri %]/api/worker/status/'+pid).success(function(jobData) {
+                    angular.forEach($scope.geneDbSources, function(dbs) {
+                      if (dbs.name==db.name) {
+                        dbs.status=jobData.status;
+                      }
+                    });
+                    if (jobData.status != 'done' && jobData.status != 'failed') {
+                      queryJobStatus(pid);
+                    }
+                    else if (jobData.status == 'done') {
+                      $scope.loadHomologs(true);
+                    }
+                  });
+                }, 5000);
+              }
+              if (d.pid) {
+                queryJobStatus(d.pid);
+              }
+            }).error($rootScope.errHandler);
+          });
+        }
+
+        $scope.loadHomologs = function(reload) {
+          if (reload || $scope.ngModel.blast_results==null) {
+            $scope.ngModel.loadBlastRuns($scope.setBlastRuns);
+            $scope.ngModel.loadBlastResults(function(data) {
+              $scope.gridOptions.data=$scope.ngModel.blast_results;
+            });
+          }
+        }
+
+        $scope.setBlastRuns = function() {
+          angular.forEach($scope.dbSources, function(db) {
+            if (db.status==null || db.status=='') db.status='not run';
+          });
+          angular.forEach($scope.ngModel.blast_runs, function(br) {
+            angular.forEach($scope.dbSources, function(db) {
+              if (db.status == null) {
+                db.status='not run';
+              }
+              if (db.name==br.db_source.name) {
+                if ($scope.ngModel.transcripts != null) 
+                  db.status='done - '+br.hits+' hits on '+br.matched_transcripts+'/'+$scope.ngModel.transcripts.length+' transcripts';
+                else 
+                  db.status='done - '+br.hits+' hits';
+                db.hits=br.hits;
+                db.matched_transcripts=br.matched_transcripts;
+              }
+            });
+          });
+        }
+        $scope.$watch('ngModel.id', function(newVal, oldVal) {
+          if (newVal != null && newVal != oldVal) $scope.loadHomologs();
+        });
+      },
+         
+    }
+  }).
   directive('pagedGrid', function(uiGridConstants, $timeout, $location, $rootScope) {
     return {
       restrict: 'E',
@@ -212,6 +315,53 @@ angular.module('tearDropDirectives', []).
         $scope.fcStyle={
           'color': 'hsla('+hue+',60%,70%,'+alpha+')',
         };
+      },
+    }
+  })
+  .directive('genomeAlignments', function($http, $rootScope) {
+    return {
+      restrict: 'E',
+      replace: true,
+      templateUrl: '[% config.base_uri %]/app/partials/genome_alignments.html',
+      scope: {
+        mappings: '=',
+      },
+      link: function($scope, element, attr) {
+        var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
+        $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
+
+        $scope.loadGenomeAlignments = function(map, reload) {
+          if (map==null) return;
+          if (reload || map.alignment==null) {
+            map.alignment=[];
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+              map.alignment=data;
+            }).error($rootScope.errHandler);
+          }
+        }
+      },
+    }
+  })
+  .directive('transcriptAlignment', function($http, $rootScope) {
+    return {
+      restrict: 'E',
+      replace: true,
+      templateUrl: '[% config.base_uri %]/app/partials/transcript_alignment.html',
+      scope: {
+        transcript: '=',
+      },
+      link: function($scope, element, attr) {
+        var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
+        $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
+
+        $scope.transcript.loadAlignment = function(reload) {
+          if (reload || $scope.transcript.alignment==null) {
+            $scope.transcript.alignment=[];
+            $http.get('[% config.base_uri %]/api/transcripts/'+$scope.transcript.id+'/pileup').success(function(data) {
+              $scope.transcript.alignment=data;
+            }).error($rootScope.errHandler);
+          }
+        }
       },
     }
   })

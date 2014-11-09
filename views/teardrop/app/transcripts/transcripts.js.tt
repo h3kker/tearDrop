@@ -43,7 +43,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.gridOptions={
     minRowsToShow: 20,
     columnDefs: [
-      { name: 'Transcript', field: 'id' },
+      { name: 'Transcript', field: 'id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/transcripts/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
       { name: 'Gene', field: 'gene.id', cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/genes/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></div>' },
       { name: 'Name', field: 'name' },
       { name: 'Organism', field: 'organism.scientific_name' },
@@ -60,13 +60,30 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ).error($rootScope.errHandler);
   }
 }])
-.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', function($rootScope, $routeParams, $scope, $http) {
-  $scope.refresh = function() {
-    $scope.transcript=null;
-    $http.get('[% config.base_uri %]/api/transcripts/'+$routeParams.id).success(function(data) {
-      $scope.transcript=data;
-    }).error($rootScope.errHandler);
+.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'Transcript', function($rootScope, $routeParams, $scope, $http, Transcript) {
+  $scope.newTag={tag:'', level:'info'};
+  $scope.selectedDbs=[];
+  $scope.selectedTags=[];
+  $scope.blastGridOptions={
+    enableFiltering: true,
+    showFooter: true,
+    minRowsToShow: 50,
+    multiSelect: false,
+    onRegisterApi: function(gridApi) {
+      gridApi.selection.on.rowSelectionChanged($scope,function(row){
+        $scope.transcript.best_homolog=row.entity.source_sequence_id;
+        $scope.transcript.name=row.entity.stitle;
+        $scope.transcript.save();
+      });
+    },
   };
+
+  $scope.transcriptDbSources = angular.copy($rootScope.dbSources);
+  $scope.refresh = function() {
+    $scope.transcript = Transcript.get({id: $routeParams.id}, function(data) {
+      $scope.transcript.prepare();
+    }, $rootScope.errHandler);
+  }
   $scope.refresh();
 }])
 .controller('GenesCtrl', ['$rootScope', '$scope', '$http', '$location', function($rootScope, $scope, $http, $location) {
@@ -114,85 +131,19 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
 .controller('GenesDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'uiGridConstants', '$timeout', 'Gene', function($rootScope, $routeParams, $scope, $http, uiGridConstants, $timeout, Gene) {
   $scope.selectedDbs=[];
   $scope.selectedTags=[];
-  $scope.geneDbSources = angular.copy($rootScope.dbSources);
-  $scope.runBlast = function(selectedDbs) {
-    console.log(selectedDbs);
-    angular.forEach(selectedDbs, function(db) {
-      $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/run_blast', {
-        'params': { database: db.name }
-      }).success(function(d) {
-        db.status='started';
-        $rootScope.updateQueueStatus();
-        var queryJobStatus = function(pid) {
-          $timeout(function() {
-            $http.get('[% config.base_uri %]/api/worker/status/'+pid).success(function(jobData) {
-              angular.forEach($scope.geneDbSources, function(dbs) {
-                if (dbs.name==db.name) {
-                  dbs.status=jobData.status;
-                }
-              });
-              if (jobData.status != 'done' && jobData.status != 'failed') {
-                queryJobStatus(pid);
-              }
-              else if (jobData.status == 'done') {
-                $scope.loadHomologs(true);
-              }
-            });
-          }, 5000);
-        }
-        if (d.pid) {
-          queryJobStatus(d.pid);
-        }
-      }).error($rootScope.errHandler);
-    });
-  }
+  $scope.newTag={ tag: '', level: 'info' };
   $scope.blastGridOptions={
-    showFooter: true,
     enableFiltering: true,
-    rowsPerPage: 10,
+    showFooter: true,
     minRowsToShow: 50,
-    columnDefs: [
-      { name: 'Transcript', field: 'transcript_id', width: '10%' },
-      { name: 'DB', field: 'db_source', width: '10%' },
-      { name: 'Hit', field: 'stitle', width: '40%' },
-      { name: 'e-value', field: 'evalue', width: '10%', sort: { priority: 0, direction: uiGridConstants.ASC }, filter: { condition: uiGridConstants.filter.LESS_THAN } },
-      { name: 'Match Length', field: 'length', width: '10%' },
-      { name: 'positive %', field: 'ppos', width: '10%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-      { name: 'identical %', field: 'pident', width: '10%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-    ],
+    multiSelect: false,
     onRegisterApi: function(gridApi) {
       gridApi.selection.on.rowSelectionChanged($scope,function(row){
         $scope.gene.best_homolog=row.entity.source_sequence_id;
         $scope.gene.name=row.entity.stitle;
-        $scope.saveGene();
+        $scope.gene.save();
       });
     },
-  };
-  $scope.newTag={ tag: '', level: 'info' };
-  $scope.addTags = function(selectedTags) {
-    if ($scope.newTag !== null && $scope.newTag.tag !== '') {
-      selectedTags.push($scope.newTag);
-      $scope.newTag={ tag: '', level: 'info' };
-    }
-    $scope.gene.tags=$scope.gene.tags.concat(selectedTags);
-    $scope.saveGene();
-  }
-  $scope.removeTag = function(tag) {
-    $scope.gene.tags=$scope.gene.tags.filter(function(t) {
-      return t.tag!=tag.tag;
-    });
-    $scope.saveGene();
-  }
-  $scope.setRating = function(val) {
-    $scope.gene.rating=val;
-    $scope.gene.reviewed=true;
-    $scope.saveGene();
-  }
-  $scope.saveGene = function() {
-    $scope.gene.$save(function(g) {
-      g.prepare();
-      $rootScope.reloadTags();
-    }, $rootScope.errHandler);
   };
   $scope.deGridOptions={
     showFooter: true,
@@ -215,77 +166,18 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       },
     ],
   };
-  var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
   $scope.loadTranscriptMsa = function() {
     $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/transcripts/msa').success(function(d) {
       $scope.transcriptMSA=d;
     }).error($rootScope.errHandler);
   }
 
-  $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
-  $scope.alignments={};
-  $scope.loadAlignments = function(reload) {
-    console.log('loadAlignments '+$scope.alignments.viewTranscript.id);
-    if ($scope.alignments.viewTranscript==null) return;
-    if (reload || $scope.alignments[$scope.alignments.viewTranscript.id]==null) {
-      $scope.alignments[$scope.alignments.viewTranscript.id]=[];
-      $http.get('[% config.base_uri %]/api/transcripts/'+$scope.alignments.viewTranscript.id+'/pileup').success(function(data) {
-        $scope.alignments[$scope.alignments.viewTranscript.id]=data;
-      }).error($rootScope.errHandler);
-    }
-  }
-  $scope.loadGenomeAlignments = function(map, reload) {
-    if (map==null) return;
-    console.log('loadGenomeAlignments');
-    console.log(map);
-    if (reload || map.alignment==null) {
-      map.alignment=[];
-      $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params:{tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-        map.alignment=data;
-      }).error($rootScope.errHandler);
-    }
-  }
-  $scope.loadHomologs = function(reload) {
-    if (reload || $scope.gene.blast_results==null) {
-      $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/blast_runs').success(function(data) {
-        $scope.gene.blast_runs=data;
-        $scope.setBlastRuns();
-      });
-      $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/blast_results').success(function(data) {
-        $scope.gene.blast_results=data;
-        angular.forEach($scope.gene.blast_results, function(br) {
-          ['evalue', 'length', 'ppos', 'pident'].forEach(function(f) {
-            br[f]=parseFloat(br[f]);
-          });
-        });
-        $scope.blastGridOptions.data=$scope.gene.blast_results;
-      }).error($rootScope.errHandler);
-    }
-  }
   $scope.refresh = function() {
     $scope.gene = Gene.get({id: $routeParams.id}, function(data) {
       $scope.gene.prepare();
-      $scope.setBlastRuns();
       $scope.deGridOptions.data=$scope.gene.de_results;
     }, $rootScope.errHandler);
   }
   $scope.refresh();
 
-  $scope.setBlastRuns = function() {
-    angular.forEach($scope.geneDbSources, function(db) {
-      if (db.status==null || db.status=='') db.status='not run';
-    });
-    angular.forEach($scope.gene.blast_runs, function(br) {
-      angular.forEach($scope.geneDbSources, function(db) {
-        if (db.status == null) {
-          db.status='not run';
-        }
-        if (db.name==br.db_source.name) {
-          db.status='done - '+br.hits+' hits on '+br.matched_transcripts+'/'+$scope.gene.transcripts.length+' transcripts';
-          db.hits=br.hits;
-          db.matched_transcripts=br.matched_transcripts;
-        }
-      });
-    });
-  }
 }]);

@@ -48,6 +48,12 @@ __PACKAGE__->table("tags");
   default_value: 'info'
   is_nullable: 0
 
+=head2 category
+
+  data_type: 'text'
+  default_value: 'general'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,6 +61,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "level",
   { data_type => "text", default_value => "info", is_nullable => 0 },
+  "category",
+  { data_type => "text", default_value => "general", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -122,8 +130,8 @@ Composing rels: L</transcript_tags> -> transcript
 __PACKAGE__->many_to_many("transcripts", "transcript_tags", "transcript");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-01 12:09:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0gCo99ZTeQRoH/MoF9Yd4g
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-09 23:51:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TveS7AeiCk9WvrT5ulHWzw
 
 sub _is_column_serializable { 1 };
 

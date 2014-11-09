@@ -11,8 +11,16 @@ use TearDrop::Worker;
 my $dbs = schema->resultset('DbSource')->search({
   name => [ 'refseq_plant', 'refseq_fungi', 'ncbi_cdd' ]
 });
-for my $g (schema->resultset('Gene')->search({ reviewed => 0 })->all) {
+for my $g (schema->resultset('Gene')->search({ 'me.reviewed' => 0 }, )->all) {
+  my %has_runs;
+  for my $t ($g->transcripts) {
+    $has_runs{$_->db_source_id}=1 for $t->blast_runs;
+  }
   for my $db ($dbs->all) {
+    if ($has_runs{$db->id}) {
+      debug 'gene '.$g->id.' already blasted against '.$db->name.' ('.$db->id.')';
+      next;
+    }
     my $task = new TearDrop::Task::BLAST(replace => 1, gene_id => $g->id, database => $db->name, post_processing => sub {
       return if $g->reviewed;
       for my $t ($g->transcripts) {

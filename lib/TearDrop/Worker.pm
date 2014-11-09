@@ -50,6 +50,15 @@ $pm->run_on_start(sub {
   $jobs{$pid}=$j;
 });
 
+sub TearDrop::Worker::submit {
+  my $item = shift;
+  schema->resultset('Workqueue')->create({
+    status => 'queued',
+    class => ref($item),
+    task_object => $item,
+  })
+}
+
 sub TearDrop::Worker::enqueue {
   my $item = shift;
   $item->status('queued');

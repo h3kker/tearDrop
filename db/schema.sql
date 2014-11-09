@@ -284,7 +284,8 @@ create index de_result_transcript_id_idx on de_results(transcript_id);
 DROP TABLE IF EXISTS tags CASCADE;
 CREATE TABLE tags (
   tag text primary key,
-  level text not null default 'info'
+  category text not null default 'general',
+  level text not null default 'info',
 );
 
 DROP TABLE IF EXISTS transcript_tags CASCADE;
@@ -301,19 +302,42 @@ CREATE TABLE gene_tags (
   PRIMARY KEY (gene_id, tag)
 );
 
-INSERT INTO tags (tag, level) VALUES 
-  ('bad assembly', 'danger'),
-  ('good assembly', 'success'),
-  ('interesting', 'success'),
-  ('good coverage', 'success'),
-  ('low coverage overall', 'warning'),
-  ('low coverage 5p', 'warning'),
-  ('low coverage 3p', 'warning'),
-  ('low coverage dip', 'warning'),
-  ('low coverage multiple dips', 'warning'),
-  ('many errors', 'warning'),
-  ('good homologs', 'success'),
-  ('bad homolog support', 'warning'),
-  ('no annotations', 'warning'),
-  ('no homologs', 'danger')
+INSERT INTO tags (tag, category, level) VALUES 
+  ('bad assembly', 'general', 'danger'),
+  ('good assembly', 'general', 'success'),
+  ('interesting', 'general', 'success'),
+  ('possible chimera', 'general', 'danger'),
+  ('possible fusion', 'general', 'danger'),
+  ('short', 'general', 'warning'),
+  ('good coverage', 'coverage', 'success'),
+  ('low overall', 'coverage', 'warning'),
+  ('low 5p', 'coverage', 'warning'),
+  ('low 3p', 'coverage', 'warning'),
+  ('dip', 'coverage', 'warning'),
+  ('multiple dips', 'coverage', 'warning'),
+  ('uneven', 'coverage', 'warning'),
+  ('very uneven', 'coverage', 'warning'),
+  ('many errors', 'coverage', 'warning'),
+  ('good homologs', 'homology', 'success'),
+  ('bad homolog support', 'homology', 'warning'),
+  ('no annotations', 'homology', 'warning'),
+  ('no homologs', 'homology', 'danger'),
+  ('maybe intron', 'mapping', 'warning'),
+  ('unmapped', 'mapping', 'danger'),
+  ('lots of mappings', 'mapping', 'warning'),
+  ('many orthologs', 'mapping', 'info'),
+  ('bad mapping', 'mapping', 'danger')
 ;
+
+DROP TABLE IF EXISTS workqueue CASCADE;
+CREATE TABLE workqueue (
+  id serial primary key,
+  pid integer,
+  submit_date timestamp default current_timestamp,
+  start_date timestamp,
+  stop_date timestamp,
+  status text not null default 'queued',
+  errmsg text,
+  class text not null,
+  task_object text not null
+);
