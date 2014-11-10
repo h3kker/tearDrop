@@ -5,15 +5,18 @@
 - XXX "loading" feedback 
 - disable alignment view when unavailable
 - set url path on de run selection
+- deal with multiple alignments => selection, define "favorite"
+- refactor old worker to backup worker, might be useful to keep around
 
 ## big stuff
 
 - multiple projects: master database with separate dbs for projects
-- job manager
-  * via db table
-  * worker process started on request
-  * how to signal new jobs?
-- refactor transcript/gene ids - use internal id to support multiple assemblies per db
+- DONE job manager
+  * DONE via db table
+  * DONE worker process started on request
+  * DONE respawn worker process on fail
+  * DONE signal worker with fifo, use fifo to check if worker alive, restart if no response
+- refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions)
 
 ## visualisation
 
@@ -47,6 +50,15 @@ use/extend https://github.com/WealthBar/angular-d3?
 ## nice to have
 
 - overview page (general assembly stats)
-- sample, alignments, assebmly pages
+- sample, alignments, assembly pages
 - data exports?
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
+
+### data import
+
+- via web?
+- create/import stats for 
+  - DONE alignments (tophat, star, bowtie)
+  - count tables
+  - samples (raw files)
+  - genome mappings

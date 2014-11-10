@@ -12,9 +12,16 @@ extends 'TearDrop::Task';
 
 use Carp;
 use IPC::Run 'harness';
+use File::Temp ();
 
 has 'transcript_id' => ( is => 'rw', isa => 'Str' );
 has 'gene_id' => ( is => 'rw', isa => 'Str' );
+has 'gene_ids' => ( is => 'rw', isa => 'ArrayRef[Str]', traits => ['Array'], handles => {
+    has_gene_ids => 'count',
+    all_gene_ids => 'elements',
+  },
+  default => sub { [] },
+);
 has 'sequences' => ( is => 'rw', isa => 'HashRef[Str]' );
 
 has 'evalue_cutoff' => ( is => 'rw', isa => 'Num', default => .01 );
@@ -45,7 +52,7 @@ sub run {
   if ($self->gene_id) {
     my $gene = schema->resultset('Gene')->find($self->gene_id);
     confess 'Unknown gene '.$self->gene_id unless defined $gene;
-    for my $trans ($gene->search_related('transcripts')->all) {
+    for my $trans ($gene->transcripts) {
       push @transcripts, $trans;
     }
   }
@@ -54,10 +61,18 @@ sub run {
     confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
     push @transcripts, $trans;
   }
+  elsif ($self->has_gene_ids) {
+    my $genes = schema->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
+    for my $g ($genes->all) {
+      for my $trans ($g->transcripts) {
+        push @transcripts, $trans;
+      }
+    }
+  }
   else {
     confess 'Need gene_id or transcript_id';
   }
-  my $seq_f = $self->tmpfile;
+  my $seq_f = File::Temp->new;
   my $kept=0;
   my @blast_runs;
   my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
@@ -78,6 +93,9 @@ sub run {
   }
   unless ($kept) {
     debug 'no transcripts to blast, finished';
+    if ($self->has_post_processing) {
+      $self->post_processing->($self);
+    }
     return;
   }
 

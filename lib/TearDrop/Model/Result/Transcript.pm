@@ -274,6 +274,7 @@ __PACKAGE__->many_to_many("tags", "transcript_tags", "tag");
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LD1cL5MN/ZHhpiox6g+3bw
 
+use Dancer qw/:moose !status/;
 use Dancer::Plugin::DBIC 'schema';
 
 use Moo;
@@ -298,6 +299,14 @@ around set_tags => sub {
   }
 };
 
+sub set_tag {
+  my ($self, $tag) = @_;
+  for my $o ($self->tags) {
+    return if ($o->tag eq $tag->{tag});
+  }
+  $self->add_to_tags(schema->resultset('Tag')->find_or_create($tag));
+}
+
 sub to_fasta {
   my $self = shift;
   return ">".$self->id.($self->name ? " ".$self->name:"")."\n".$self->nsequence;
@@ -314,6 +323,30 @@ sub comparisons {
     'tags' => { cmp => 'IN', column => 'transcript_tags.tag' },
     'organism.scientific_name' => { cmp => 'like', column => 'organism.scientific_name' },
   };
+}
+
+sub auto_annotate {
+  my $self = shift;
+  return if $self->reviewed;
+  my $best_homolog = $self->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;
+  unless($best_homolog) {
+    debug 'no homologs...';
+    $self->set_tag({ tag => 'no homologs', category => 'homology' });
+    return;
+  }
+  if (!defined $self->best_homolog || $self->best_homolog ne $best_homolog->source_sequence_id) {
+    debug 'setting best homolog to '.$best_homolog->stitle;
+    $self->best_homolog($best_homolog->source_sequence_id);
+    $self->name($best_homolog->stitle);
+    $self->description($best_homolog->stitle);
+    if ($best_homolog->evalue < 1e-10) {
+      $self->set_tag({ tag => 'good homologs', category => 'homology' });
+    }
+    else {
+      $self->set_tag({ tag => 'bad homologs', category => 'homology' });
+    }
+    $self->update;
+  }
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -13,8 +13,14 @@ our $VERSION = '0.1';
 
 set layout => undef;
 
+my $worker;
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
+  unless($worker) {
+    require TearDrop::Worker::DB;
+    $worker = new TearDrop::Worker::DB;
+    $worker->start_worker;
+  }
 };
 
 # make sure user variable is available in all views
@@ -180,8 +186,8 @@ get '/transcripts/:id/run_blast' => sub {
     name => param('database') || 'refseq_plant'
   })->first || send_error 'db not found', 404;
   my $task = new TearDrop::Task::BLAST(transcript_id => $rs->id, database => $db->name);
-  TearDrop::Worker::enqueue($task);
-  { pid => $task->pid, status => $task->status };
+  my $item = $worker->enqueue($task);
+  { id => $item->id, status => $item->status };
 };
 
 
@@ -358,8 +364,8 @@ get '/genes/:id/run_blast' => sub {
     name => param('database') || 'refseq_plant'
   })->first || send_error 'db not found', 404;
   my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
-  TearDrop::Worker::enqueue($task);
-  { pid => $task->pid, status => $task->status };
+  my $item = $worker->enqueue($task);
+  { id => $item->id, status => $item->status };
 };
 
 get '/genes/:id/transcripts/msa' => sub {
@@ -490,11 +496,11 @@ get '/tags' => sub {
 };
 
 get '/worker/status' => sub {
-  TearDrop::Worker::get_status();
+  $worker->status;
 };
 
 get '/worker/status/:job' => sub {
-  TearDrop::Worker::get_job_status(param 'job');
+  $worker->job_status(param 'job');
 };
 
 

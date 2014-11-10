@@ -15,13 +15,15 @@ use IPC::Run 'harness';
 has 'transcripts' => ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
 has 'algorithm' => ( is => 'rw', isa => 'Str', default => 'FFT-NS-i' );
 
+use File::Temp ();
+
 sub run {
   my $self = shift;
 
   my $exe = sprintf "ext/mafft/mafft_%s.sh", $self->algorithm;
   confess 'No script $exe exists, invalid algorithm?' unless -f $exe;
 
-  my $seq_f = $self->tmpfile;
+  my $seq_f = File::Temp->new();
   for my $trans (@{$self->transcripts}) {
     print $seq_f $trans->to_fasta."\n";
   }

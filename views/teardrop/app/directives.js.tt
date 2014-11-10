@@ -43,9 +43,10 @@ angular.module('tearDropDirectives', []).
               db.status='started';
               $rootScope.updateQueueStatus();
               var queryJobStatus = function(pid) {
+                console.log('here');
                 $timeout(function() {
                   $http.get('[% config.base_uri %]/api/worker/status/'+pid).success(function(jobData) {
-                    angular.forEach($scope.geneDbSources, function(dbs) {
+                    angular.forEach($scope.dbSources, function(dbs) {
                       if (dbs.name==db.name) {
                         dbs.status=jobData.status;
                       }
@@ -59,8 +60,8 @@ angular.module('tearDropDirectives', []).
                   });
                 }, 5000);
               }
-              if (d.pid) {
-                queryJobStatus(d.pid);
+              if (d.id) {
+                queryJobStatus(d.id);
               }
             }).error($rootScope.errHandler);
           });

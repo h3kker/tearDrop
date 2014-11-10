@@ -133,6 +133,17 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
         bam_path => $s{bam_path},
       });
     }
+    else {
+      $alignment->program($s{program});
+      $alignment->sample_id($sample->id);
+      $alignment->update;
+    }
+    try {
+      $alignment->read_stats;
+      $alignment->update;
+    } catch {
+      warn 'unable to read stats for '.$alignment->bam_path.": $_";
+    };
 
     my $assembly = schema->resultset($s{type} eq 'transcriptome' ? 'TranscriptAssembly' : 'Organism')->search({ name => $s{assembly} })->first;
     unless($assembly) {
@@ -141,7 +152,7 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
     }
     my ($k, $v) = $s{type} eq 'transcriptome' ? ('transcript_assembly_id', $assembly->id) : ('organism_name', $assembly->name);
     my $res = $s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment';
-    schema->resultset($res)->find_or_create({
+    schema->resultset($res)->update_or_create({
       alignment_id => $alignment->id,
       $k => $v,
     });

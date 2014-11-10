@@ -337,6 +337,7 @@ CREATE TABLE workqueue (
   start_date timestamp,
   stop_date timestamp,
   status text not null default 'queued',
+  batch boolean default false,
   errmsg text,
   class text not null,
   task_object text not null

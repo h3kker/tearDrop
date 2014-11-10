@@ -87,6 +87,12 @@ __PACKAGE__->table("workqueue");
   data_type: 'text'
   is_nullable: 0
 
+=head2 batch
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -117,7 +123,9 @@ __PACKAGE__->add_columns(
   "class",
   { data_type => "text", is_nullable => 0 },
   "task_object",
-  { data_type => "text", is_nullable => 0, 'serializer_class' => 'Storable' },
+  { data_type => "text", is_nullable => 0 },
+  "batch",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -133,11 +141,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-09 23:50:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JBMvZpaa4hrzJa5HwrpXrw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-10 23:11:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:87VjBs7/7DjBS1ecs/Q4Wg
 
-__PACKAGE__->load_components('InflateColumn::Serializer', 'Core');
 
+sub _is_column_serializable { 1 };
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

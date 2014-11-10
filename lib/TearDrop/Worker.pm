@@ -3,8 +3,10 @@ package TearDrop::Worker;
 use warnings;
 use strict;
 
-use Dancer ':syntax';
+use Dancer qw/:moose !status/;
 use Dancer::Plugin::DBIC 'schema';
+
+use Mouse;
 
 use Try::Tiny;
 use Parallel::ForkManager;
@@ -12,6 +14,29 @@ use Parallel::ForkManager;
 use TearDrop::Task::BLAST;
 use TearDrop::Task::MAFFT;
 use TearDrop::Task::Mpileup;
+
+has 'pm' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
+  my $self = shift;
+  my $pm = Parallel::ForkManager->new($self->threads);
+  $pm->run_on_finish(sub {
+    $self->job_finished(@_);
+  });
+  $pm->run_on_start(sub {
+    $self->job_started(@_);
+  });
+  $pm;
+});
+
+has 'threads' => ( is => 'rw', isa => 'Int', default => 4);
+
+has 'jobs' => ( is => 'rw', isa => 'HashRef', default => sub { {} }, traits => ['Hash'], handles => {
+  get_job => 'get',
+  set_job => 'set',
+  delete_job => 'delete',
+  has_job => 'exists',
+  all_jobs => 'values',
+});
+
 
 my $pm = Parallel::ForkManager->new(4);
 
@@ -83,7 +108,7 @@ sub TearDrop::Worker::wait {
 sub TearDrop::Worker::get_status {
   $pm->wait_children;
   return {
-    pending => scalar @{$status{queue}},
+    queued => scalar @{$status{queue}},
     failed => $status{failed},
     running => scalar keys %{$status{running}},
   };

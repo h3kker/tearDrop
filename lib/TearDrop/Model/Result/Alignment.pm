@@ -197,7 +197,85 @@ __PACKAGE__->might_have(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 13:28:04
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0pDhsqt0l/AjJIvpSgM+aA
 
+use File::Basename;
+use Carp;
+use Dancer ':script';
+
 sub _is_column_serializable { 1 };
+
+sub read_stats {
+  my $self = shift;
+
+  my $aln_dir = dirname($self->bam_path);
+  $self->$_(0) for qw/total_reads unique_reads multiple_reads mapped_reads/;
+  if ($self->program eq 'star') {
+    open(STAT, "<$aln_dir/Log.final.out") or confess("open $aln_dir/Log.final.out: $!");
+    while(<STAT>) {
+      chomp;
+      if (m#Number of input reads.*\s(\d+)#) {
+        $self->total_reads($1);
+      }
+      elsif (m#Uniquely mapped reads number.*\s(\d+)#) {
+        $self->unique_reads($1);
+      }
+      elsif (m#Number of reads mapped to multiple loci.*\s(\d+)#) {
+        $self->multiple_reads($1);
+      }
+    }
+    close STAT;
+    $self->mapped_reads($self->unique_reads+$self->multiple_reads);
+  }
+  elsif ($self->program eq 'tophat') {
+    open(STAT, "<$aln_dir/align_summary.txt") or confess("open $aln_dir/align_summary.txt: $!");
+    while(<STAT>) {
+      chomp;
+      if (m#Input\s*:\s*(\d+)#) {
+        $self->total_reads($self->total_reads+$1);
+      }
+      elsif (m#Mapped\s*:\s*(\d+)#) {
+        $self->mapped_reads($self->mapped_reads+$1);
+      }
+      elsif (m#of these\s*:\s*(\d+)#) {
+        $self->multiple_reads($self->multiple_reads+$1);
+      }
+      elsif (m#(\d+).* are discordant#) {
+        $self->discordant_pairs($1);
+      }
+    }
+    close STAT;
+    $self->unique_reads($self->mapped_reads - $self->multiple_reads);
+  }
+  elsif ($self->program eq 'bowtie2') {
+    open(STAT, "<$aln_dir/bowtie_stats.txt") or confess("open $aln_dir/bowtie_stats.txt: $!");
+    while(<STAT>) {
+      chomp;
+      if (m#(\d+) reads; of these#) {
+        $self->total_reads($1);
+      }
+      elsif (m#(\d+).*aligned concordantly exactly 1 time#) {
+        $self->unique_reads($1);
+      }
+      elsif (m#(\d+).*aligned concordantly >1 times#) {
+        $self->multiple_reads($1);
+      }
+      elsif (m#(\d+).*aligned discordantly 1 time#) {
+        $self->discordant_pairs($1);
+      }
+      # unpaired reads - add! I think they're added in tophat too
+      elsif (m#(\d+).*aligned exactly 1 time#) {
+        $self->unique_reads($self->unique_reads + $1);
+      }
+      elsif (m#(\d+).*aligned >1 times#) {
+        $self->multiple_reads($self->multiple_reads + $1);
+      }
+    }
+    close STAT;
+    $self->mapped_reads($self->unique_reads + $self->multiple_reads);
+  }
+  else {
+    Carp::cluck("don't know how to get stats for ".$self->program." alignments");
+  }
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
