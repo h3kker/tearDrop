@@ -11,11 +11,14 @@
 ## big stuff
 
 - multiple projects: master database with separate dbs for projects
+- blast against transcript assemblies (see also reciprocal best hit)
 - DONE job manager
   * DONE via db table
   * DONE worker process started on request
   * DONE respawn worker process on fail
   * DONE signal worker with fifo, use fifo to check if worker alive, restart if no response
+  * race condition safety: provide one fifo per worker (tmpdir?), select task for update in transaction
+  * cannot start job with post_processing command (does not survive de/serialisation)
 - refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions)
 
 ## visualisation
@@ -30,6 +33,9 @@ use/extend https://github.com/WealthBar/angular-d3?
 ## automated annotation workflow
 
 - DONE run blast in background
+  * DONE annotate genes and transcripts with best hits
+  * DONE set no/good/bad homology tags
+- XXX reciprocal best hit
 - transfer transcript annotations to genes
 - analyze coverage
   * categorize high/low
