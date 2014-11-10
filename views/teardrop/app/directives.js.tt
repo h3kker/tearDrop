@@ -29,9 +29,9 @@ angular.module('tearDropDirectives', []).
         });
         $scope.gridOptions.onRegisterApi = function(gridApi) {
           gridApi.selection.on.rowSelectionChanged($scope,function(row){
-            $scope.gene.best_homolog=row.entity.source_sequence_id;
-            $scope.gene.name=row.entity.stitle;
-            $scope.saveGene();
+            $scope.ngModel.best_homolog=row.entity.source_sequence_id;
+            $scope.ngModel.name=row.entity.stitle;
+            $scope.ngModel.save();
           });
         };
         $scope.runBlast = function(selectedDbs) {

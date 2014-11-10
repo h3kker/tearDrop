@@ -9,7 +9,7 @@ var objPrototype = {
           }
         }, this.$rootScope.errHandler);
       },
-      setRating: function(rating) {
+      setRating: function(val) {
         this.rating=val;
         this.reviewed=true;
         this.save();
