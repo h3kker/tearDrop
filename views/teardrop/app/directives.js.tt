@@ -359,14 +359,6 @@ angular.module('tearDropDirectives', []).
         var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
         $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
 
-        $scope.transcript.loadAlignment = function(reload) {
-          if (reload || $scope.transcript.alignment==null) {
-            $scope.transcript.alignment=[];
-            $http.get('[% config.base_uri %]/api/transcripts/'+$scope.transcript.id+'/pileup').success(function(data) {
-              $scope.transcript.alignment=data;
-            }).error($rootScope.errHandler);
-          }
-        }
       },
     }
   })

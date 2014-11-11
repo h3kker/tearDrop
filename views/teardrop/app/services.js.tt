@@ -43,8 +43,8 @@ var objPrototype = {
       },
 };
 
-tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http',
-  function($resource, $rootScope, $http){
+tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http', 'Transcript',
+  function($resource, $rootScope, $http, Transcript){
     var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
       query: {method:'GET'},
     });
@@ -58,6 +58,11 @@ tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http',
             de[f]=parseFloat(de[f]);
           });
         });
+        var newT=[];
+        angular.forEach(this.transcripts, function(t) {
+          newT.push(new Transcript(t));
+        });
+        this.transcripts=newT;
       },
       loadBlastResults: function(callback) {
         var that=this;
@@ -100,6 +105,15 @@ tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http',
           that.blast_runs=data;
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
+      },
+      loadAlignment: function(reload) {
+        if (reload || this.alignment==null) {
+          this.alignment=[];
+          var that=this;
+          $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/pileup').success(function(data) {
+            that.alignment=data;
+          }).error($rootScope.errHandler);
+        }
       },
     });
     return Transcript;
