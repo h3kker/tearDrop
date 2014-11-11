@@ -78,7 +78,7 @@ sub run {
   my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
   #my @cmd = ('sleep', 10);
   for my $trans (@transcripts) {
-    if (!$self->replace && schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id})->first) {
+    if (!$self->replace && schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
       debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
       next;
     }
@@ -98,6 +98,8 @@ sub run {
     }
     return;
   }
+
+  debug 'running BLAST on '.$kept.' transcripts.';
 
   my $out;
   my $err;

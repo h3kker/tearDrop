@@ -280,32 +280,9 @@ use Dancer::Plugin::DBIC 'schema';
 use Moo;
 use namespace::clean;
 
+with 'TearDrop::Model::TranscriptLike';
+
 sub _is_column_serializable { 1 };
-
-around set_tags => sub {
-  my ($orig, $self, @upd_tags) = @_;
-  my %new_tags = map { $_->{tag} => $_ } @upd_tags;
-  for my $o ($self->tags) {
-    if ($new_tags{$o->tag}) {
-      delete $new_tags{$o->tag};
-    }
-    else {
-      $self->remove_from_tags($o);
-    }
-  }
-  for my $n (values %new_tags) {
-    my $ntag = schema->resultset('Tag')->find_or_create($n);
-    $self->add_to_tags($ntag);
-  }
-};
-
-sub set_tag {
-  my ($self, $tag) = @_;
-  for my $o ($self->tags) {
-    return if ($o->tag eq $tag->{tag});
-  }
-  $self->add_to_tags(schema->resultset('Tag')->find_or_create($tag));
-}
 
 sub to_fasta {
   my $self = shift;
@@ -325,29 +302,11 @@ sub comparisons {
   };
 }
 
-sub auto_annotate {
+sub best_blast_hit {
   my $self = shift;
-  return if $self->reviewed;
-  my $best_homolog = $self->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;
-  unless($best_homolog) {
-    debug 'no homologs...';
-    $self->set_tag({ tag => 'no homologs', category => 'homology' });
-    return;
-  }
-  if (!defined $self->best_homolog || $self->best_homolog ne $best_homolog->source_sequence_id) {
-    debug 'setting best homolog to '.$best_homolog->stitle;
-    $self->best_homolog($best_homolog->source_sequence_id);
-    $self->name($best_homolog->stitle);
-    $self->description($best_homolog->stitle);
-    if ($best_homolog->evalue < 1e-10) {
-      $self->set_tag({ tag => 'good homologs', category => 'homology' });
-    }
-    else {
-      $self->set_tag({ tag => 'bad homologs', category => 'homology' });
-    }
-    $self->update;
-  }
+  $self->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;
 }
+
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
