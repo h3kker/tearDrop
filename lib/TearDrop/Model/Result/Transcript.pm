@@ -307,6 +307,10 @@ sub best_blast_hit {
   $self->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;
 }
 
+sub mappings {
+  my $self = shift;
+  [ $self->transcript_mappings ];
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

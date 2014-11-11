@@ -146,6 +146,7 @@ get '/transcripts/:id' => sub {
   my $tser = $rs->TO_JSON;
   $tser->{tags} = [ $rs->tags ];
   $tser->{transcript_mappings} = [ $rs->transcript_mappings ];
+  $tser->{annotations} = $rs->gene_model_annotations;
   $tser->{de_results} = [];
   for my $der (schema->resultset('DeResult')->search({ transcript_id => $rs->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {

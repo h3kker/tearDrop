@@ -244,27 +244,6 @@ sub mappings {
   [ sort { $a->tid eq $b->tid ? $a->tstart <=> $b->tstart : $a->tid cmp $b->tid } @mappings ];
 }
 
-# should fold into mappings?
-sub gene_model_annotations {
-  my ($self, $context) = @_;
-  $context = 200 unless defined $context;
-  my $annotations;
-  for my $loc (@{$self->mappings}) {
-    my $ann = $loc->genome_mapping->organism_name->gene_models->search_related('gene_model_mappings', {
-      -and => [
-        contig => $loc->tid,
-        -or => [
-          cstart => { '>',  $loc->tstart-$context, '<', $loc->tend+$context },
-          cend => { '<', $loc->tend+$context, '>', $loc->tstart-$context },
-          -and => { cstart => { '<', $loc->tstart-$context }, cend => { '>', $loc->tend+$context }},
-        ]
-      ]
-    });
-    push @$annotations, $ann->all;
-  }
-  $annotations;
-}
-
 sub best_blast_hit {
   my $self = shift;
   $self->search_related('transcripts')->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;

@@ -58,5 +58,25 @@ sub set_tag {
   $self->add_to_tags(schema->resultset('Tag')->find_or_create($tag));
 }
 
+sub gene_model_annotations {
+  my ($self, $context) = @_;
+  $context = 200 unless defined $context;
+  my $annotations;
+  for my $loc (@{$self->mappings}) {
+    my $ann = $loc->genome_mapping->organism_name->gene_models->search_related('gene_model_mappings', {
+      -and => [
+        contig => $loc->tid,
+        -or => [
+          cstart => { '>',  $loc->tstart-$context, '<', $loc->tend+$context },
+          cend => { '<', $loc->tend+$context, '>', $loc->tstart-$context },
+          -and => { cstart => { '<', $loc->tstart-$context }, cend => { '>', $loc->tend+$context }},
+        ]
+      ]
+    });
+    push @$annotations, $_ for $ann->all;
+  }
+  $annotations;
+}
+
 
 1;
