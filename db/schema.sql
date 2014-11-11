@@ -20,8 +20,11 @@ CREATE TABLE organisms (
 
 DROP TABLE IF EXISTS gene_models CASCADE;
 CREATE TABLE gene_models (
+  id serial primary key,
   organism text references organisms(name),
-  path text
+  name text not null unique,
+  description text,
+  path text NOT NULL
 );
 
 DROP TABLE IF EXISTS transcript_assemblies CASCADE;
@@ -191,6 +194,21 @@ CREATE TABLE transcript_mappings (
   blocksizes text,
   qstarts text,
   tstarts text
+);
+
+DROP TABLE IF EXISTS gene_model_mappings CASCADE;
+CREATE TABLE gene_model_mappings (
+  contig text not null,
+  mtype text not null,
+  cstart integer not null,
+  cend integer not null,
+  cstrand text not null,
+  id text not null,
+  name text,
+  parent text,
+  additional text,
+  gene_model_id integer not null references gene_models(id),
+  PRIMARY KEY (id, gene_model_id)
 );
 
 DROP TABLE IF EXISTS count_methods CASCADE;

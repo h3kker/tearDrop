@@ -216,6 +216,9 @@ sub import_file {
       });
     }
   }
+  else {
+    confess "don't know how to handle ".$self->program." maps";
+  }
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

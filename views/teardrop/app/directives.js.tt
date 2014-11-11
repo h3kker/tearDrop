@@ -330,11 +330,15 @@ angular.module('tearDropDirectives', []).
       link: function($scope, element, attr) {
         var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
         $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
+        $scope.annotations=[];
 
         $scope.loadGenomeAlignments = function(map, reload) {
           if (map==null) return;
           if (reload || map.alignment==null) {
             map.alignment=[];
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+              $scope.annotations=data;
+            }).error($rootScope.errHandler);
             $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
               map.alignment=data;
             }).error($rootScope.errHandler);

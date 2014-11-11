@@ -44,6 +44,22 @@ for my $table (keys %tbl_src) {
   }
 }
 
+if (!scalar keys %wanted || exists $wanted{genome_annotations}) {
+  open(IF, "$bdir/genome_annotations.csv") or die "open $bdir/genome_annotations.csv";
+  my $hline = <IF>;
+  chomp $hline;
+  my @header_fields = split ',', $hline;
+  while(<IF>) {
+    chomp;
+    my @f = split ',';
+    my %s = map { 
+      $header_fields[$_] => $f[$_]
+    } 0..$#header_fields;
+    my $model = schema->resultset('GeneModel')->update_or_create(\%s);
+    $model->import_file;
+  }
+}
+
 if (!scalar keys %wanted || exists $wanted{samples}) {
   open(IF, "$bdir/samples.csv") or die "open $bdir/samples.csv";
   my $hline = <IF>;

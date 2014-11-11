@@ -31,6 +31,17 @@
  </div>
 </div>
 
+<div class="row" ng-if="gene.annotations.length">
+ <div class="col-md-12">
+  <h5>Annotations in Genomic Region</h5>
+  <ol>
+   <li ng-repeat="ann in gene.annotations | filter:{ 'mtype':'gene' } | orderBy:['contig', 'cstart']">
+    {{ann.contig}} {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}} <a href="http://ensembl.gramene.org/Brachypodium_distachyon/Gene/Summary?db=core;g={{ann.name}}">{{ann.name}}</a>
+   </li>
+  </ol>
+ </div>
+</div>
+
 <div class="row">
  <div class="col-md-12">
   <span ng-repeat="tag in gene.tags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="gene.removeTag(tag)"></i></span>

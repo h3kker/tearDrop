@@ -234,11 +234,35 @@ sub mappings {
           $ovl=1;
           $m->tend($loc->tend);
         }
+        if ($ovl) {
+          $m->match_ratio($loc->match_ratio) if ($loc->match_ratio > $m->match_ratio);
+        }
       }
       push @mappings, $loc unless $ovl;
     }
   }
   [ sort { $a->tid eq $b->tid ? $a->tstart <=> $b->tstart : $a->tid cmp $b->tid } @mappings ];
+}
+
+# should fold into mappings?
+sub gene_model_annotations {
+  my ($self, $context) = @_;
+  $context = 200 unless defined $context;
+  my $annotations;
+  for my $loc (@{$self->mappings}) {
+    my $ann = $loc->genome_mapping->organism_name->gene_models->search_related('gene_model_mappings', {
+      -and => [
+        contig => $loc->tid,
+        -or => [
+          cstart => { '>',  $loc->tstart-$context, '<', $loc->tend+$context },
+          cend => { '<', $loc->tend+$context, '>', $loc->tstart-$context },
+          -and => { cstart => { '<', $loc->tstart-$context }, cend => { '>', $loc->tend+$context }},
+        ]
+      ]
+    });
+    push @$annotations, $ann->all;
+  }
+  $annotations;
 }
 
 sub best_blast_hit {

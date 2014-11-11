@@ -1,9 +1,19 @@
      <div>
       <accordion>
-       <accordion-group ng-repeat="map in mappings" open="loadGenomeAlignments(map)">
+       <accordion-group ng-repeat="map in mappings | orderBy:'match_ratio'" open="loadGenomeAlignments(map)">
         <accordion-heading>
-         {{map.tid}}: {{map.tstart | number}} - {{map.tend | number}}
+         {{map.tid}}: {{map.tstart | number}} - {{map.tend | number}} ({{map.match_ratio * 100}}%)
         </accordion-heading>
+         <div class="row">
+          <div class="col-md-12">
+           <h5>Annotations</h5>
+           <ol>
+            <li ng-repeat="ann in annotations | orderBy:'cstart' | filter:{'annotation_type': 'gene_model', 'mtype': 'gene'}">
+             {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name}}
+            </li>
+           </ol>
+          </div>
+         </div>
          <div class="row">
           <div class="col-md-12">
            <nvd3-line-chart data="map.alignment"
