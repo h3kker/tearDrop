@@ -5,7 +5,7 @@ use strict;
 
 
 use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC;
+use Dancer::Plugin::DBIC 'schema';
 use Mouse;
 
 extends 'TearDrop::Task';
@@ -42,7 +42,7 @@ has 'dbtype_query_scripts' => ( is => 'rw', isa => 'HashRef', default => sub {
 sub run {
   my $self = shift;
 
-  my $db_source = schema->resultset('DbSource')->search({ name => $self->database })->first;
+  my $db_source = schema($self->project)->resultset('DbSource')->search({ name => $self->database })->first;
   unless($db_source) {
     confess 'Unknown database source '.$self->database;
   }
@@ -50,19 +50,19 @@ sub run {
 
   my @transcripts;
   if ($self->gene_id) {
-    my $gene = schema->resultset('Gene')->find($self->gene_id);
+    my $gene = schema($self->project)->resultset('Gene')->find($self->gene_id);
     confess 'Unknown gene '.$self->gene_id unless defined $gene;
     for my $trans ($gene->transcripts) {
       push @transcripts, $trans;
     }
   }
   elsif ($self->transcript_id) {
-    my $trans = schema->resultset('Transcript')->find($self->transcript_id);
+    my $trans = schema($self->project)->resultset('Transcript')->find($self->transcript_id);
     confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
     push @transcripts, $trans;
   }
   elsif ($self->has_gene_ids) {
-    my $genes = schema->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
+    my $genes = schema($self->project)->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
     for my $g ($genes->all) {
       for my $trans ($g->transcripts) {
         push @transcripts, $trans;
@@ -78,14 +78,14 @@ sub run {
   my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
   #my @cmd = ('sleep', 10);
   for my $trans (@transcripts) {
-    if (!$self->replace && schema->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
+    if (!$self->replace && schema($self->project)->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
       debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
       next;
     }
-    push @blast_runs, schema->resultset('BlastRun')->update_or_create({
+    push @blast_runs, schema($self->project)->resultset('BlastRun')->update_or_create({
       transcript_id => $trans->id, db_source_id => $db_source->id, parameters => join(" ", @cmd), finished => 0
     });
-    schema->resultset('BlastResult')->search({
+    schema($self->project)->resultset('BlastResult')->search({
       transcript_id => $trans->id, db_source_id => $db_source->id
     })->delete;
     print $seq_f $trans->to_fasta."\n";
@@ -110,7 +110,7 @@ sub run {
   }
   for my $l (split "\n", $out) {
     my @f = split "\t", $l;
-    schema->resultset('BlastResult')->update_or_create({
+    schema($self->project)->resultset('BlastResult')->update_or_create({
       transcript_id => $f[0],
       db_source_id => $db_source->id,
       source_sequence_id => $f[1],

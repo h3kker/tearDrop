@@ -1,2 +1,15 @@
 <h1>Welcome to TearDrop</h1>
 <p>This is the Transcriptome and Expression Annotation Reviewing (TEAR) drop point for analysis and manual curation of Transcriptome Assembly and Differential Expression results.</p>
+<h3>Current Projects</h3>
+<div class="panel" ng-class="{ 'panel-info': project.status=='active', 'panel-default': project.status=='setup', 'panel-success': project.status=='done' }" ng-repeat="project in projects">
+ <div class="panel-heading">
+  <h3 class="panel-title">{{project.name}} <span ng-show="isCurrentProject(project)">[*]</span></h3>
+ </div>
+ <div class="panel-body">
+  <p>{{project.description}}</p>
+  <button ng-show="project.status!='setup'" class="btn btn-sm" ng-class="{'btn-success': isCurrentProject(project)}" ng-click="setProject(project)">Switch to this project</button>
+ </div>
+ <div class="panel-footer">
+  Status: {{project.status}}
+ </div>
+</div>

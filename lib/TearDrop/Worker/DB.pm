@@ -94,6 +94,7 @@ sub enqueue {
   my $queue_item = schema->resultset('Workqueue')->create({
     status => $task->status,
     class => ref($task),
+    project => var('project'),
     task_object => $self->serialize_task($task)
   });
   $task->id($queue_item->id);
@@ -138,14 +139,14 @@ sub job_status {
 
 sub deserialize_item {
   my ($self, $item) = @_;
-  my $h = from_json $item->task_object;
-  bless $h, $item->class;
-  $h;
+  my $o = YAML::Load($item->task_object);
+  $o->project($item->project->name);
+  $o;
 }
 
 sub serialize_task {
   my ($self, $task) = @_;
-  to_json $task;
+  YAML::Dump($task);
 }
 
 1;

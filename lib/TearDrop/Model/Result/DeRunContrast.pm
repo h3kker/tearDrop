@@ -59,6 +59,17 @@ __PACKAGE__->table("de_run_contrasts");
   data_type: 'text'
   is_nullable: 1
 
+=head2 imported
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
+=head2 sha1
+
+  data_type: 'text'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -69,6 +80,10 @@ __PACKAGE__->add_columns(
   "path",
   { data_type => "text", is_nullable => 0 },
   "parameters",
+  { data_type => "text", is_nullable => 1 },
+  "imported",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "sha1",
   { data_type => "text", is_nullable => 1 },
 );
 
@@ -142,8 +157,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 21:26:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BghkGnFhU6kMSm5S9W9lAA
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x7goJMvFcVcmUmMcR2b5jg
 
 sub _is_column_serializable { 1 };
 

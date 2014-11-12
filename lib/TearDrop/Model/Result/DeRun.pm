@@ -75,6 +75,17 @@ __PACKAGE__->table("de_runs");
   data_type: 'text'
   is_nullable: 0
 
+=head2 sha1
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 imported
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -97,6 +108,10 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "name",
   { data_type => "text", is_nullable => 0 },
+  "sha1",
+  { data_type => "text", is_nullable => 1 },
+  "imported",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -173,8 +188,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lr/y0Tjm7KbNDNJTFyFVpw
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BtYK8YD3NrXkv4wSmC2d+A
 
 sub _is_column_serializable { 1 };
 

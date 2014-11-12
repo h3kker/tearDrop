@@ -13,9 +13,22 @@ our $VERSION = '0.1';
 
 set layout => undef;
 
+sub setup_projects {
+  for my $project (schema->resultset('Project')->search({status => 'active'})->all) {
+    my %conf = %{config->{plugins}{DBIC}{default}};
+    my $project_name=$project->name;
+    $conf{dsn}=~s/dbname=\w+;/dbname=teardrop_$project_name;/;
+    $conf{schema_class}='TearDrop::Model';
+    config->{plugins}{DBIC}{$project_name}=\%conf;
+  }
+}
+setup_projects();
+
 my $worker;
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
+  var 'project' => cookie 'project';
+  debug var 'project';
   unless($worker) {
     require TearDrop::Worker::DB;
     $worker = new TearDrop::Worker::DB;
@@ -34,7 +47,6 @@ hook 'before_template' => sub {
 prefix config->{base_uri};
 
 get '/' => sub {
-  schema->resultset('Sample');
   template 'teardrop/app/index';
 };
 
@@ -62,6 +74,10 @@ hook before_error_render => sub {
     $msg =~ s/ at .*//s;
     $error->{message} =$msg;
   }
+};
+
+get '/projects' => sub {
+  [ schema->resultset('Project')->all ];
 };
 
 sub parse_params {
@@ -100,10 +116,10 @@ get '/transcripts' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
   
-  parse_params(schema->resultset('Transcript'), $filter, $sort);
+  parse_params(schema(var 'project')->resultset('Transcript'), $filter, $sort);
   debug $sort;
   debug $filter;
-  my $rs = schema->resultset('Transcript')->search($filter, { 
+  my $rs = schema(var 'project')->resultset('Transcript')->search($filter, { 
     order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
@@ -124,10 +140,10 @@ get '/transcripts/fasta' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
   
-  parse_params(schema->resultset('Transcript'), $filter, $sort);
+  parse_params(schema(var 'project')->resultset('Transcript'), $filter, $sort);
   debug $sort;
   debug $filter;
-  my $rs = schema->resultset('Transcript')->search($filter, { 
+  my $rs = schema(var 'project')->resultset('Transcript')->search($filter, { 
     order_by => $sort,
     prefetch => [ 'organism', { 'transcript_tags' => [ 'tag' ] } ]
   });
@@ -142,13 +158,13 @@ get '/transcripts/fasta' => sub {
 };
 
 get '/transcripts/:id' => sub {
-  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $tser = $rs->TO_JSON;
   $tser->{tags} = [ $rs->tags ];
   $tser->{transcript_mappings} = [ $rs->transcript_mappings ];
   $tser->{annotations} = $rs->gene_model_annotations;
   $tser->{de_results} = [];
-  for my $der (schema->resultset('DeResult')->search({ transcript_id => $rs->id },
+  for my $der (schema(var 'project')->resultset('DeResult')->search({ transcript_id => $rs->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
     my $d = $der->TO_JSON;
     $d->{contrast}=$der->contrast->TO_JSON;
@@ -161,8 +177,8 @@ get '/transcripts/:id' => sub {
 post '/transcripts/:id' => sub {
   my %tags = map {
     $_->tag => 1,
-  } schema->resultset('Tag')->all;
-  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  } schema(var 'project')->resultset('Tag')->all;
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
   $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
   $rs->update_tags(@{$upd->{tags}});
@@ -171,7 +187,7 @@ post '/transcripts/:id' => sub {
 };
 
 get '/transcripts/:id/blast_results' => sub {
-  my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $trans = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my @results;
   for my $bl ($trans->search_related('blast_results', undef, { prefetch => 'db_source' })) {
     my $bl_ser = $bl->TO_JSON;
@@ -182,8 +198,8 @@ get '/transcripts/:id/blast_results' => sub {
 };
 
 get '/transcripts/:id/run_blast' => sub {
-  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'transcript not found', 404;
-  my $db = schema->resultset('DbSource')->search({
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'transcript not found', 404;
+  my $db = schema(var 'project')->resultset('DbSource')->search({
     name => param('database') || 'refseq_plant'
   })->first || send_error 'db not found', 404;
   my $task = new TearDrop::Task::BLAST(transcript_id => $rs->id, database => $db->name);
@@ -193,14 +209,14 @@ get '/transcripts/:id/run_blast' => sub {
 
 
 get '/transcripts/:id/blast_runs' => sub {
-  my $rs = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my %blast_runs;
   for my $br ($rs->blast_runs) {
     next unless $br->finished;
     my $br_ser = $br->TO_JSON;
     $br_ser->{db_source}=$br->db_source->TO_JSON;
     $blast_runs{$br->db_source->name} ||= $br_ser;
-    my $hit_count = schema->resultset('BlastResult')->search({
+    my $hit_count = schema(var 'project')->resultset('BlastResult')->search({
       transcript_id => $rs->id, db_source_id => $br->db_source_id
     })->count;
     $blast_runs{$br->db_source->name}->{hits} += $hit_count;
@@ -210,7 +226,7 @@ get '/transcripts/:id/blast_runs' => sub {
 
 
 get '/transcripts/:id/genomePileup' => sub {
-  my $trans = schema->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
+  my $trans = schema(var 'project')->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
   my $context=200;
   my $best_location = $trans->search_related('transcript_mappings', {}, { order_by => { -desc => 'match_ratio' } })->first; 
   send_error 'no valid genome mapping!', 500 unless $best_location;
@@ -235,7 +251,7 @@ get '/transcripts/:id/genomePileup' => sub {
 };
 
 get '/transcripts/:id/pileup' => sub {
-  my $trans = schema->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $trans = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
   return TearDrop::Task::Mpileup->new(
@@ -253,10 +269,10 @@ get '/genes' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
 
-  parse_params(schema->resultset('Gene'), $filter, $sort);
+  parse_params(schema(var 'project')->resultset('Gene'), $filter, $sort);
   debug $sort;
   debug $filter;
-  my $rs = schema->resultset('Gene')->search($filter, { 
+  my $rs = schema(var 'project')->resultset('Gene')->search($filter, { 
     order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
@@ -297,10 +313,10 @@ get '/genes/fasta' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
 
-  parse_params(schema->resultset('Gene'), $filter, $sort);
+  parse_params(schema(var 'project')->resultset('Gene'), $filter, $sort);
   debug $sort;
   debug $filter;
-  my $rs = schema->resultset('Gene')->search($filter, { 
+  my $rs = schema(var 'project')->resultset('Gene')->search($filter, { 
     order_by => $sort,
     prefetch => [ 
       { 'transcripts' => [ 
@@ -318,7 +334,7 @@ get '/genes/fasta' => sub {
 };
 
 get '/genes/:id' => sub {
-  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $gene = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $transcripts = [ $gene->search_related('transcripts')->all ];
   my $ser = $gene->TO_JSON;
   $ser->{transcripts} = [ map {
@@ -331,7 +347,7 @@ get '/genes/:id' => sub {
   $ser->{annotations} = $gene->gene_model_annotations;
   $ser->{tags} = [ $gene->tags ];
   $ser->{de_results} = [];
-  for my $der (schema->resultset('DeResult')->search({ transcript_id => $gene->id },
+  for my $der (schema(var 'project')->resultset('DeResult')->search({ transcript_id => $gene->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
     my $d = $der->TO_JSON;
     $d->{contrast}=$der->contrast->TO_JSON;
@@ -345,8 +361,8 @@ get '/genes/:id' => sub {
 post '/genes/:id' => sub {
   my %tags = map {
     $_->tag => 1,
-  } schema->resultset('Tag')->all;
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  } schema(var 'project')->resultset('Tag')->all;
+  my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
   $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
   $rs->update_tags(@{$upd->{tags}});
@@ -355,14 +371,14 @@ post '/genes/:id' => sub {
 };
 
 get '/genes/:id/fasta' => sub {
-  my $gene = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $gene = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   content_type 'text/plain';
   $gene->to_fasta;
 };
 
 get '/genes/:id/run_blast' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'gene not found', 404;
-  my $db = schema->resultset('DbSource')->search({
+  my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'gene not found', 404;
+  my $db = schema(var 'project')->resultset('DbSource')->search({
     name => param('database') || 'refseq_plant'
   })->first || send_error 'db not found', 404;
   my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
@@ -371,17 +387,17 @@ get '/genes/:id/run_blast' => sub {
 };
 
 get '/genes/:id/transcripts/msa' => sub {
-  my $gene = schema->resultset('Gene')->find(param 'id') || send_error 'not found', 404;
+  my $gene = schema(var 'project')->resultset('Gene')->find(param 'id') || send_error 'not found', 404;
   TearDrop::Task::MAFFT->new(transcripts => [ $gene->transcripts ], algorithm => 'FFT-NS-i')->run;
 };
 
 get '/genes/:id/blast_runs' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   $rs->aggregate_blast_runs;
 };
 
 get '/genes/:id/blast_results' => sub {
-  my $rs = schema->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
   my @results;
   my $transcripts = $rs->search_related('transcripts');
   for my $trans ($transcripts->all) {
@@ -395,7 +411,7 @@ get '/genes/:id/blast_results' => sub {
 };
 
 get '/deruns' => sub {
-  my $rs = schema->resultset('DeRun')->search(undef, { prefetch => { 'de_run_contrasts' => { 'contrast' => [ 'base_condition', 'contrast_condition' ] } } });
+  my $rs = schema(var 'project')->resultset('DeRun')->search(undef, { prefetch => { 'de_run_contrasts' => { 'contrast' => [ 'base_condition', 'contrast_condition' ] } } });
   my @ret;
   for my $r ($rs->all) {
     my $ser = $r->TO_JSON;
@@ -409,17 +425,17 @@ get '/deruns' => sub {
 };
 
 get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
-  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
+  my $de_run = schema(var 'project')->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
   my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  parse_params(schema->resultset('DeResult'), $filters, $sort);
-  my $rs = schema->resultset('DeResult')->search($filters, { 
+  parse_params(schema(var 'project')->resultset('DeResult'), $filters, $sort);
+  my $rs = schema(var 'project')->resultset('DeResult')->search($filters, { 
     order_by => $sort,
   });
   my @f;
   for my $r ($rs->all) {
-    push @f, schema->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id)->to_fasta;
+    push @f, schema(var 'project')->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id)->to_fasta;
   }
   content_type 'text/plain';
   join "\n", @f;
@@ -427,14 +443,14 @@ get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
 
 
 get '/deruns/:id/contrasts/:contrast_id/results' => sub {
-  my $de_run = schema->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
+  my $de_run = schema(var 'project')->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
   my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  parse_params(schema->resultset('DeResult'), $filters, $sort);
+  parse_params(schema(var 'project')->resultset('DeResult'), $filters, $sort);
   debug $filters;
   debug $sort;
-  my $rs = schema->resultset('DeResult')->search($filters, { 
+  my $rs = schema(var 'project')->resultset('DeResult')->search($filters, { 
     order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
@@ -442,7 +458,7 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   my @ret;
   for my $r ($rs->all) {
     my $ser = $r->TO_JSON;
-    $ser->{transcript}=schema->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id);
+    $ser->{transcript}=schema(var 'project')->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id);
     push @ret, $ser;
   }
   if (param('page')) {
@@ -464,7 +480,7 @@ get '/genome_mappings/:id/annotations' => sub {
   if (param('tend')-param('tstart') + $context*2 > 50000) {
     send_error 'refusing to extract more than 50kb', 500;
   }
-  my $gm = schema->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
+  my $gm = schema(var 'project')->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
 
   my $transcripts = $gm->search_related('transcript_mappings', {
     -and => [
@@ -508,7 +524,7 @@ get '/genome_mappings/:id/pileup' => sub {
   if (param('tend')-param('tstart') + $context*2 > 50000) {
     send_error 'refusing to extract more than 50kb', 500;
   }
-  my $gm = schema->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
+  my $gm = schema(var 'project')->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
 
   my $genome = $gm->organism_name;
 
@@ -534,11 +550,11 @@ get '/genome_mappings/:id/pileup' => sub {
 };
 
 get '/db_sources' => sub {
-  [ schema->resultset('DbSource')->all ];
+  [ schema(var 'project')->resultset('DbSource')->all ];
 };
 
 get '/tags' => sub {
-  [ schema->resultset('Tag')->all ];
+  [ schema(var 'project')->resultset('Tag')->all ];
 };
 
 get '/worker/status' => sub {

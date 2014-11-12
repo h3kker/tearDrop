@@ -2,6 +2,7 @@
 
 // Declare app level module which depends on views, and components
 var tearDrop = angular.module('TearDrop', [
+  'ngCookies',
   'ngRoute',
   'nvd3ChartDirectives',
   'angular-growl',
@@ -17,7 +18,12 @@ config(['$routeProvider', function($routeProvider) {
   })
   .otherwise({redirectTo: '/'});
 }])
-.controller('RootCtrl', [function() {
+.controller('RootCtrl', ['$rootScope', '$scope', '$http', '$cookies', function($rootScope, $scope, $http, $cookies) {
+  $scope.isCurrentProject = function(proj) {
+    console.log($rootScope.currentProject);
+    console.log(proj.name);
+    return $rootScope.currentProject != null && proj.name==$rootScope.currentProject.name;
+  }
 }]);
 
 tearDrop.config(['growlProvider', '$httpProvider', function(growlProvider, $httpProvider) {
@@ -25,7 +31,25 @@ tearDrop.config(['growlProvider', '$httpProvider', function(growlProvider, $http
 }]);
 
 
-tearDrop.run(function($rootScope, $timeout, $http, growl) {
+tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
+  $rootScope.currentProject=null;
+  $rootScope.projects=[];
+  $rootScope.reloadProjects = function() {
+    $http.get('[% config.base_uri %]/api/projects').success(function(data) {
+      $rootScope.projects=data;
+      angular.forEach($rootScope.projects, function(p) {
+        if (p.name==$cookies.project) $rootScope.currentProject=p;
+      });
+      console.log($cookies.project);
+      console.log($rootScope.currentProject);
+    }).error($rootScope.errHandler);
+  }
+  $rootScope.reloadProjects();
+  $rootScope.setProject = function(project) {
+    $cookies.project=project.name;
+    $rootScope.currentProject=project;
+    console.log($cookies.project);
+  }
   var workQueueStatus;
   $rootScope.workerStatus={};
   $rootScope.updateQueueStatus = function(success) {

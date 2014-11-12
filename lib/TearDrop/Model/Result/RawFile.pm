@@ -71,7 +71,7 @@ __PACKAGE__->table("raw_files");
   data_type: 'text'
   is_nullable: 0
 
-=head2 md5
+=head2 sha1
 
   data_type: 'text'
   is_nullable: 1
@@ -96,7 +96,7 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "path",
   { data_type => "text", is_nullable => 0 },
-  "md5",
+  "sha1",
   { data_type => "text", is_nullable => 1 },
 );
 
@@ -194,8 +194,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-26 17:42:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vwOIJO4rhI01sBSSBLxKtg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OOMIPEUueJMfy2TAWNgn5w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

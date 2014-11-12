@@ -18,7 +18,13 @@
       <a class="navbar-brand" href="#/">
         CSF.NGS teardrop
       </a>
-      <ul class="nav navbar-nav">
+      <p class="navbar-text" ng-show="currentProject">
+       Project: {{currentProject.name}}
+      </p>
+      <p class="navbar-text" ng-hide="currentProject">
+       Please set Project!
+      </p>
+      <ul class="nav navbar-nav" ng-if="currentProject">
        <li class="dropdown">
         <a href="#/genes" class="dropdown-toggle" data-toggle="dropdown">Transcripts <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu">
@@ -56,6 +62,7 @@
   <script src="[% config.base_uri %]/js/angular.min.js"></script>
   <script src="[% config.base_uri %]/js/angular-route.min.js"></script>
   <script src="[% config.base_uri %]/js/angular-resource.min.js"></script>
+  <script src="[% config.base_uri %]/js/angular-cookies.min.js"></script>
   <script src="[% config.base_uri %]/js/angular-growl.min.js"></script>
   <script src="[% config.base_uri %]/js/ui-bootstrap-tpls.js"></script>
   <script src="[% config.base_uri %]/js/ui-grid-unstable.js"></script>

@@ -1,12 +1,12 @@
 use utf8;
-package TearDrop::Model::Result::Workqueue;
+package TearDrop::Master::Model::Result::Workqueue;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-TearDrop::Model::Result::Workqueue
+TearDrop::Master::Model::Result::Workqueue
 
 =cut
 
@@ -23,11 +23,17 @@ use base 'DBIx::Class::Core';
 
 =item * L<DBIx::Class::Helper::Row::ToJSON>
 
+=item * L<DBIx::Class::InflateColumn::Serializer>
+
 =back
 
 =cut
 
-__PACKAGE__->load_components("InflateColumn::DateTime", "Helper::Row::ToJSON");
+__PACKAGE__->load_components(
+  "InflateColumn::DateTime",
+  "Helper::Row::ToJSON",
+  "InflateColumn::Serializer",
+);
 
 =head1 TABLE: C<workqueue>
 
@@ -72,6 +78,12 @@ __PACKAGE__->table("workqueue");
   default_value: 'queued'
   is_nullable: 0
 
+=head2 batch
+
+  data_type: 'boolean'
+  default_value: false
+  is_nullable: 1
+
 =head2 errmsg
 
   data_type: 'text'
@@ -87,11 +99,11 @@ __PACKAGE__->table("workqueue");
   data_type: 'text'
   is_nullable: 0
 
-=head2 batch
+=head2 project
 
-  data_type: 'boolean'
-  default_value: false
-  is_nullable: 1
+  data_type: 'text'
+  is_foreign_key: 1
+  is_nullable: 0
 
 =cut
 
@@ -118,14 +130,16 @@ __PACKAGE__->add_columns(
   { data_type => "timestamp", is_nullable => 1 },
   "status",
   { data_type => "text", default_value => "queued", is_nullable => 0 },
+  "batch",
+  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
   "errmsg",
   { data_type => "text", is_nullable => 1 },
   "class",
   { data_type => "text", is_nullable => 0 },
   "task_object",
   { data_type => "text", is_nullable => 0 },
-  "batch",
-  { data_type => "boolean", default_value => \"false", is_nullable => 1 },
+  "project",
+  { data_type => "text", is_foreign_key => 1, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -140,12 +154,26 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
+=head1 RELATIONS
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-10 23:11:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:87VjBs7/7DjBS1ecs/Q4Wg
+=head2 project
+
+Type: belongs_to
+
+Related object: L<TearDrop::Master::Model::Result::Project>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "project",
+  "TearDrop::Master::Model::Result::Project",
+  { name => "project" },
+  { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
 
 
-sub _is_column_serializable { 1 };
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 19:30:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NMoxSDXgEoaYaYHAT1rO+A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

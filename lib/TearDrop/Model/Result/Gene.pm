@@ -162,7 +162,7 @@ sub aggregate_blast_runs {
       my $brun_ser = $brun->TO_JSON;
       $brun_ser->{db_source}=$brun->db_source->TO_JSON;
       $blast_runs{$brun->db_source->name} ||= $brun_ser;
-      my $hit_count = schema->resultset('BlastResult')->search({
+      my $hit_count = schema(var 'project')->resultset('BlastResult')->search({
         transcript_id => $trans->id, db_source_id => $brun->db_source_id
       })->count;
       $blast_runs{$brun->db_source->name}->{matched_transcripts} ||= 0;

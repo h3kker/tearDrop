@@ -24,6 +24,8 @@ CREATE TABLE gene_models (
   organism text references organisms(name),
   name text not null unique,
   description text,
+  sha1 text,
+  imported boolean default false,
   path text NOT NULL
 );
 
@@ -35,6 +37,8 @@ CREATE TABLE transcript_assemblies (
   program text not null,
   parameters text,
   assembly_date timestamp,
+  sha1 text,
+  imported boolean default false,
   path text,
   is_primary boolean not null
 ); 
@@ -127,7 +131,7 @@ CREATE TABLE raw_files (
   read integer not null,
   description text not null,
   path text not null unique,
-  md5 text
+  sha1 text
 );
 
 DROP TABLE IF EXISTS assembled_files CASCADE;
@@ -173,6 +177,8 @@ CREATE TABLE genome_mappings (
   alignment_date timestamp,
   transcript_assembly_id integer not null references transcript_assemblies(id),
   organism_name text not null references organisms(name),
+  sha1 text,
+  imported boolean default false,
   path text not null
 );
 
@@ -271,6 +277,8 @@ CREATE TABLE de_runs (
   description text,
   run_date timestamp,
   parameters text,
+  sha1 text,
+  imported boolean default false,
   path text,
   count_table_id integer not null references count_tables(id)
 );
@@ -279,6 +287,8 @@ DROP TABLE IF EXISTS de_run_contrasts CASCADE;
 CREATE TABLE de_run_contrasts (
   de_run_id integer not null references de_runs(id),
   contrast_id integer not null references contrasts(id),
+  sha1 text,
+  imported boolean default false,
   path text not null,
   parameters text,
   UNIQUE(de_run_id, contrast_id)
@@ -318,45 +328,4 @@ CREATE TABLE gene_tags (
   gene_id text not null references genes(id),
   tag text not null references tags(tag),
   PRIMARY KEY (gene_id, tag)
-);
-
-INSERT INTO tags (tag, category, level) VALUES 
-  ('bad assembly', 'general', 'danger'),
-  ('good assembly', 'general', 'success'),
-  ('interesting', 'general', 'success'),
-  ('possible chimera', 'general', 'danger'),
-  ('possible fusion', 'general', 'danger'),
-  ('short', 'general', 'warning'),
-  ('good coverage', 'coverage', 'success'),
-  ('low overall', 'coverage', 'warning'),
-  ('low 5p', 'coverage', 'warning'),
-  ('low 3p', 'coverage', 'warning'),
-  ('dip', 'coverage', 'warning'),
-  ('multiple dips', 'coverage', 'warning'),
-  ('uneven', 'coverage', 'warning'),
-  ('very uneven', 'coverage', 'warning'),
-  ('many errors', 'coverage', 'warning'),
-  ('good homologs', 'homology', 'success'),
-  ('bad homolog support', 'homology', 'warning'),
-  ('no annotations', 'homology', 'warning'),
-  ('no homologs', 'homology', 'danger'),
-  ('maybe intron', 'mapping', 'warning'),
-  ('unmapped', 'mapping', 'danger'),
-  ('lots of mappings', 'mapping', 'warning'),
-  ('many orthologs', 'mapping', 'info'),
-  ('bad mapping', 'mapping', 'danger')
-;
-
-DROP TABLE IF EXISTS workqueue CASCADE;
-CREATE TABLE workqueue (
-  id serial primary key,
-  pid integer,
-  submit_date timestamp default current_timestamp,
-  start_date timestamp,
-  stop_date timestamp,
-  status text not null default 'queued',
-  batch boolean default false,
-  errmsg text,
-  class text not null,
-  task_object text not null
 );

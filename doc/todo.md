@@ -20,6 +20,7 @@
   * DONE worker process started on request
   * DONE respawn worker process on fail
   * DONE signal worker with fifo, use fifo to check if worker alive, restart if no response
+  * use YAML to de/serialize tasks
   * race condition safety: provide one fifo per worker (tmpdir?), select task for update in transaction; 
   * cannot start job with post_processing command (does not survive de/serialisation)
   * one dedicated worker process started separately? comms with REST?
