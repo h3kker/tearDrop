@@ -20,8 +20,6 @@ config(['$routeProvider', function($routeProvider) {
 }])
 .controller('RootCtrl', ['$rootScope', '$scope', '$http', '$cookies', function($rootScope, $scope, $http, $cookies) {
   $scope.isCurrentProject = function(proj) {
-    console.log($rootScope.currentProject);
-    console.log(proj.name);
     return $rootScope.currentProject != null && proj.name==$rootScope.currentProject.name;
   }
 }]);
@@ -38,17 +36,16 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
     $http.get('[% config.base_uri %]/api/projects').success(function(data) {
       $rootScope.projects=data;
       angular.forEach($rootScope.projects, function(p) {
-        if (p.name==$cookies.project) $rootScope.currentProject=p;
+        if (p.name==$cookies.project) $rootScope.setProject(p);
       });
-      console.log($cookies.project);
-      console.log($rootScope.currentProject);
     }).error($rootScope.errHandler);
   }
   $rootScope.reloadProjects();
   $rootScope.setProject = function(project) {
     $cookies.project=project.name;
     $rootScope.currentProject=project;
-    console.log($cookies.project);
+    $rootScope.reloadTags();
+    $rootScope.reloadDbSources();
   }
   var workQueueStatus;
   $rootScope.workerStatus={};
@@ -71,7 +68,6 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
       $rootScope.dbSources=d;
     });
   }
-  $rootScope.reloadDbSources();
   
   $rootScope.tags=[];
   $rootScope.reloadTags = function() {
@@ -79,7 +75,6 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
       $rootScope.tags=d;
     });
   }
-  $rootScope.reloadTags();
 
   $rootScope.errHandler=function(err) {
     console.log(err);
