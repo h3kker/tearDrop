@@ -163,6 +163,7 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-27 09:40:06
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SVhruQtJxhZYkrenb72Upg
 
+sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
