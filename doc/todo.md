@@ -12,7 +12,8 @@
 
 ## big stuff
 
-- multiple projects: master database with separate dbs for projects
+- DONE multiple projects: master database with separate dbs for projects
+  - create template and provide scripts to setup project db
 - blast search in transcript assemblies (see also reciprocal best hit)
 - DONE import GFF files with genome annotations
 - DONE job manager
