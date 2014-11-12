@@ -312,7 +312,6 @@ angular.module('tearDropDirectives', []).
       link: function($scope, element, attr) {
         var hue=Math.max(120, Math.min(360, 240-$scope.ngModel.log2_foldchange/5*120));
         var alpha=Math.max(0.5, Math.min(1, -1*Math.log10($scope.ngModel.adjp)/2));
-        console.log(hue+','+alpha);
         $scope.fcStyle={
           'color': 'hsla('+hue+',60%,70%,'+alpha+')',
         };
@@ -330,20 +329,28 @@ angular.module('tearDropDirectives', []).
       link: function($scope, element, attr) {
         var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
         $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
-        $scope.annotations=[];
+
+        $scope.loadAnnotations = function(map, reload) {
+          if (reload || map.annotations==null) {
+            map.annotations=[];
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+                map.annotations=data;
+            }).error($rootScope.errHandler);
+          }
+        }
 
         $scope.loadGenomeAlignments = function(map, reload) {
           if (map==null) return;
           if (reload || map.alignment==null) {
             map.alignment=[];
-            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-              $scope.annotations=data;
-            }).error($rootScope.errHandler);
             $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
               map.alignment=data;
             }).error($rootScope.errHandler);
           }
         }
+        $scope.$watchCollection('mappings', function(newMaps) {
+          angular.forEach($scope.mappings, $scope.loadAnnotations);
+        });
       },
     }
   })

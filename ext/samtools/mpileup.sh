@@ -6,4 +6,4 @@ shift
 contig=$1
 shift
 
-samtools mpileup -r $contig -f $ref $@ 
+samtools mpileup --ff UNMAP -r $contig -f $ref $@ 

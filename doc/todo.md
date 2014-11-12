@@ -2,12 +2,13 @@
 
 ## bugs/urgent
 
-- DONE "loading" feedback (more or less)
+- "loading" feedback (more or less)
 - hide alignment view when unavailable
 - set url path on de run selection
 - deal with multiple alignments => selection, define "favorite"
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
+- XXX reciprocal best hit
 
 ## big stuff
 
@@ -35,8 +36,7 @@
   - mafft results for transcripts
 - de result diagnostic plots (volcano, MA)
 - alignment overviews
-  - mapping %, dis/concordant pairings; maybe idxstats
-- 
+  * mapping percent, dis/concordant pairings; maybe idxstats
 
 use/extend https://github.com/WealthBar/angular-d3?
 
@@ -45,7 +45,6 @@ use/extend https://github.com/WealthBar/angular-d3?
 - DONE run blast in background
   * DONE annotate genes and transcripts with best hits
   * DONE set no/good/bad homology tags
-- XXX reciprocal best hit
 - transfer transcript annotations to genes
 - analyze coverage
   * categorize high/low
@@ -56,6 +55,10 @@ use/extend https://github.com/WealthBar/angular-d3?
 
 - DONE transcript view: integrate into gene view, move transcript alignment view there
 - display more details for genomic mapping
+  - DONE external annotations (GFF)
+  - matching parts, gaps, etc.
+  - comparison with CDS/exon from external GFFs
+  - weird things like transcripts mapped over several 100 kb
 - DONE split tags into categories, 
   - display categorized tags in each tab
   - find good space for alignment/mapping tags
@@ -69,6 +72,10 @@ use/extend https://github.com/WealthBar/angular-d3?
 - sample, alignments, assembly pages
 - data exports?
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
+- refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface
+- use bioperl to run/parse blast?
+- look at bioperl interfaces to go annotations and online databases
+- faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 
 ### data import
 
