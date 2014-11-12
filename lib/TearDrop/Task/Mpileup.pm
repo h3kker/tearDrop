@@ -73,6 +73,32 @@ sub run {
   my $cache = $cache{$aln_key};
 
   my @run_alignments = grep { !exists $cache->{$_->bam_path} } @{$self->alignments};
+#  use Bio::DB::Sam;
+#  for my $aln (@run_alignments) {
+#    my $sam = Bio::DB::Sam->new(-bam => $aln->bam_path, -fasta => $self->reference_path);
+#    $sam->fast_pileup($self->region_spec, sub {
+#      my ($seqid, $pos, $p) = @_;
+#      my $refbase = $sam->segment($seqid,$pos,$pos)->dna;
+#      my $mismatch=0;
+#      my $depth=0;
+#      for my $pileup (@$p) {
+#        $depth++;
+#        if ($pileup->indel || $pileup->is_refskip) {
+#          $mismatch++;
+#          next;
+#        }
+#        my $b = $pileup->alignment;
+#        my $qbase  = substr($b->qseq,$pileup->qpos,1);
+#        $mismatch++ if $refbase ne $qbase;
+#      }
+#      push @{$cache->{$aln->bam_path}}, {
+#        pos => $pos,
+#        depth => $depth,
+#        mismatch => $mismatch,
+#        mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
+#      };
+#    });
+#  }
 
   if (@run_alignments) {
     my @cmd = ('ext/samtools/mpileup.sh', $self->reference_path, $self->region_spec, map { $_->bam_path } @run_alignments);
@@ -105,14 +131,43 @@ sub run {
   $cache{$aln_key}=$cache;
 
   my $aggregate_factor = ceil($self->effective_size/$self->aggregate_to);
-  $self->result([ map {
-    { 
-      key => $_->sample->name,
-      values => [ map {
-        [ $_->{pos}, $_->{depth}, $_->{mismatch}, $_->{mismatch_rate} ],
-      } grep { $_->{pos} % $aggregate_factor == 0 } @{$cache->{$_->bam_path}} ],
+  my @ret;
+  for my $aln (@{$self->alignments}) {
+    my $r = { key => $aln->sample->name, bins => {} };
+    for my $p (@{$cache->{$aln->bam_path}}) {
+      my $bin = int($p->{pos}/$aggregate_factor);
+      $r->{bins}{$bin}||=[];
+      push @{$r->{bins}{$bin}}, $p;
     }
-  } sort { $a->sample->name cmp $b->sample->name } @{$self->alignments} ]);
+    push @ret, $r;
+  }
+  for my $r (@ret) {
+    $r->{values}=[];
+    for my $bins (values %{$r->{bins}}) {
+      my $pos=$bins->[0]{pos};
+      my $sum_depth=0;
+      my $max_mismatch=0;
+      my $max_mismatch_rate=0;
+      for my $b (@$bins) {
+        $sum_depth+=$b->{depth};
+        $max_mismatch=$b->{mismatch} if $b->{mismatch}>$max_mismatch;
+        $max_mismatch_rate=$b->{mismatch_rate} if $b->{mismatch}>$max_mismatch_rate;
+      }
+      push @{$r->{values}}, [ $pos, $sum_depth/scalar @$bins, $max_mismatch, $max_mismatch_rate ];
+    }
+    $r->{values} = [ sort { $a->[0] <=> $b->[0] } @{$r->{values}} ];
+    delete $r->{bins};
+  }
+  $self->result([ sort { $a->{key} cmp $b->{key} } @ret ]);
+#  $self->result([ map {
+#    { 
+#      key => $_->sample->name,
+#      values => [ map {
+#        [ $_->{pos}, $_->{depth}, $_->{mismatch}, $_->{mismatch_rate} ],
+#      } grep { $_->{pos} % $aggregate_factor == 0 } @{$cache->{$_->bam_path}} ],
+#    }
+#  } sort { $a->sample->name cmp $b->sample->name } @{$self->alignments} ]);
+  $self->result;
 }
 
 1;
