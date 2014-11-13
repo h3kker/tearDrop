@@ -160,7 +160,44 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x7goJMvFcVcmUmMcR2b5jg
 
+use Dancer qw/:moose !status/;
+use Dancer::Plugin::DBIC 'schema';
+use Try::Tiny;
+use Carp;
+
+use Moo;
+use namespace::clean;
+
+with 'TearDrop::Model::HasFileImport';
+
 sub _is_column_serializable { 1 };
+
+sub import_file {
+  my $self = shift;
+
+  my %field_map = qw/
+    transcript transcript_id
+    pvalue pvalue
+    padj adjp
+    baseMean base_mean
+    log2FoldChange log2_foldchange
+  /;
+
+  $self->delete_related('de_results');
+
+  open IF, "<".$self->path or die "open ".$self->path.": $!";
+  my $hline = <IF>;
+  chomp $hline;
+  my @header_fields = split "\t", $hline;
+  while(<IF>) {
+    my @f = split "\t";
+    my %s = map {
+      $header_fields[$_] => $f[$_] eq 'NA' ? undef : $f[$_]
+    } grep { exists $field_map{$header_fields[$_]} } 0..$#header_fields;
+    $self->create_related('de_results', \%s);
+  }
+  close IF;
+}
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

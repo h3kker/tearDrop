@@ -170,30 +170,43 @@ __PACKAGE__->belongs_to(
 use Dancer qw/:moose !status/;
 use Dancer::Plugin::DBIC 'schema';
 use Carp;
+use Try::Tiny;
+
+use Moo;
+use namespace::clean;
+
+with 'TearDrop::Model::HasFileImport';
 
 sub _is_column_serializable { 1 };
 
 sub import_file {
   my $self = shift;
-  $self->delete_related('gene_model_mappings');
 
+  $self->delete_related('gene_model_mappings');
   open IF, "<".$self->path or confess "Open ".$self->path.": $!";
   while(<IF>) {
     next if m/^#/;
     my @f = split " ", $_, 9;
     my %sf = map { split "=", $_ } split ";", $f[8];
-    schema(var 'project')->resultset('GeneModelMapping')->create({
+    if (exists $sf{Note}) {
+      $sf{Note}=~tr/\+/ /;
+    }
+    $self->create_related('gene_model_mappings', {
       contig => $f[0],
       mtype => $f[2],
       cstart => $f[3],
       cend => $f[4],
+      # score => $f[5], # ignore
       strand => $f[6],
+      # frame => $f[7], # ignore
       id => $sf{ID},
       name => $sf{Name},
       parent => $sf{Parent},
+      additional => $sf{Note},
       gene_model_id => $self->id,
     });
   }
+  close IF;
 }
 
 

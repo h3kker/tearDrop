@@ -58,6 +58,16 @@ __PACKAGE__->table("projects");
   data_type: 'text'
   is_nullable: 1
 
+=head2 title
+
+  data_type: 'text'
+  is_nullable: 0
+
+=head2 forskalle_group
+
+  data_type: 'text'
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -67,6 +77,10 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 1 },
   "status",
   { data_type => "text", is_nullable => 1 },
+  "title",
+  { data_type => "text", is_nullable => 0 },
+  "forskalle_group",
+  { data_type => "text", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -99,8 +113,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 19:30:34
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RRFO4oJpp9IzcuWja17icg
+# Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-13 12:23:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:U5tn7Ld5wb7iFXU1XcT8bg
 
 sub _is_column_serializable { 1 };
 

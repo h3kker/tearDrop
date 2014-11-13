@@ -5,6 +5,7 @@ var tearDrop = angular.module('TearDrop', [
   'ngCookies',
   'ngRoute',
   'nvd3ChartDirectives',
+  'ad3',
   'angular-growl',
   'tearDropServices',
   'tearDropDirectives',

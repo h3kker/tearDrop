@@ -45,7 +45,7 @@ sub update_tags {
     }
   }
   for my $n (values %new_tags) {
-    my $ntag = schema(var 'project')->resultset('Tag')->find_or_create($n);
+    my $ntag = schema($self->result_source->schema)->resultset('Tag')->find_or_create($n);
     $self->add_to_tags($ntag);
   }
 }
@@ -55,7 +55,7 @@ sub set_tag {
   for my $o ($self->tags) {
     return if ($o->tag eq $tag->{tag});
   }
-  $self->add_to_tags(schema(var 'project')->resultset('Tag')->find_or_create($tag));
+  $self->add_to_tags(schema($self->result_source->schema)->resultset('Tag')->find_or_create($tag));
 }
 
 sub gene_model_annotations {

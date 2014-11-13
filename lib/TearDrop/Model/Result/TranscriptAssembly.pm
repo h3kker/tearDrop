@@ -214,5 +214,50 @@ __PACKAGE__->has_many(
 
 sub _is_column_serializable { 1 };
 
+use Dancer qw/:moose !status/;
+use Dancer::Plugin::DBIC 'schema';
+use Carp;
+use Try::Tiny;
+
+use Moo;
+use namespace::clean;
+
+with 'TearDrop::Model::HasFileImport';
+
+sub import_file {
+  my $self = shift;
+  $self->delete_related('transcripts');
+  open FA, "<".$self->path || confess 'open '.$self->path.": $!";
+  my $cur_trans;
+  while(<FA>) {
+    chomp;
+    if (m/^>\s*([^ ]+)\s*/) {
+      if ($cur_trans) {
+        debug "Insert ".$cur_trans->{id};
+        $self->result_source->schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} }) if $cur_trans->{gene};
+        $self->create_related('transcripts', $cur_trans);
+      }
+      my $trans_id=$1;
+      $cur_trans={
+        id => $trans_id,
+        nsequence => '',
+      };
+      if ($trans_id =~ m#(c\d+_g\d+)_i.+#) {
+        $cur_trans->{gene}=$1;
+      }
+    }
+    else {
+      $cur_trans->{nsequence}.=$_;
+    }
+  }
+  close FA;
+  if ($cur_trans->{id}) {
+    $self->result_source->schema->find_or_create({ id => $cur_trans->{gene} }) if $cur_trans->{gene};
+    $self->create_related('transcript', $cur_trans);
+  }
+}
+
+
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

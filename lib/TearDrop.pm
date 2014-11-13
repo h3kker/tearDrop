@@ -14,7 +14,7 @@ our $VERSION = '0.1';
 set layout => undef;
 
 sub setup_projects {
-  for my $project (schema->resultset('Project')->search({status => 'active'})->all) {
+  for my $project (schema->resultset('Project')->search()->all) {
     my %conf = %{config->{plugins}{DBIC}{default}};
     my $project_name=$project->name;
     $conf{dsn}=~s/dbname=\w+;/dbname=teardrop_$project_name;/;
@@ -28,6 +28,9 @@ my $worker;
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
   var 'project' => cookie 'project';
+  if (var('project') && !exists config->{plugins}{DBIC}{var 'project'}) {
+    send_error 'invalid project: '.var('project'), 500;
+  }
   debug var 'project';
   unless($worker) {
     require TearDrop::Worker::DB;

@@ -3,51 +3,35 @@
 use warnings;
 use strict;
 
+use Getopt::Long;
+
+BEGIN {
+  Getopt::Long::Configure('pass_through');
+}
+
+
 use Dancer ':script';
 use Dancer::Plugin::DBIC 'schema';
 
-my $assembly = shift @ARGV;
-my $fasta = shift @ARGV;
+use Try::Tiny;
 
-die "Usage: $0 [assembly name] [fasta]?" unless $assembly;
+use TearDrop;
 
-my $a = schema->resultset('TranscriptAssembly')->search({ name => $assembly })->first;
+my ($project, $assembly, $fasta);
+
+GetOptions('project|p=s' => \$project, 'assembly|a=s' => \$assembly, 'fasta|f=s' => \$fasta) || die "Usage!";
+
+die "Usage: $0 --project [project] --assembly [assembly name] --fasta [fasta]?" unless $project && $assembly;
+
+my $a = schema($project)->resultset('TranscriptAssembly')->search({ name => $assembly })->first;
 die "Assembly $assembly not in database!" unless $a;
 
-schema->resultset('Transcript')->search({ assembly_id => $a->id })->delete;
+$a->delete_related('transcripts');
 
 if ($fasta && $fasta ne $a->path) {
   $a->path($fasta);
+  $a->sha1(undef);
   $a->update;
 }
 
-$fasta = $a->path;
-open(FA, "<$fasta") or die "open $fasta: $!";
-my $cur_trans;
-while(<FA>) {
-  chomp;
-  if (m/^>\s*([^ ]+)\s*/) {
-    if ($cur_trans) {
-      print "Insert ".$cur_trans->{id}."             \r";
-      $|=1;
-      schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} });
-      schema->resultset('Transcript')->create($cur_trans);
-    }
-    my $trans_id=$1;
-    my $gene = $trans_id;
-    $gene =~ s/_i.+//;
-    $cur_trans={
-      id => $trans_id,
-      assembly_id => $a->id,
-      gene => $gene,
-      nsequence => '',
-    }
-  }
-  else {
-    $cur_trans->{nsequence}.=$_;
-  }
-}
-close FA;
-
-schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} });
-schema->resultset('Transcript')->create($cur_trans);
+$a->import_file;

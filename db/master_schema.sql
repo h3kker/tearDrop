@@ -1,7 +1,9 @@
 DROP TABLE IF EXISTS projects CASCADE;
 CREATE TABLE projects (
   name text primary key,
+  title text not null unique,
   description text,
+  forskalle_group text not null,
   status text
 );
 

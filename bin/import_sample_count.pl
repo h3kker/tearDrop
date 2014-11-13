@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+die "XXX do not use yet!";
+
 use warnings;
 use strict;
 

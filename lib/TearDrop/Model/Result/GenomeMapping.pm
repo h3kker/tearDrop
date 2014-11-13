@@ -186,11 +186,18 @@ __PACKAGE__->has_many(
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oo+Yen9VgMl9yahAY5KvAQ
 
 use Carp;
+use Try::Tiny;
+
+use Moo;
+use namespace::clean;
+
+with 'TearDrop::Model::HasFileImport';
 
 sub _is_column_serializable { 1 };
 
 sub import_file {
   my $self = shift;
+
   $self->delete_related('transcript_mappings');
 
   if ($self->program eq 'blat') {
@@ -230,10 +237,12 @@ sub import_file {
         tstarts => $tstarts
       });
     }
+    close IF;
   }
   else {
     confess "don't know how to handle ".$self->program." maps";
   }
+
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

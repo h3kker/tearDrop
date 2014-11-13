@@ -3,16 +3,29 @@
 use warnings;
 use strict;
 
+use Getopt::Long;
+
+BEGIN {
+  Getopt::Long::Configure('pass_through');
+}
+
 use Dancer ':script';
 use Dancer::Plugin::DBIC 'schema';
 
+use TearDrop;
 use TearDrop::Worker;
 
-my $dbs = schema->resultset('DbSource')->search({
-  name => [ 'refseq_plant', 'refseq_fungi', 'ncbi_cdd' ]
+my $project;
+my $db_sources = [ qw/refseq_plant refseq_fungi ncbi_cdd/ ];
+
+GetOptions('project|p=s' => \$project, 'db_source|db=s@' => \$db_sources) or die "Usage!";
+die "Usage: $0 --project [project] {--db_source [db] {--db_source [db] ...}}?" unless $project;
+
+my $dbs = schema($project)->resultset('DbSource')->search({
+  name => $db_sources
 });
 my @genes;
-for my $g (schema->resultset('Gene')->search({ 'me.reviewed' => 0 }, )->all) {
+for my $g (schema($project)->resultset('Gene')->search({ 'me.reviewed' => 0 }, )->all) {
   #my %has_runs;
   #for my $t ($g->transcripts) {
   #  $has_runs{$_->db_source_id}=1 for $t->blast_runs;
@@ -26,7 +39,7 @@ for my $g (schema->resultset('Gene')->search({ 'me.reviewed' => 0 }, )->all) {
       #}
       my $task = new TearDrop::Task::BLAST(replace => 0, gene_ids => [ map { $_->id } @genes ], database => $db->name, post_processing => sub {
         for my $g (@genes) {
-          my $sg = schema->resultset('Gene')->find($g->id);
+          my $sg = schema($project)->resultset('Gene')->find($g->id);
           return if $sg->reviewed;
           for my $t ($sg->transcripts) {
             $t->auto_annotate;
