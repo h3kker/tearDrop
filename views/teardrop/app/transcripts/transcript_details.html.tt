@@ -9,6 +9,7 @@
   <p><reviewed description ng-model="transcript"></p>
   <dt>Name</dt> <dd click-to-edit ng-model="transcript.name" save-callback="transcript.save"></dd>
   <dt>Description</dt> <dd click-to-edit ng-model="transcript.description" save-callback="transcript.save"></dd>
+  <dt>Organism</dt> <dd click-to-edit ng-model="transcript.organism_name" save-callback="transcript.save"></dd>
   <dt>Best Homolog</dt> <dd>{{transcript.best_homolog || '-'}}</dd>
   <dt>Gene</dt> <dd><a href="#/genes/{{transcript.gene.id}}">{{transcript.gene.id}}</a></dd>
   <dt>Rating</dt> <dd><rating ng-model="transcript.rating" max="10" ng-click="transcript.setRating(transcript.rating)"></rating></dd>

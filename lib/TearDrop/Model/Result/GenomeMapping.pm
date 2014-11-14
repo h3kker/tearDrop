@@ -118,6 +118,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "sha1",
   { data_type => "text", is_nullable => 1 },
+  "needs_prefix",
+  { data_type => "boolean", default_value => \"false", is_nullable => 0 },
   "imported",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
 );
@@ -201,8 +203,6 @@ sub import_file {
 
   $self->delete_related('transcript_mappings');
 
-  my $prefix_checked=undef;
-  my $prefix;
   my @rows;
   if ($self->program eq 'blat') {
     open IF, "<".$self->path or confess("Open ".$self->path.": $!");
@@ -220,11 +220,7 @@ sub import_file {
           $tid, $tsize, $tstart, $tend,
           $blocksizes, $qstarts, $tstarts
       ) = @v[0..2, 8..16, 18..20];
-      unless($prefix_checked) {
-        $prefix=$self->transcript_assembly->prefix unless index($qid, $self->transcript_assembly->prefix)==0;
-        $prefix_checked=1;
-      }
-      $qid=$prefix.'.'.$qid if $prefix;
+      $qid=$self->transcript_assembly->prefix.'.'.$qid if $self->needs_prefix;
       my $match_pct = sprintf "%.2f", $matchscore/$qsize;
       next unless $match_pct>.5;
 

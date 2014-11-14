@@ -56,6 +56,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "transcript_assembly_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  "use_original_id",
+  { data_type => "boolean", default => \"false", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY

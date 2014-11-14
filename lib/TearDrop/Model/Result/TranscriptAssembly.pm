@@ -102,6 +102,8 @@ __PACKAGE__->add_columns(
   },
   "prefix",
   { data_type => "text", is_nullable => 0 },
+  "add_prefix",
+  { data_type => "boolean", is_nullable => 0, default_value => \"false" },
   "name",
   { data_type => "text", is_nullable => 0 },
   "description",
@@ -233,31 +235,47 @@ sub import_file {
   my $count;
   my @rows;
   my %genes;
+  my $flush_rows = sub {
+    my @rows = @_;
+    debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
+    my %create_genes;
+    for my $r (@rows) {
+      if ($r->{id} =~ m#(.*c\d+_g\d+)_i.+#) {
+        $r->{gene_id}=$1;
+        next if exists $genes{$r->{gene_id}};
+        $create_genes{$r->{gene_id}} = { id => $r->{gene_id} };
+        if ($self->add_prefix && $r->{original_id} =~ m#(.*c\d+_g\d+)_i.+#) {
+          $create_genes{$r->{gene_id}}->{original_id}=$1;
+        }
+      }
+    }
+    if (values %create_genes) {
+      $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
+      $genes{$_->{id}}=1 for values %create_genes;
+    }
+    $self->result_source->schema->resultset('Transcript')->populate(\@rows);
+    debug '   done';
+  };
   while(<FA>) {
     chomp;
     if (m/^>\s*([^ ]+)\s*/) {
+      my $trans_id=$1;
       if ($cur_trans) {
-        #debug "Insert ".$cur_trans->{id};
         $count++;
-        $cur_trans->{assembly_id}=$self->id;
         push @rows, $cur_trans;
       }
       if (@rows>=config->{import_flush_rows}) {
-        debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
-        my %create_genes = map { $_->{gene_id} => { id => $_->{gene_id} } } grep { !exists $genes{$_->{gene_id}} } @rows;
-        $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
-        $genes{$_->{id}}=1 for values %create_genes;
-        $self->result_source->schema->resultset('Transcript')->populate(\@rows);
+        $flush_rows->(@rows);
         @rows=();
-        debug '  done';
       }
-      my $trans_id=$self->prefix.'.'.$1;
       $cur_trans={
         id => $trans_id,
         nsequence => '',
+        assembly_id => $self->id,
       };
-      if ($trans_id =~ m#(c\d+_g\d+)_i.+#) {
-        $cur_trans->{gene_id}=$self->prefix.'.'.$1;
+      if ($self->add_prefix) {
+        $cur_trans->{original_id} = $cur_trans->{id};
+        $cur_trans->{id} = $self->prefix.'.'.$trans_id;
       }
     }
     else {
@@ -266,13 +284,10 @@ sub import_file {
   }
   close FA;
 
-  $cur_trans->{assembly_id}=$self->id;
   push @rows, $cur_trans;
 
   debug '  flushing remaining '.@rows.' to db (line '. $. .')';
-  my %create_genes = map { $_->{gene_id} => { id => $_->{gene_id} } } grep { !exists $genes{$_->{gene_id}} } @rows;
-  $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
-  $self->result_source->schema->resultset('Transcript')->populate(\@rows);
+  $flush_rows->(@rows);
   debug '  done';
 }
 

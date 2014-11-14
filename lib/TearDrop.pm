@@ -8,6 +8,7 @@ use TearDrop::Worker;
 
 use Text::Markdown 'markdown';
 use Carp;
+use Try::Tiny;
 
 our $VERSION = '0.1';
 
@@ -31,7 +32,12 @@ hook 'before' => sub {
   if (var('project') && !exists config->{plugins}{DBIC}{var 'project'}) {
     send_error 'invalid project: '.var('project'), 500;
   }
-  debug var 'project';
+  try {
+    schema(var 'project')->storage->ensure_connected;
+  } catch {
+    warning 'invalid project cookie '.var 'project';
+    delete cookies->{project};
+  };
   unless($worker) {
     require TearDrop::Worker::DB;
     $worker = new TearDrop::Worker::DB;
@@ -126,16 +132,24 @@ get '/transcripts' => sub {
     order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
-    prefetch => [ 'organism', { 'transcript_tags' => [ 'tag' ] } ]
+    prefetch => [ 'organism', 'gene', { 'transcript_tags' => [ 'tag' ] } ]
   });
+  my $ser = [ map {
+    my $t=$_;
+    my $tser = $t->TO_JSON;
+    for (qw/organism gene/) {
+      $tser->{$_} = $t->$_->TO_JSON if $t->$_;
+    }
+    $tser;
+  } $rs->all ];
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,
-      data => [ $rs->all ],
+      data => $ser,
     };
   }
   else {
-    return [ $rs->all ];
+    return $ser;
   }
 };
 
@@ -232,13 +246,17 @@ get '/transcripts/:id/pileup' => sub {
   my $trans = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
+  my @alns = $assembly->transcriptome_alignments;
+  send_error 'no alignments for transcript', 404 unless @alns;
+
+  # XXX should check if original_id settings is consistent for all alignments
   return TearDrop::Task::Mpileup->new(
     reference_path => $assembly->path,
-    region => $trans->original_id,
+    region => $alns[0]->use_original_id ? $trans->original_id : $trans->id,
     effective_size => length($trans->nsequence),
     context => 0,
     type => 'transcript',
-    alignments => [ map { $_->alignment } $assembly->search_related('transcriptome_alignments')->all ],
+    alignments => [ map { $_->alignment } @alns ],
   )->run;
 
 };

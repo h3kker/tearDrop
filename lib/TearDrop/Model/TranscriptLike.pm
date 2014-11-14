@@ -8,12 +8,6 @@ use Dancer qw/:moose !status/;
 use Moo::Role;
 use namespace::clean;
 
-sub original_id {
-  my $self = shift;
-  return index($self->id, $self->assembly->prefix)==-1 ? $self->id :
-    substr $self->id, length($self->assembly->prefix)+1;
-}
-
 sub auto_annotate {
   my $self = shift;
   return if $self->reviewed;

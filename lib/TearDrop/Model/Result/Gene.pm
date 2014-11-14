@@ -73,6 +73,8 @@ __PACKAGE__->table("genes");
 __PACKAGE__->add_columns(
   "id",
   { data_type => "text", is_nullable => 0 },
+  "original_id",
+  { data_type => "text", is_nullable => 1 },
   "description",
   { data_type => "text", is_nullable => 1 },
   "best_homolog",
@@ -191,7 +193,7 @@ sub comparisons {
     'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 
     'reviewed' => { cmp => '=', column => 'me.reviewed' },
     'tags' => { cmp => 'IN', column => 'gene_tags.tag' },
-    'organism' => { cmp => 'like', column => 'transcripts.organism' },
+    'organism' => { cmp => 'like', column => 'transcripts.organism_name' },
   };
 }
 

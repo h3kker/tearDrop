@@ -81,6 +81,8 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "parameters",
   { data_type => "text", is_nullable => 1 },
+  "needs_prefix",
+  { data_type => "boolean", default_value => \"false", is_nullable => 0 },
   "imported",
   { data_type => "boolean", default_value => \"false", is_nullable => 1 },
   "sha1",
@@ -172,6 +174,9 @@ sub _is_column_serializable { 1 };
 sub import_file {
   my ($self, %param) = @_;
 
+  confess 'marked as "needs_prefix", but none provided (and cannot figure it out myself yet)' 
+    if $self->needs_prefix && !defined $param{id_prefix};
+
   my %field_map = qw/
     transcript transcript_id
     pvalue pvalue
@@ -193,7 +198,7 @@ sub import_file {
     my %s = map {
       $field_map{$header_fields[$_]} => $f[$_] eq 'NA' ? undef : $f[$_]
     } grep { exists $field_map{$header_fields[$_]} } 0..$#header_fields;
-    $s{transcript_id} = $param{id_prefix}.'.'.$s{transcript_id} if $param{id_prefix};
+    $s{transcript_id} = $param{id_prefix}.'.'.$s{transcript_id} if $self->needs_prefix;
     $s{de_run_id} = $self->de_run->id;
     $s{contrast_id} = $self->contrast->id;
     push @rows, \%s;

@@ -2,12 +2,13 @@
 
 ## bugs/urgent
 
-- "loading" feedback 
+- "loading" feedback, error handling ($http interceptor?)
 - hide alignment view when unavailable
 - set url path on de run selection
 - deal with multiple alignments => selection, define "favorite"
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
+- assembly selection in views
 - XXX reciprocal best hit
 - XXX transcript alignment meta: field for "needs prefix"
 
@@ -16,6 +17,8 @@
 - DONE multiple projects: master database with separate dbs for projects
   - DONE create template and provide scripts to setup project db
 - blast search in transcript assemblies (see also reciprocal best hit)
+  - extract ref seq from blast db 
+  - fasta text field
 - DONE import GFF files with genome annotations
 - job manager
   * DONE via db table
@@ -69,24 +72,29 @@ use/extend https://github.com/WealthBar/angular-d3? or not.
   - find good space for alignment/mapping tags
   - only general tags on top?
 - transfer annotations from transcript to gene
-- liftover annotations from transcripts, between projects
+- DONE liftover annotations from transcripts, between projects
+
+## data import
+
+- via web?
+  - local files: submit to worker
+  - upload: might be complicated; maybe not via browser, curl/wget? should have a resume. 
+- suppport g/bzip
+- create/import stats for 
+  - DONE alignments (tophat, star, bowtie)
+  - count tables
+  - samples (raw files)
+  - genome mappings
 
 ## nice to have
 
 - overview page (general assembly stats)
-- sample, alignments, assembly pages
+- sample, alignments, assembly pages (necessary for data import via web)
 - data exports?
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
 - refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface
 - use bioperl to run/parse blast?
 - look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
+- schema versioning
 
-### data import
-
-- via web?
-- create/import stats for 
-  - DONE alignments (tophat, star, bowtie)
-  - count tables
-  - samples (raw files)
-  - genome mappings

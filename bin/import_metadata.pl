@@ -135,6 +135,7 @@ if (!scalar keys %wanted || exists $wanted{genome_mappings}) {
         parameters => $s{parameters},
         transcript_assembly_id => $transcripts->id,
         organism_name => $organism->name,
+        needs_prefix => $s{needs_prefix},
         path => $s{path},
       });
     }
@@ -161,6 +162,7 @@ if (!scalar keys %wanted || exists $wanted{de_runs}) {
     my $de_contrast = $de->update_or_create_related('de_run_contrasts', {
       contrast_id => $contrast->id,
       parameters => $s{contrast_parameters},
+      needs_prefix => $s{needs_prefix},
       path => $s{path}
     });
     if ($import_files) {
@@ -205,12 +207,13 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       warn "no such assembly: ".$s{assembly};
       next;
     }
-    my ($k, $v) = $s{type} eq 'transcriptome' ? ('transcript_assembly_id', $assembly->id) : ('organism_name', $assembly->name);
+    my %vals = $s{type} eq 'transcriptome' ? 
+      ('transcript_assembly_id' => $assembly->id, 'use_original_id' => $s{use_original_id}) : 
+      ('organism_name', $assembly->name);
+    $vals{alignment_id} = $alignment->id;
+
     my $res = $s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment';
-    schema($project)->resultset($res)->update_or_create({
-      alignment_id => $alignment->id,
-      $k => $v,
-    });
+    schema($project)->resultset($res)->update_or_create(\%vals);
   });
 }
 

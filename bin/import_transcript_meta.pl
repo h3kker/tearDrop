@@ -14,13 +14,18 @@ use Dancer::Plugin::DBIC 'schema';
 
 use TearDrop;
 
-my ($project, $prefix);
-GetOptions('project|p=s' => \$project, 'prefix=s' => \$prefix) || die "Usage!";
-die "Usage: $0 --project [project] --prefix [assembly prefix]? [input]" unless $project;
+my ($project, $assembly);
+GetOptions('project|p=s' => \$project, 'assembly|a=s' => \$assembly) || die "Usage!";
+die "Usage: $0 --project [project] --assembly [assembly]? [input]" unless $project;
 
 my $hline = <>;
 chomp $hline;
 my @header_fields = split ',', $hline;
+
+my $as;
+if ($assembly) {
+  $as=schema($project)->resultset('TranscriptAssembly')->find({ name => $assembly }) || die "Assembly ".$assembly." not found.";
+}
 
 while(<>) {
   chomp;
@@ -28,9 +33,10 @@ while(<>) {
   my %h = map { 
     $header_fields[$_] => $f[$_]
   } 0..$#header_fields;
-  $h{id}=$prefix.'.'.$h{id} if $prefix;
+  if ($as && $as->add_prefix) {
+    $h{id}=$as->prefix.'.'.$h{id};
+  }
   my $trans = schema($project)->resultset('Transcript')->find($h{id}) || die("Transcript ".$h{id}." not found.");
-  delete $h{id};
   $trans->$_($h{$_}) for keys %h;
   print "setting ".$h{id}."         \r";
   $|=1;
