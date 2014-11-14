@@ -4,10 +4,15 @@ use warnings;
 use strict;
 
 use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
 
 use Moo::Role;
 use namespace::clean;
+
+sub original_id {
+  my $self = shift;
+  return index($self->id, $self->assembly->prefix)==-1 ? $self->id :
+    substr $self->id, length($self->assembly->prefix)+1;
+}
 
 sub auto_annotate {
   my $self = shift;
@@ -45,7 +50,7 @@ sub update_tags {
     }
   }
   for my $n (values %new_tags) {
-    my $ntag = schema($self->result_source->schema)->resultset('Tag')->find_or_create($n);
+    my $ntag = $self->result_source->schema->resultset('Tag')->find_or_create($n);
     $self->add_to_tags($ntag);
   }
 }
@@ -55,7 +60,7 @@ sub set_tag {
   for my $o ($self->tags) {
     return if ($o->tag eq $tag->{tag});
   }
-  $self->add_to_tags(schema($self->result_source->schema)->resultset('Tag')->find_or_create($tag));
+  $self->add_to_tags($self->result_source->schema->resultset('Tag')->find_or_create($tag));
 }
 
 sub gene_model_annotations {

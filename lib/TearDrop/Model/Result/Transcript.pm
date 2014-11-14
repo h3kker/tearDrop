@@ -98,13 +98,13 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "assembly_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-  "gene",
+  "gene_id",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
   "name",
   { data_type => "text", is_nullable => 1 },
   "nsequence",
   { data_type => "text", is_nullable => 1 },
-  "organism",
+  "organism_name",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
   "best_homolog",
   { data_type => "text", is_nullable => 1 },
@@ -186,7 +186,7 @@ Related object: L<TearDrop::Model::Result::Gene>
 __PACKAGE__->belongs_to(
   "gene",
   "TearDrop::Model::Result::Gene",
-  { id => "gene" },
+  { id => "gene_id" },
   {
     is_deferrable => 0,
     join_type     => "LEFT",
@@ -206,7 +206,7 @@ Related object: L<TearDrop::Model::Result::Organism>
 __PACKAGE__->belongs_to(
   "organism",
   "TearDrop::Model::Result::Organism",
-  { name => "organism" },
+  { name => "organism_name" },
   {
     is_deferrable => 0,
     join_type     => "LEFT",

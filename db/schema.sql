@@ -32,6 +32,7 @@ CREATE TABLE gene_models (
 DROP TABLE IF EXISTS transcript_assemblies CASCADE;
 CREATE TABLE transcript_assemblies (
   id serial primary key,
+  prefix text not null unique,
   name text not null unique,
   description text,
   program text not null,

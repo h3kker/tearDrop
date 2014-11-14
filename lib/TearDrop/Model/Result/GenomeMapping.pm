@@ -185,6 +185,7 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oo+Yen9VgMl9yahAY5KvAQ
 
+use Dancer qw/:moose !status/;
 use Carp;
 use Try::Tiny;
 
@@ -200,6 +201,9 @@ sub import_file {
 
   $self->delete_related('transcript_mappings');
 
+  my $prefix_checked=undef;
+  my $prefix;
+  my @rows;
   if ($self->program eq 'blat') {
     open IF, "<".$self->path or confess("Open ".$self->path.": $!");
     my $l=0;
@@ -216,10 +220,16 @@ sub import_file {
           $tid, $tsize, $tstart, $tend,
           $blocksizes, $qstarts, $tstarts
       ) = @v[0..2, 8..16, 18..20];
+      unless($prefix_checked) {
+        $prefix=$self->transcript_assembly->prefix unless index($qid, $self->transcript_assembly->prefix)==0;
+        $prefix_checked=1;
+      }
+      $qid=$prefix.'.'.$qid if $prefix;
       my $match_pct = sprintf "%.2f", $matchscore/$qsize;
       next unless $match_pct>.5;
 
-      $self->create_related('transcript_mappings', {
+      push @rows, {
+        genome_mapping_id => $self->id,
         transcript_id => $qid,
         matches => $matchscore,
         match_ratio => $match_pct,
@@ -235,9 +245,21 @@ sub import_file {
         blocksizes => $blocksizes,
         qstarts => $qstarts,
         tstarts => $tstarts
-      });
+      };
+
+      if (@rows >= config->{import_flush_rows}) {
+        debug 'flushing '.@rows.' to database (line '. $. .')';
+        $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+        @rows=();
+        debug 'done.';
+      }
     }
     close IF;
+    if (@rows) {
+      debug 'flushing remaining '.@rows.' to database';
+      $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+      debug 'done.';
+    }
   }
   else {
     confess "don't know how to handle ".$self->program." maps";

@@ -100,6 +100,8 @@ __PACKAGE__->add_columns(
     is_nullable       => 0,
     sequence          => "transcript_assemblies_id_seq",
   },
+  "prefix",
+  { data_type => "text", is_nullable => 0 },
   "name",
   { data_type => "text", is_nullable => 0 },
   "description",
@@ -215,7 +217,6 @@ __PACKAGE__->has_many(
 sub _is_column_serializable { 1 };
 
 use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
 use Carp;
 use Try::Tiny;
 
@@ -229,21 +230,34 @@ sub import_file {
   $self->delete_related('transcripts');
   open FA, "<".$self->path || confess 'open '.$self->path.": $!";
   my $cur_trans;
+  my $count;
+  my @rows;
+  my %genes;
   while(<FA>) {
     chomp;
     if (m/^>\s*([^ ]+)\s*/) {
       if ($cur_trans) {
-        debug "Insert ".$cur_trans->{id};
-        $self->result_source->schema->resultset('Gene')->find_or_create({ id => $cur_trans->{gene} }) if $cur_trans->{gene};
-        $self->create_related('transcripts', $cur_trans);
+        #debug "Insert ".$cur_trans->{id};
+        $count++;
+        $cur_trans->{assembly_id}=$self->id;
+        push @rows, $cur_trans;
       }
-      my $trans_id=$1;
+      if (@rows>=config->{import_flush_rows}) {
+        debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
+        my %create_genes = map { $_->{gene_id} => { id => $_->{gene_id} } } grep { !exists $genes{$_->{gene_id}} } @rows;
+        $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
+        $genes{$_->{id}}=1 for values %create_genes;
+        $self->result_source->schema->resultset('Transcript')->populate(\@rows);
+        @rows=();
+        debug '  done';
+      }
+      my $trans_id=$self->prefix.'.'.$1;
       $cur_trans={
         id => $trans_id,
         nsequence => '',
       };
       if ($trans_id =~ m#(c\d+_g\d+)_i.+#) {
-        $cur_trans->{gene}=$1;
+        $cur_trans->{gene_id}=$self->prefix.'.'.$1;
       }
     }
     else {
@@ -251,10 +265,15 @@ sub import_file {
     }
   }
   close FA;
-  if ($cur_trans->{id}) {
-    $self->result_source->schema->find_or_create({ id => $cur_trans->{gene} }) if $cur_trans->{gene};
-    $self->create_related('transcript', $cur_trans);
-  }
+
+  $cur_trans->{assembly_id}=$self->id;
+  push @rows, $cur_trans;
+
+  debug '  flushing remaining '.@rows.' to db (line '. $. .')';
+  my %create_genes = map { $_->{gene_id} => { id => $_->{gene_id} } } grep { !exists $genes{$_->{gene_id}} } @rows;
+  $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
+  $self->result_source->schema->resultset('Transcript')->populate(\@rows);
+  debug '  done';
 }
 
 

@@ -125,7 +125,7 @@ Related object: L<TearDrop::Model::Result::Transcript>
 __PACKAGE__->has_many(
   "transcripts",
   "TearDrop::Model::Result::Transcript",
-  { "foreign.gene" => "self.id" },
+  { "foreign.gene_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -162,8 +162,8 @@ sub aggregate_blast_runs {
       my $brun_ser = $brun->TO_JSON;
       $brun_ser->{db_source}=$brun->db_source->TO_JSON;
       $blast_runs{$brun->db_source->name} ||= $brun_ser;
-      my $hit_count = schema($self->result_source->schema)->resultset('BlastResult')->search({
-        transcript_id => $trans->id, db_source_id => $brun->db_source_id
+      my $hit_count = $trans->search_related('blast_results', {
+        db_source_id => $brun->db_source_id
       })->count;
       $blast_runs{$brun->db_source->name}->{matched_transcripts} ||= 0;
       $blast_runs{$brun->db_source->name}->{matched_transcripts}++ if $hit_count;

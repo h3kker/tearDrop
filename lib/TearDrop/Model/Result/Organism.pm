@@ -140,7 +140,7 @@ Related object: L<TearDrop::Model::Result::Transcript>
 __PACKAGE__->has_many(
   "transcripts",
   "TearDrop::Model::Result::Transcript",
-  { "foreign.organism" => "self.name" },
+  { "foreign.organism_name" => "self.name" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

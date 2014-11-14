@@ -228,38 +228,13 @@ get '/transcripts/:id/blast_runs' => sub {
 };
 
 
-get '/transcripts/:id/genomePileup' => sub {
-  my $trans = schema(var 'project')->resultset('Transcript')->find(param 'id') || send_error 'not found', 404;
-  my $context=200;
-  my $best_location = $trans->search_related('transcript_mappings', {}, { order_by => { -desc => 'match_ratio' } })->first; 
-  send_error 'no valid genome mapping!', 500 unless $best_location;
-  my $genome = $best_location->genome_mapping->organism_name;
-
-  my $others = $best_location->genome_mapping->search_related('transcript_mappings', {
-    -or => [
-      tstart => { '>',  $best_location->tstart-$context, '<', $best_location->tend+$context },
-      tend => { '<', $best_location->tend+$context, '>', $best_location->tstart-$context },
-      -and => { tstart => { '<', $best_location->tstart-$context }, tend => { '>', $best_location->tend+$context }},
-    ]
-  });
-  debug map { $_->transcript->id } $others->all;
-
-  return TearDrop::Task::Mpileup->new(
-    reference_path => $genome->genome_path,
-    region => $best_location->tid, start => $best_location->tstart, end => $best_location->tend,
-    context => $context,
-    type => 'genome',
-    alignments => [ map { $_->alignment } $genome->search_related('genome_alignments')->all ],
-  )->run;
-};
-
 get '/transcripts/:id/pileup' => sub {
   my $trans = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $assembly = $trans->assembly || send_error 'assembly '.$trans->assembly_id.' not found', 404;
 
   return TearDrop::Task::Mpileup->new(
     reference_path => $assembly->path,
-    region => $trans->id,
+    region => $trans->original_id,
     effective_size => length($trans->nsequence),
     context => 0,
     type => 'transcript',

@@ -26,12 +26,12 @@ sub sha1_sum {
 }
 
 around 'import_file' => sub {
-  my $orig = shift;
-  my $self = shift;
+  my ($orig, $self, @args) = @_;
 
+  debug 'calculating checksum...';
   my $checksum = $self->sha1_sum;
   debug 'file checksum '.$checksum.', current: '.($self->sha1 || '[undef]');
-  if ($self->sha1 && $self->sha1 eq $checksum) {
+  if ($self->imported && $self->sha1 && $self->sha1 eq $checksum) {
     info 'no import: checksum unchanged';
     return;
   }
@@ -39,7 +39,7 @@ around 'import_file' => sub {
   try {
     $self->result_source->schema->txn_do(sub {
       # do import
-      $orig->($self, @_);
+      $orig->($self, @args);
       # and set fields
       $self->sha1($checksum);
       $self->imported(1);

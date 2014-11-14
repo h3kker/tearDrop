@@ -101,10 +101,7 @@ __PACKAGE__->add_columns(
 
 =cut
 
-__PACKAGE__->add_unique_constraint(
-  "de_run_contrasts_de_run_id_contrast_id_key",
-  ["de_run_id", "contrast_id"],
-);
+__PACKAGE__->set_primary_key("de_run_id", "contrast_id");
 
 =head1 RELATIONS
 
@@ -173,7 +170,7 @@ with 'TearDrop::Model::HasFileImport';
 sub _is_column_serializable { 1 };
 
 sub import_file {
-  my $self = shift;
+  my ($self, %param) = @_;
 
   my %field_map = qw/
     transcript transcript_id
@@ -189,12 +186,28 @@ sub import_file {
   my $hline = <IF>;
   chomp $hline;
   my @header_fields = split "\t", $hline;
+  my @rows;
   while(<IF>) {
+    chomp;
     my @f = split "\t";
     my %s = map {
-      $header_fields[$_] => $f[$_] eq 'NA' ? undef : $f[$_]
+      $field_map{$header_fields[$_]} => $f[$_] eq 'NA' ? undef : $f[$_]
     } grep { exists $field_map{$header_fields[$_]} } 0..$#header_fields;
-    $self->create_related('de_results', \%s);
+    $s{transcript_id} = $param{id_prefix}.'.'.$s{transcript_id} if $param{id_prefix};
+    $s{de_run_id} = $self->de_run->id;
+    $s{contrast_id} = $self->contrast->id;
+    push @rows, \%s;
+    if (@rows >= config->{import_flush_rows}) {
+      debug 'flushing '.@rows.' to database (line '. $. .')';
+      $self->result_source->schema->resultset('DeResult')->populate(\@rows);
+      @rows=();
+      debug 'done.';
+    }
+  }
+  if (@rows) {
+    debug 'flushing remaining '.@rows.' to database';
+    $self->result_source->schema->resultset('DeResult')->populate(\@rows);
+    debug 'done.';
   }
   close IF;
 }

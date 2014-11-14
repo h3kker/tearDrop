@@ -184,6 +184,7 @@ sub import_file {
 
   $self->delete_related('gene_model_mappings');
   open IF, "<".$self->path or confess "Open ".$self->path.": $!";
+  my @rows;
   while(<IF>) {
     next if m/^#/;
     my @f = split " ", $_, 9;
@@ -191,7 +192,7 @@ sub import_file {
     if (exists $sf{Note}) {
       $sf{Note}=~tr/\+/ /;
     }
-    $self->create_related('gene_model_mappings', {
+    push @rows, {
       contig => $f[0],
       mtype => $f[2],
       cstart => $f[3],
@@ -204,7 +205,18 @@ sub import_file {
       parent => $sf{Parent},
       additional => $sf{Note},
       gene_model_id => $self->id,
-    });
+    };
+    if (@rows >= config->{import_flush_rows}) {
+      debug 'flush '.@rows.' rows to database (line '. $. .')';
+      $self->result_source->schema->resultset('GeneModelMapping')->populate(\@rows);
+      @rows=();
+      debug 'done.';
+    }
+  }
+  if (@rows) {
+    debug 'flush remaining '.@rows.' rows to database';
+    $self->result_source->schema->resultset('GeneModelMapping')->populate(\@rows);
+    debug 'done.';
   }
   close IF;
 }
