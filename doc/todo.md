@@ -9,11 +9,12 @@
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
 - XXX reciprocal best hit
+- XXX transcript alignment meta: field for "needs prefix"
 
 ## big stuff
 
 - DONE multiple projects: master database with separate dbs for projects
-  - create template and provide scripts to setup project db
+  - DONE create template and provide scripts to setup project db
 - blast search in transcript assemblies (see also reciprocal best hit)
 - DONE import GFF files with genome annotations
 - job manager
@@ -25,7 +26,8 @@
   * race condition safety: provide one fifo per worker (tmpdir?), select task for update in transaction; 
   * cannot start job with post_processing command (does not survive de/serialisation)
   * one dedicated worker process started separately? comms with REST?
-- refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions)
+- DONE refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions) (in the end concat id with assembly-specific id prefix)
+- transcript-transcript relationships for assembly comparisons
 
 ## visualisation
 
@@ -52,6 +54,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not.
   * categorize high/low
   * look for dips
   * possible introns (via genomic coverage, use annotation where available)
+- generate rating from tags
 
 ## manual curation
 
@@ -66,7 +69,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not.
   - find good space for alignment/mapping tags
   - only general tags on top?
 - transfer annotations from transcript to gene
-- generate rating from tags
+- liftover annotations from transcripts, between projects
 
 ## nice to have
 
