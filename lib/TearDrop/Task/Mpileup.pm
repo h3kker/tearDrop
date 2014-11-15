@@ -112,17 +112,21 @@ sub run {
       my @f = split "\t", $l;
       my $i=1;
       for my $aln (@run_alignments) {
-        my $depth=0; my $mismatch=0;
+        my $plus=0; my $mismatch_plus=0; my $minus=0; my $mismatch_minus=0;
         if (defined $f[$i*3+1]) {
-          $depth = () = $f[$i*3+1] =~ m#[\.\,]#g;
-          $mismatch = () = $f[$i*3+1] =~ m#[ACGTN]#gi;
-          $depth+=$mismatch;
+          $plus = () = $f[$i*3+1] =~ m#\.#g;
+          $minus = () = $f[$i*3+1] =~ m#\,#g;
+          $mismatch_plus = () = $f[$i*3+1] =~ m#[ACGTN]#g;
+          $mismatch_minus = () = $f[$i*3+1] =~ m#[acgtn]#g;
         }
+        my $depth = $plus+$minus+$mismatch_plus+$mismatch_minus;
         push @{$cache->{$aln->bam_path}}, {
           pos => $f[1]+0,
           depth => $depth,
-          mismatch => $mismatch+0,
-          mismatch_rate => $depth>0 ? $mismatch/$depth : 0,
+          depth_plus => $plus+$mismatch_plus,
+          depth_minus => $plus+$mismatch_minus,
+          mismatch => $mismatch_plus+$mismatch_minus,
+          mismatch_rate => $depth>0 ? ($mismatch_plus+$mismatch_minus)/$depth : 0,
         };
         $i++;
       }
@@ -131,34 +135,44 @@ sub run {
   $cache{$aln_key}=$cache;
 
   my $aggregate_factor = ceil($self->effective_size/$self->aggregate_to);
-  my @ret;
+  my @a;
   for my $aln (@{$self->alignments}) {
-    my $r = { key => $aln->sample->name, bins => {} };
+    my $r = { name => $aln->sample->name, bins => {} };
     for my $p (@{$cache->{$aln->bam_path}}) {
       my $bin = int($p->{pos}/$aggregate_factor);
       $r->{bins}{$bin}||=[];
       push @{$r->{bins}{$bin}}, $p;
     }
-    push @ret, $r;
+    push @a, $r;
   }
-  for my $r (@ret) {
-    $r->{values}=[];
-    for my $bins (values %{$r->{bins}}) {
+  my %ret = (mismatch => [], coverage_plus => [], coverage_minus => []);
+  for my $r (sort { $a->{name} cmp $b->{name} } @a) {
+    my $mismatch = { name => $r->{name}, data => [] };
+    my $coverage_plus = { name => $r->{name}, data => [] };
+    my $coverage_minus = { name => $r->{name}, data => [] };
+    push @{$ret{mismatch}}, $mismatch;
+    push @{$ret{coverage_plus}}, $coverage_plus;
+    push @{$ret{coverage_minus}}, $coverage_minus;
+    for my $bins (sort { $a->[0]{pos} <=> $b->[0]{pos} } values %{$r->{bins}}) {
       my $pos=$bins->[0]{pos};
-      my $sum_depth=0;
+      my $sum_plus=0;
+      my $sum_minus=0;
       my $max_mismatch=0;
       my $max_mismatch_rate=0;
       for my $b (@$bins) {
-        $sum_depth+=$b->{depth};
+        $sum_plus+=$b->{depth_plus};
+        $sum_minus+=$b->{depth_minus};
         $max_mismatch=$b->{mismatch} if $b->{mismatch}>$max_mismatch;
         $max_mismatch_rate=$b->{mismatch_rate} if $b->{mismatch}>$max_mismatch_rate;
       }
-      push @{$r->{values}}, [ $pos, $sum_depth/scalar @$bins, $max_mismatch, $max_mismatch_rate ];
+      push @{$coverage_plus->{data}}, $sum_plus/scalar @$bins;
+      push @{$coverage_minus->{data}}, $sum_minus/scalar @$bins;
+      push @{$mismatch->{data}}, $max_mismatch;
     }
-    $r->{values} = [ sort { $a->[0] <=> $b->[0] } @{$r->{values}} ];
-    delete $r->{bins};
   }
-  $self->result([ sort { $a->{key} cmp $b->{key} } @ret ]);
+  #$self->result(\%ret);
+  \%ret;
+}
 #  $self->result([ map {
 #    { 
 #      key => $_->sample->name,
@@ -167,7 +181,6 @@ sub run {
 #      } grep { $_->{pos} % $aggregate_factor == 0 } @{$cache->{$_->bam_path}} ],
 #    }
 #  } sort { $a->sample->name cmp $b->sample->name } @{$self->alignments} ]);
-  $self->result;
-}
+#  $self->result;
 
 1;

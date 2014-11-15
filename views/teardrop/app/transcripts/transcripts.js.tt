@@ -77,7 +77,6 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       });
     },
   };
-
   $scope.transcriptDbSources = angular.copy($rootScope.dbSources);
   $scope.refresh = function() {
     $scope.transcript = Transcript.get({id: $routeParams.id}, function(data) {

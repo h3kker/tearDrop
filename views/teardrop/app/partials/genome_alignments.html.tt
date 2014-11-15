@@ -28,6 +28,8 @@
             <accordion-group open="loadGenomeAlignments(map)">
              <accordion-heading>View Alignment</accordion-heading>
               <div class="row"><div class="col-md-12">
+               <highchart id="coverage" config="coverageChartConfig"></highchart>
+               <!--
                <nvd3-line-chart data="map.alignment"
                  y="getArg('mismatch_rate')"
                  noData="Loading..."
@@ -50,6 +52,7 @@
                   style="stack"
                   showControls="true">
                </nvd3-stacked-area-chart>
+               -->
               </div></div>
             </accordion-group>
            </accordion>

@@ -69,7 +69,9 @@
   <script src="[% config.base_uri %]/js/d3.min.js"></script>
   <script src="[% config.base_uri %]/js/nv.d3.min.js"></script>
   <script src="[% config.base_uri %]/js/angularjs-nvd3-directives.min.js"></script>
-  <script src="[% config.base_uri %]/js/angularD3.js"></script>
+  <script src="http://code.highcharts.com/highcharts.js"></script>
+  <script src="http://code.highcharts.com/highcharts-more.js"></script>
+  <script src="[% config.base_uri %]/js/highcharts-ng.js"></script>
   <link rel="stylesheet" href="[% config.base_uri %]/css/nv.d3.min.css"/>
   <script src="[% config.base_uri %]/app/app.js"></script>
   <script src="[% config.base_uri %]/app/services.js"></script>

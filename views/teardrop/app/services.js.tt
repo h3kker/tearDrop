@@ -110,7 +110,9 @@ tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http', 'Transcrip
         if (reload || this.alignment==null) {
           this.alignment=[];
           var that=this;
+          this.alignmentLoading=true;
           $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/pileup').success(function(data) {
+            that.alignmentLoading=false;
             that.alignment=data;
           }).error($rootScope.errHandler);
         }

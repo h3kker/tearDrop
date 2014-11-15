@@ -90,7 +90,8 @@
      </div>
     </div>
    </tab>
-   <tab select="transcript.loadAlignment()">
+   <tab select="transcript.loadAlignment()"> 
+   <!--tab-->
     <tab-heading>Transcript Alignment</tab-heading>
     <div class="row">
      <div class="col-md-12">

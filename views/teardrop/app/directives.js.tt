@@ -326,31 +326,91 @@ angular.module('tearDropDirectives', []).
       scope: {
         mappings: '=',
       },
-      link: function($scope, element, attr) {
-        var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
-        $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
+      compile: function(element, attr) {
+        return {
+          pre: function($scope, element, attr) {
+            $scope.coverageChartConfig = {
+              options: {
+                "chart": { "type": "area", zoomType: 'x' },
+                "plotOptions": { 
+                  "series": { "stacking":"normal", marker: { enabled: false } }, 
+                },
+              },
+              series: [],
+              title: { text: '' },
+              loading: $scope.alignmentLoading,
+              xAxis: { min: 0, },
+              yAxis: [
+                { title: { text: 'Coverage' }, },
+                { title: { text: 'Mismatch Rate' }, opposite: true, min: 0 }
+              ],
+              size: { width: 800, height: 500, }
+            };
+          },
+          post: function($scope, element, attr) {
+            $scope.loadAnnotations = function(map, reload) {
+              if (reload || map.annotations==null) {
+                map.annotations=[];
+                $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+                    map.annotations=data;
+                }).error($rootScope.errHandler);
+              }
+            }
 
-        $scope.loadAnnotations = function(map, reload) {
-          if (reload || map.annotations==null) {
-            map.annotations=[];
-            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-                map.annotations=data;
-            }).error($rootScope.errHandler);
-          }
-        }
-
-        $scope.loadGenomeAlignments = function(map, reload) {
-          if (map==null) return;
-          if (reload || map.alignment==null) {
-            map.alignment=[];
-            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-              map.alignment=data;
-            }).error($rootScope.errHandler);
-          }
-        }
-        $scope.$watchCollection('mappings', function(newMaps) {
-          angular.forEach($scope.mappings, $scope.loadAnnotations);
-        });
+            $scope.loadGenomeAlignments = function(map, reload) {
+              if (map==null) return;
+              if (reload || map.alignment==null) {
+                map.alignment=[];
+                $scope.alignmentLoading=false;
+                $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+                  $scope.alignmentLoading=true;
+                  angular.forEach(data.mismatch, function(s, sample) {
+                    s.type='bar';
+                    s.name=s.name+' Mis';
+                    //s.yAxis=1;
+                    angular.forEach(s.data, function(v,k) {
+                      /*
+                      s.data[k]=data.coverage[sample].data[k]>0 ? 
+                        s.data[k]/data.coverage[sample].data[k] : null;
+                      */
+                      s.data[k]=s.data[k]>0 ? s.data[k] : null;
+                    });
+                    $scope.coverageChartConfig.series.push(s);
+                  });
+//                  angular.forEach(data.coverage, function(s, sample) {
+//                    s.type='area';
+//                    angular.forEach(s.data, function(v,k) {
+//                      if (s.data[k]==0) s.data[k]=null;
+//                    });
+//                    $scope.coverageChartConfig.series.push(s);
+//                  });
+                  angular.forEach(data.coverage_plus, function(s, sample) {
+                    s.type='line';
+                    s.name=s.name+'+';
+                    angular.forEach(s.data, function(v,k) {
+                      //s.data[k] = s.data[k]>0 ? s.data[k] : null;
+                      s.data[k] = s.data[k]+data.coverage_minus[sample].data[k];
+                    });
+                    $scope.coverageChartConfig.series.push(s);
+                  });
+                  /*
+                  angular.forEach(data.coverage_minus, function(s, sample) {
+                    s.type='line';
+                    s.name=s.name+'-';
+                    angular.forEach(s.data, function(v,k) {
+                      s.data[k] = s.data[k]>0 ? s.data[k]*-1 : null;
+                    });
+                    $scope.coverageChartConfig.series.push(s);
+                  });
+                  */
+                }).error($rootScope.errHandler);
+              }
+            }
+            $scope.$watchCollection('mappings', function(newMaps) {
+              angular.forEach($scope.mappings, $scope.loadAnnotations);
+            });
+          },
+        };
       },
     }
   })
@@ -359,13 +419,57 @@ angular.module('tearDropDirectives', []).
       restrict: 'E',
       replace: true,
       templateUrl: '[% config.base_uri %]/app/partials/transcript_alignment.html',
-      scope: {
-        transcript: '=',
-      },
-      link: function($scope, element, attr) {
-        var pileupFieldMap = { depth: 1, mismatch: 2, mismatch_rate: 3 };
-        $scope.getArg = function(arg) { return function(d) { return d[pileupFieldMap[arg]] } };
+      compile: function(element, attr) {
+        return {
+          pre: function($scope, element, attr) {
+            $scope.coverageChartConfig = {
+              options: {
+                "chart": { "type": "area", zoomType: 'x' },
+                "plotOptions": { 
+                  "series": { "stacking":"normal" }, 
+                },
+              },
+              series: [],
+              title: { text: '' },
+              loading: $scope.transcript.alignmentLoading,
+              xAxis: { min: 0, },
+              yAxis: [
+                { title: { text: 'Coverage' }, },
+                { title: { text: 'Mismatch Rate' }, opposite: true, max: 1, min: 0 }
+              ],
+              size: { width: 800, height: 500, }
+            };
+          },
+          post: function($scope, element, attr) {
+            $scope.$watch('transcript.alignment', function(newValue) {
+              if (newValue != null) {
+                angular.forEach(newValue.mismatch, function(s, sample) {
+                  s.type='line';
+                  s.yAxis=1;
+                  angular.forEach(s.data, function(v,k) {
+                    s.data[k]=newValue.coverage[sample].data[k]>0 ? 
+                      s.data[k]/newValue.coverage[sample].data[k] : null;
+                  });
+                  $scope.coverageChartConfig.series.push(s);
+                });
+                angular.forEach(newValue.coverage, function(s, sample) {
+                  s.type='area';
+                  angular.forEach(s.data, function(v,k) {
+                    if (s.data[k]==0) s.data[k]=null;
+                  });
+                  $scope.coverageChartConfig.series.push(s);
+                });
+              }
+            });
+            $scope.$watch('transcript.nsequence', function(v) {
+              if (v!=null) $scope.coverageChartConfig.xAxis.max=v.length;
+            });
+            $scope.$watch('transcript.alignmentLoading', function(v) {
+              $scope.coverageChartConfig.loading=v;
+            });
+          },
 
+        };
       },
     }
   })

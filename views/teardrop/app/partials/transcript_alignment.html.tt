@@ -1,6 +1,9 @@
 <div>
      <div class="row">
       <div class="col-md-12">
+       <highchart id="coverage" config="coverageChartConfig"></highchart>
+       <!--highchart id="mismatch" config="mismatchChartConfig"></highchart-->
+       <!-- 
        <nvd3-line-chart data="transcript.alignment"
           y="getArg('mismatch_rate')"
           noData="Loading..."
@@ -27,14 +30,6 @@
           style="stack"
           showControls="true">
        </nvd3-stacked-area-chart>
-       <!--
-       <div d3-chart="" data="transcript.alignment[0].values" margin="{ top: 10, right: 60, bottom: 20, left: 60}">
-        <d3-axis name="0" label="Coordinates" orientation="bottom" ticks="20"></d3-axis>
-        <d3-axis name="1" label="Coverage" orientation="left" ticks="5"></d3-axis>
-        <d3-axis name="3" label="Mismatch" orientation="right" ticks="5"></d3-axis>
-        <d3-line x="0" xscale="0" y="1" yscale="1" stroke="#000000"></d3-line>
-        <d3-bars width="2" x="0" xscale="0" y="3" yscale="3"></d3-bars>
-       </div>
        -->
       </div>
      </div>
