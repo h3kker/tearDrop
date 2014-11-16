@@ -291,9 +291,34 @@ sub to_fasta {
   return ">".$self->id.($self->name ? " ".$self->name:"")."\n".$self->nsequence;
 }
 
+# XXX should be done in the DB for better performance 
+# (and flexibility, i.e. order_by and where clauses)
+# only problem is intron size...
+sub filtered_mappings {
+  my ($self, $params) = @_;
+  $params||={};
+  $params->{limit}||=10;
+  $params->{match_cutoff}||=.85;
+  $params->{order_by}||={ -desc => 'match_ratio' };
+  my @ret;
+  my @all = $self->transcript_mappings({ match_ratio => { '>', $params->{match_cutoff} } }, { order_by => $params->{order_by} });
+
+  MAP: for my $map (@all) {
+    #debug $map->TO_JSON;
+    unless($map->is_good($params)) {
+      debug '   skip map '; debug $map->TO_JSON;
+      next;
+    }
+    push @ret, $map;
+    last if @ret > $params->{limit};
+  }
+  wantarray ? @ret : \@ret;
+}
+
 sub comparisons {
   {
     rating => { cmp => '>', column => 'me.rating' }, 
+    assembly => { cmp => '=', column => 'transcript_assemblies.name' },
     id => { cmp => 'like', column => 'me.id' },
     name => { cmp => 'like', column => 'me.name' }, 
     description => { cmp => 'like', column => 'me.description' }, 
@@ -307,11 +332,6 @@ sub comparisons {
 sub best_blast_hit {
   my $self = shift;
   $self->search_related('blast_results', undef, { order_by => [ { -asc => 'evalue' }, { -desc => 'pident' } ]})->first;
-}
-
-sub mappings {
-  my $self = shift;
-  [ $self->transcript_mappings ];
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

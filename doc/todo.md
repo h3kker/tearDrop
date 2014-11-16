@@ -12,6 +12,7 @@
 - XXX reciprocal best hit
 - XXX transcript alignment meta: field for "needs prefix"
 - XXX alignment disappears when gene/transcript is saved....
+- XXX fix filtered genome mapping mess
 
 ## big stuff
 
@@ -65,6 +66,11 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 - DONE transcript view: integrate into gene view, move transcript alignment view there
 - display more details for genomic mapping
+  - DONE filtering
+    - DONE display only useful genome mappings 
+    - userdefined criteria!
+    - show something when there's no valid mapping
+    - XXX fix mess: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
   - DONE external annotations (GFF)
   - matching parts, gaps, etc.
   - comparison with CDS/exon from external GFFs
@@ -87,6 +93,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - count tables
   - samples (raw files)
   - genome mappings
+- use Text::CSV or similar for table import
 
 ## nice to have
 
@@ -98,5 +105,5 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - use bioperl to run/parse blast?
 - look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
-- schema versioning
+- schema versioning, automated migration to new schema
 

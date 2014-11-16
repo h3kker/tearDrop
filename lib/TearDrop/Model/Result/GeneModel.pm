@@ -249,9 +249,9 @@ sub import_file {
   my $self = shift;
 
   $self->delete_related('gene_model_mappings');
-  open IF, "<".$self->path or confess "Open ".$self->path.": $!";
+  open my $IF, "<".$self->path or confess "Open ".$self->path.": $!";
   my @rows;
-  while(<IF>) {
+  while(<$IF>) {
     next if m/^#/;
     chomp;
     my @f = split " ", $_, 9;
@@ -285,7 +285,7 @@ sub import_file {
     $self->result_source->schema->resultset('GeneModelMapping')->populate(\@rows);
     debug 'done.';
   }
-  close IF;
+  close $IF;
 }
 
 

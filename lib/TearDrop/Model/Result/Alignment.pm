@@ -197,9 +197,9 @@ __PACKAGE__->might_have(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-10-29 13:28:04
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0pDhsqt0l/AjJIvpSgM+aA
 
-use File::Basename;
 use Carp;
-use Dancer ':script';
+use Dancer qw/:moose !status !dirname/;
+use File::Basename;
 
 sub _is_column_serializable { 1 };
 

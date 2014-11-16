@@ -58,21 +58,15 @@ sub set_tag {
 }
 
 sub gene_model_annotations {
-  my ($self, $context) = @_;
+  my ($self, $context, $param) = @_;
   $context = 200 unless defined $context;
-  my $annotations;
-  for my $loc (@{$self->mappings}) {
-    my $ann = $loc->genome_mapping->organism_name->gene_models->search_related('gene_model_mappings', {
-      -and => [
-        contig => $loc->tid,
-        -or => [
-          cstart => { '>',  $loc->tstart-$context, '<', $loc->tend+$context },
-          cend => { '<', $loc->tend+$context, '>', $loc->tstart-$context },
-          -and => { cstart => { '<', $loc->tstart-$context }, cend => { '>', $loc->tend+$context }},
-        ]
-      ]
-    });
-    push @$annotations, $_ for $ann->all;
+  my $annotations=[];
+  for my $loc (@{$self->filtered_mappings($param)}) { 
+    for my $gm ($loc->genome_mapping->organism_name->gene_models) {
+      push @$annotations, @{$gm->as_tree({
+        contig => $loc->tid, start => $loc->tstart-$context, end => $loc->tend+$context
+      }, $param)};
+    }
   }
   $annotations;
 }

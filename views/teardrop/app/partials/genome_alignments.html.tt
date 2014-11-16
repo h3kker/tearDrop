@@ -1,5 +1,10 @@
-    <div>
-     <div class="row" ng-repeat="map in mappings | orderBy:'match_ratio'" open="loadGenomeAlignments(map)">
+    <div class="container-fluid">
+     <div class="row" ng-if="mappings.length==0">
+      <div class="col-md-12">
+       <div class="alert alert-warning" role="alert">No valid genome mappings.</div>
+      </div>
+     </div>
+     <div class="row" ng-repeat="map in mappings | orderBy:['match_ratio', 'tid', 'tstart', 'tend']" open="loadGenomeAlignments(map)">
       <div class="col-md-12">
        <div class="panel panel-primary">
         <div class="panel-heading">

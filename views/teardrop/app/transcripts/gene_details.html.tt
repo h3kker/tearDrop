@@ -11,6 +11,12 @@
    <dt>Name</dt> <dd click-to-edit ng-model="gene.name" save-callback="gene.save"></dd>
    <dt>Description</dt> <dd click-to-edit ng-model="gene.description" save-callback="gene.save"></dd>
    <dt>Best Homolog</dt> <dd>{{gene.best_homolog || '-'}}</dd>
+   <dt>Organism(s)</dt> 
+    <dd><span ng-if="gene.organism.length<2">{{gene.organism[0].scientific_name || '-'}}</span>
+     <ul ng-if="gene.organism.length>1">
+      <li ng-repeat="org in gene.organisms">{{org.scientific_name}} ({{org.count}} transcripts)
+     </ul>
+    </dd>
    <dt>Rating</dt> <dd><rating ng-model="gene.rating" max="10" ng-click="gene.setRating(gene.rating)"></rating></dd>
    <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="gene.reviewed" ng-change="gene.save()"></dd>
   </dl>

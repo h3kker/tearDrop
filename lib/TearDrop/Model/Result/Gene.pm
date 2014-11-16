@@ -187,7 +187,9 @@ sub to_fasta {
 
 sub comparisons {
   {
-    rating => { cmp => '>', column => 'me.rating' }, id => { cmp => 'like', column => 'me.id' },
+    rating => { cmp => '>', column => 'me.rating' }, 
+    id => { cmp => 'like', column => 'me.id' },
+    assembly => { cmp => '=', column => 'transcript_assemblies.name' },
     name => { cmp => 'like', column => 'me.name' }, 
     description => { cmp => 'like', column => 'me.description' }, 
     'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 
@@ -214,15 +216,18 @@ sub organism {
   ];
 }
 
-sub mappings {
-  my $self = shift;
+sub filtered_mappings {
+  my ($self, $param) = shift;
+  $param||={};
+  $param->{limit}||=5;
 
   my @mappings;
   for my $t ($self->transcripts) {
-    for my $loc ($t->search_related('transcript_mappings')->slice(0,20)) {
+    for my $loc ($t->filtered_mappings($param)) {
       my $ovl=0;
       for my $m (@mappings) {
         # overlap 3', extend left
+        next unless $loc->tid eq $m->tid;
         if ($loc->tstart < $m->tstart && $loc->tend > $m->tend) {
           $ovl=1;
           $m->tstart($loc->tstart);

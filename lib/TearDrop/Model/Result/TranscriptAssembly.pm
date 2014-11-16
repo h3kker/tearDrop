@@ -230,7 +230,7 @@ with 'TearDrop::Model::HasFileImport';
 sub import_file {
   my $self = shift;
   $self->delete_related('transcripts');
-  open FA, "<".$self->path || confess 'open '.$self->path.": $!";
+  open my $FA, "<".$self->path || confess 'open '.$self->path.": $!";
   my $cur_trans;
   my $count;
   my @rows;
@@ -256,7 +256,7 @@ sub import_file {
     $self->result_source->schema->resultset('Transcript')->populate(\@rows);
     debug '   done';
   };
-  while(<FA>) {
+  while(<$FA>) {
     chomp;
     if (m/^>\s*([^ ]+)\s*/) {
       my $trans_id=$1;
@@ -282,7 +282,7 @@ sub import_file {
       $cur_trans->{nsequence}.=$_;
     }
   }
-  close FA;
+  close $FA;
 
   push @rows, $cur_trans;
 

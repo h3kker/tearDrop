@@ -199,7 +199,8 @@ with 'TearDrop::Model::HasFileImport';
 sub _is_column_serializable { 1 };
 
 sub as_tree {
-  my ($self, $region) = @_;
+  my ($self, $region, $param) = @_;
+  $param||={};
   my $search = $region ? { 
     -and => [
       tid => $region->{contig},
@@ -213,6 +214,9 @@ sub as_tree {
   my $transcripts = $self->search_related('transcript_mappings', $search, { prefetch => { 'transcript' => 'gene' } });
   my %g;
   for my $tm ($transcripts->all) {
+    if ($param->{filter}) {
+      next unless $tm->is_good(ref $param->{filter} eq 'HASH' ? $param->{filter} : undef);
+    }
     $g{$tm->transcript->gene_id} ||= {
       id => $tm->transcript->gene_id, 
       additional => $tm->transcript->gene->description,
@@ -274,9 +278,9 @@ sub import_file {
 
   my @rows;
   if ($self->program eq 'blat') {
-    open IF, "<".$self->path or confess("Open ".$self->path.": $!");
+    open my $IF, "<".$self->path or confess("Open ".$self->path.": $!");
     my $l=0;
-    while(<IF>) {
+    while(<$IF>) {
       $l++;
       my $ispsl=1 ; ## if m/^psLayout/; # should do but want some slack here?
       # skip header
@@ -319,7 +323,7 @@ sub import_file {
         debug 'done.';
       }
     }
-    close IF;
+    close $IF;
     if (@rows) {
       debug 'flushing remaining '.@rows.' to database';
       $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);

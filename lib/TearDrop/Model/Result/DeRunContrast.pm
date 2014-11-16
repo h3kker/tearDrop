@@ -165,7 +165,6 @@ use Try::Tiny;
 use Carp;
 
 use Moo;
-use namespace::clean;
 
 with 'TearDrop::Model::HasFileImport';
 
@@ -187,12 +186,12 @@ sub import_file {
 
   $self->delete_related('de_results');
 
-  open IF, "<".$self->path or die "open ".$self->path.": $!";
-  my $hline = <IF>;
+  open my $IF, "<".$self->path or die "open ".$self->path.": $!";
+  my $hline = <$IF>;
   chomp $hline;
   my @header_fields = split "\t", $hline;
   my @rows;
-  while(<IF>) {
+  while(<$IF>) {
     chomp;
     my @f = split "\t";
     my %s = map {
@@ -214,7 +213,7 @@ sub import_file {
     $self->result_source->schema->resultset('DeResult')->populate(\@rows);
     debug 'done.';
   }
-  close IF;
+  close $IF;
 }
 
 

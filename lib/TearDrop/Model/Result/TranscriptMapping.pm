@@ -192,7 +192,42 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-02 19:09:29
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QTkgXlwf8J/ZnarhwLJsfg
 
+use Dancer qw/:moose !status/;
+
 sub _is_column_serializable { 1 };
+
+sub is_good {
+  my ($self, $params) = @_;
+  $params ||= {};
+  $params->{match_cutoff}||=.85;
+  $params->{max_intron_length}||=20000;
+  $params->{max_map_length}||=80000;
+  $params->{coverage}||=.8;
+
+  if ($self->match_ratio < $params->{match_cutoff}) {
+    debug 'match_ratio check failed';
+    return 0;
+  }
+  if ($self->tend - $self->tstart > $params->{max_map_length}) {
+    debug 'max_map_length check failed';
+    return 0;
+  }
+  if (($self->qend - $self->qstart)/length($self->transcript->nsequence) < $params->{coverage}) {
+    debug 'coverage check failed';
+    return 0;
+  }
+  my @bs = split ',', $self->blocksizes;
+  my @blocks = split ',', $self->tstarts;
+  for my $idx (0..($#blocks-1)) {
+    next unless $bs[$idx] > 0;
+    #debug 'intron '.$idx.' length '.($blocks[$idx+1] - ($blocks[$idx]+$bs[$idx]));
+    if ($blocks[$idx+1] - ($blocks[$idx]+$bs[$idx]) > $params->{max_intron_length}) {
+      debug 'intron size check failed';
+      return 0;
+    }
+  }
+  return 1;
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

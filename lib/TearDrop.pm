@@ -2,7 +2,7 @@ package TearDrop;
 use Dancer ':syntax';
 
 use Dancer::Plugin::DBIC qw(schema resultset);
-use Dancer::FileUtils qw/path read_file_content/;
+use Dancer::FileUtils qw/read_file_content/;
 
 use TearDrop::Worker;
 
@@ -175,10 +175,14 @@ get '/transcripts/fasta' => sub {
 };
 
 get '/transcripts/:id' => sub {
-  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id'), { prefetch => [
+    'organism', 'gene', { 'transcript_tags' => 'tag' }, 
+  ]}) || send_error 'not found', 404;
   my $tser = $rs->TO_JSON;
+  $tser->{organism} = $rs->organism;
   $tser->{tags} = [ $rs->tags ];
-  $tser->{transcript_mappings} = [ $rs->transcript_mappings->slice(0,50) ];
+  $tser->{transcript_mapping_count} = $rs->transcript_mappings->count;
+  $tser->{transcript_mappings} = [ $rs->filtered_mappings ];
   $tser->{annotations} = $rs->gene_model_annotations;
   $tser->{de_results} = [];
   for my $der (schema(var 'project')->resultset('DeResult')->search({ transcript_id => $rs->id },
@@ -273,10 +277,7 @@ get '/genes' => sub {
     page => param('page'), 
     rows => param('pagesize') || 50, 
     prefetch => [ 
-      { 'transcripts' => [ 
-          { 'transcript_tags' => [ 'tag' ] }, 
-          #{ 'transcript_mappings' => [ 'genome_mapping' ] } 
-      ]}, 
+      { 'transcripts' => [ 'organism', { 'transcript_tags' => [ 'tag' ] }, ]}, 
       { 'gene_tags' => [ 'tag' ] } ]
   });
   debug 'done';
@@ -287,9 +288,8 @@ get '/genes' => sub {
     $ser->{transcripts} = [ map {
       my $tser = $_->TO_JSON;
       $tser->{tags} = [ $_->tags ];
-      #$tser->{transcript_mappings} = [ $_->transcript_mappings ];
       $tser;
-    } $r->search_related('transcripts')->all ];
+    } $r->transcripts ];
     $ser->{tags} = [ $r->tags ];
     push @ret, $ser;
   }
@@ -330,16 +330,22 @@ get '/genes/fasta' => sub {
 };
 
 get '/genes/:id' => sub {
-  my $gene = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
-  my $transcripts = [ $gene->search_related('transcripts')->all ];
+  my $gene = schema(var 'project')->resultset('Gene')->find(param('id'), {
+    prefetch => [ 
+      { 'transcripts' => [ 'organism', { 'transcript_tags' => 'tag' } ] },
+      { 'gene_tags' => 'tag' },
+    ]
+  }) || send_error 'not found', 404;
   my $ser = $gene->TO_JSON;
+  $ser->{organism} = $gene->organism;
   $ser->{transcripts} = [ map {
     my $tser = $_->TO_JSON;
     $tser->{tags} = [ $_->tags ];
-    $tser->{transcript_mappings} = [ $_->transcript_mappings->slice(0,50) ];
+    $tser->{transcript_mapping_count} = $_->transcript_mappings->count;
+    $tser->{transcript_mappings} = [ $_->filtered_mappings ];
     $tser;
-  } @$transcripts ];
-  $ser->{mappings} = $gene->mappings;
+  } $gene->transcripts ];
+  $ser->{mappings} = $gene->filtered_mappings;
   $ser->{annotations} = $gene->gene_model_annotations;
   $ser->{tags} = [ $gene->tags ];
   $ser->{de_results} = [];
@@ -478,7 +484,7 @@ get '/genome_mappings/:id/annotations' => sub {
   }
   my $gm = schema(var 'project')->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
   my @ret;
-  push @ret, @{$gm->as_tree({ contig => params->{tid}, start => params->{tstart}-$context, end => params->{tend}+$context})};
+  push @ret, @{$gm->as_tree({ contig => params->{tid}, start => params->{tstart}-$context, end => params->{tend}+$context}, { filter => 1 })};
   for my $mod ($gm->organism_name->gene_models) {
     push @ret, @{$mod->as_tree({ contig => params->{tid}, start => params->{tstart}-$context, end => params->{tend}+$context})};
   }

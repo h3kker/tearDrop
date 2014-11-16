@@ -610,7 +610,7 @@ angular.module('tearDropDirectives', []).
        '<span ng-show="ngModel.name">{{ngModel.name}}</span>'+
        '<span ng-show="!ngModel.name && ngModel.reviewed"><em>Unknown</em></span>'+
        '<span ng-show="ngModel.reviewed" class="glyphicon glyphicon-ok-sign"></span>'+
-       '<span ng-hide="ngModel.reviewed" class="glyphicon glyphicon-question-sign"></span>'+
+       '<span ng-hide="ngModel.reviewed" style="font-size: 1.2em" class="text-warning glyphicon glyphicon-question-sign"></span>'+
       '</div>',
      scope: {
       ngModel: '=',
