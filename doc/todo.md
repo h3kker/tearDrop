@@ -11,6 +11,7 @@
 - assembly selection in views
 - XXX reciprocal best hit
 - XXX transcript alignment meta: field for "needs prefix"
+- XXX alignment disappears when gene/transcript is saved....
 
 ## big stuff
 
@@ -35,9 +36,10 @@
 ## visualisation
 
 - genomic alignments
-  - display gff annotations and blat mappings
-  - (limited!) zooming
-  - display coverage, split by strand, with mismatches
+  - DONE display gff annotations and blat mappings
+  - DONE zooming 
+  - zoom out (a little) 
+  - DONE display coverage, split by strand, with mismatches
 - multiple sequence alignment viewer
   - blast results
   - mafft results for transcripts
@@ -45,7 +47,7 @@
 - alignment overviews
   * mapping percent, dis/concordant pairings; maybe idxstats
 
-use/extend https://github.com/WealthBar/angular-d3? or not.
+use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## automated annotation workflow
 
@@ -92,7 +94,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not.
 - sample, alignments, assembly pages (necessary for data import via web)
 - data exports?
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
-- refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface
+- DONE refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface (at least in annotation JSON)
 - use bioperl to run/parse blast?
 - look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.

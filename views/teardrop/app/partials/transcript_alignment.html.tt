@@ -1,36 +1,7 @@
-<div>
+<div class="container-fluid">
      <div class="row">
       <div class="col-md-12">
-       <highchart id="coverage" config="coverageChartConfig"></highchart>
-       <!--highchart id="mismatch" config="mismatchChartConfig"></highchart-->
-       <!-- 
-       <nvd3-line-chart data="transcript.alignment"
-          y="getArg('mismatch_rate')"
-          noData="Loading..."
-          width="1000"
-          height="200"
-          showXAxis="true"
-          showYAxis="true"
-          forceX="[0, transcript.nsequence.length]"
-          showLegend="true">
-       </nvd3-line-chart>
-      </div>
-     </div>
-     <div class="row">
-      <div class="col-md-12">
-       <nvd3-stacked-area-chart data="transcript.alignment"
-          y="getArg('depth')"
-          noData="Loading..."
-          width="1000"
-          height="600"
-          showXAxis="true"
-          showYAxis="true"
-          showLegend="true"
-          forceX="[0, transcript.nsequence.length]"
-          style="stack"
-          showControls="true">
-       </nvd3-stacked-area-chart>
-       -->
+       <alignment-viewer data="transcript"></alignment-viewer>
       </div>
      </div>
 </div>

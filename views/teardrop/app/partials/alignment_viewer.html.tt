@@ -1,0 +1,24 @@
+<div class="row">
+ <div class="col-md-2">
+  <div class="checkbox">
+   <label><input type="checkbox" ng-model="showAnnotations" ng-change="updateChart()"> Annotations</label>
+  </div>
+  <div class="checkbox">
+   <label><input type="checkbox" ng-model="showCoverage" ng-change="updateChart()"> Coverage</label>
+  </div>
+  <div class="checkbox">
+   <label><input type="checkbox" ng-model="showMismatch" ng-change="updateChart()"> Mismatches</label>
+  </div>
+  <div class="checkbox">
+    <label><input type="checkbox" ng-model="showStranded" ng-change="updateChart()"> Strand Bias</label>
+   </div>
+   <ul class="list-group alignment-samples">
+    <li class="list-group-item" ng-repeat="sample in samples" ng-dblclick="setOnlyVisible(sample)" ng-click="setVisible(sample)" ng-class="{ 'text-muted': !sample.visible }">
+     {{sample.sample}} <span class="badge" ng-style="sample.legendStyle()"><i class="glyphicon" ng-class="{ 'glyphicon-ok': sample.visible, 'glyphicon-remove': !sample.visible }"></i></span> 
+    </li>
+   </ul>
+ </div>
+ <div class="col-md-10">
+  <highchart id="coverage" config="coverageChartConfig"></highchart>
+ </div>
+</div>

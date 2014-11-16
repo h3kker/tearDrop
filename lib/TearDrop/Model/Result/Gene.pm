@@ -219,7 +219,7 @@ sub mappings {
 
   my @mappings;
   for my $t ($self->transcripts) {
-    for my $loc ($t->search_related('transcript_mappings')->all) {
+    for my $loc ($t->search_related('transcript_mappings')->slice(0,20)) {
       my $ovl=0;
       for my $m (@mappings) {
         # overlap 3', extend left

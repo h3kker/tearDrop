@@ -17,15 +17,15 @@ has 'reference_path' => ( is => 'rw', isa => 'Str' );
 has 'region' => ( is => 'rw', isa => 'Str' );
 has 'start' => ( is => 'rw', isa => 'Int | Undef' );
 sub effective_start {
-  $_[0]->start - $_[0]->context
+  $_[0]->start ? $_[0]->start - $_[0]->context : 0;
 }
 has 'end' => ( is => 'rw', isa => 'Int | Undef' );
 sub effective_end {
-  $_[0]->end + $_[0]->context
+  $_[0]->end ? $_[0]->end + $_[0]->context : $_[0]->effective_length;
 }
 has 'context' => ( is => 'rw', isa => 'Int', default => 0 );
 has 'aggregate_to' => ( is => 'rw', isa => 'Int', default => 750 );
-has 'effective_size' => ( is => 'rw', isa => 'Int | Undef' );
+has 'effective_length' => ( is => 'rw', isa => 'Int | Undef' );
 
 sub region_spec {
   my $self = shift;
@@ -59,11 +59,11 @@ sub run {
   }
   if ($self->type eq 'genome') { 
     confess 'need start/end coordinates for genomic regions' unless defined $self->start && defined $self->end;
-    $self->effective_size($self->effective_end - $self->effective_start);
-    confess 'negative region: '.$self->start.' - '.$self->end if ($self->effective_size < 0);
+    $self->effective_length($self->effective_end - $self->effective_start);
+    confess 'negative region: '.$self->start.' - '.$self->end if ($self->effective_length < 0);
   }
   elsif ($self->type eq 'transcript') {
-    confess 'need effective size' unless $self->effective_size;
+    confess 'need effective size' unless $self->effective_length;
   }
   else {
     confess 'invalid alignment type '.$self->type;
@@ -134,7 +134,7 @@ sub run {
   }
   $cache{$aln_key}=$cache;
 
-  my $aggregate_factor = ceil($self->effective_size/$self->aggregate_to);
+  my $aggregate_factor = ceil($self->effective_length/$self->aggregate_to);
   my @a;
   for my $aln (@{$self->alignments}) {
     my $r = { name => $aln->sample->name, bins => {} };
@@ -145,7 +145,7 @@ sub run {
     }
     push @a, $r;
   }
-  my %ret = (mismatch => [], coverage_plus => [], coverage_minus => []);
+  my %ret = (binwidth => $aggregate_factor, offset => $self->effective_start, length => $self->effective_length, mismatch => [], coverage_plus => [], coverage_minus => []);
   for my $r (sort { $a->{name} cmp $b->{name} } @a) {
     my $mismatch = { name => $r->{name}, data => [] };
     my $coverage_plus = { name => $r->{name}, data => [] };

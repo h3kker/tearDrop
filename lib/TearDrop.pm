@@ -178,7 +178,7 @@ get '/transcripts/:id' => sub {
   my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $tser = $rs->TO_JSON;
   $tser->{tags} = [ $rs->tags ];
-  $tser->{transcript_mappings} = [ $rs->transcript_mappings ];
+  $tser->{transcript_mappings} = [ $rs->transcript_mappings->slice(0,50) ];
   $tser->{annotations} = $rs->gene_model_annotations;
   $tser->{de_results} = [];
   for my $der (schema(var 'project')->resultset('DeResult')->search({ transcript_id => $rs->id },
@@ -253,7 +253,7 @@ get '/transcripts/:id/pileup' => sub {
   return TearDrop::Task::Mpileup->new(
     reference_path => $assembly->path,
     region => $alns[0]->use_original_id ? $trans->original_id : $trans->id,
-    effective_size => length($trans->nsequence),
+    effective_length => length($trans->nsequence),
     context => 0,
     type => 'transcript',
     alignments => [ map { $_->alignment } @alns ],
@@ -336,7 +336,7 @@ get '/genes/:id' => sub {
   $ser->{transcripts} = [ map {
     my $tser = $_->TO_JSON;
     $tser->{tags} = [ $_->tags ];
-    $tser->{transcript_mappings} = [ $_->transcript_mappings ];
+    $tser->{transcript_mappings} = [ $_->transcript_mappings->slice(0,50) ];
     $tser;
   } @$transcripts ];
   $ser->{mappings} = $gene->mappings;
@@ -477,37 +477,10 @@ get '/genome_mappings/:id/annotations' => sub {
     send_error 'refusing to extract more than 50kb', 500;
   }
   my $gm = schema(var 'project')->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
-
-  my $transcripts = $gm->search_related('transcript_mappings', {
-    -and => [
-      tid => params->{tid},
-      -or => [
-        tstart => { '>',  params->{tstart}-$context, '<', params->{tend}+$context },
-        tend => { '<', params->{tend}+$context, '>', params->{tstart}-$context },
-        -and => { tstart => { '<', params->{tstart}-$context }, tend => { '>', params->{tend}+$context }},
-      ]
-    ]
-  });
-  my $annotations = $gm->organism_name->gene_models->search_related('gene_model_mappings', {
-    -and => [
-      contig => params->{tid},
-      -or => [
-        cstart => { '>',  params->{tstart}-$context, '<', params->{tend}+$context },
-        cend => { '<', params->{tend}+$context, '>', params->{tstart}-$context },
-        -and => { cstart => { '<', params->{tstart}-$context }, cend => { '>', params->{tend}+$context }},
-      ]
-    ]
-  });
   my @ret;
-  for my $t ($transcripts->all) {
-    my $ts = $t->TO_JSON;
-    $ts->{annotation_type}='transcript';
-    push @ret, $ts;
-  }
-  for my $an ($annotations->all) {
-    my $as = $an->TO_JSON;
-    $as->{annotation_type}='gene_model';
-    push @ret, $as;
+  push @ret, @{$gm->as_tree({ contig => params->{tid}, start => params->{tstart}-$context, end => params->{tend}+$context})};
+  for my $mod ($gm->organism_name->gene_models) {
+    push @ret, @{$mod->as_tree({ contig => params->{tid}, start => params->{tstart}-$context, end => params->{tend}+$context})};
   }
   \@ret;
 };
@@ -523,18 +496,6 @@ get '/genome_mappings/:id/pileup' => sub {
   my $gm = schema(var 'project')->resultset('GenomeMapping')->find(param 'id') || send_error 'no such mapping', 404;
 
   my $genome = $gm->organism_name;
-
-  my $others = $gm->search_related('transcript_mappings', {
-    -and => [
-      tid => params->{tid},
-      -or => [
-        tstart => { '>',  params->{tstart}-$context, '<', params->{tend}+$context },
-        tend => { '<', params->{tend}+$context, '>', params->{tstart}-$context },
-        -and => { tstart => { '<', params->{tstart}-$context }, tend => { '>', params->{tend}+$context }},
-      ]
-    ]
-  });
-  debug map { $_->transcript->id } $others->all;
 
   return TearDrop::Task::Mpileup->new(
     reference_path => $genome->genome_path,

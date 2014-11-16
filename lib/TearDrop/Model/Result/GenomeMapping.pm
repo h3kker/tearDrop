@@ -198,6 +198,75 @@ with 'TearDrop::Model::HasFileImport';
 
 sub _is_column_serializable { 1 };
 
+sub as_tree {
+  my ($self, $region) = @_;
+  my $search = $region ? { 
+    -and => [
+      tid => $region->{contig},
+      -or => [
+        tstart => { '>', $region->{start}, '<', $region->{end} },
+        tend => { '<', $region->{end}, '>', $region->{start} },
+        -and => { tstart => { '<', $region->{start} }, tend => { '>', $region->{end} }},
+      ]
+    ]
+  } : undef;
+  my $transcripts = $self->search_related('transcript_mappings', $search, { prefetch => { 'transcript' => 'gene' } });
+  my %g;
+  for my $tm ($transcripts->all) {
+    $g{$tm->transcript->gene_id} ||= {
+      id => $tm->transcript->gene_id, 
+      additional => $tm->transcript->gene->description,
+      annotation_type => 'transcript',
+      cend => $tm->tend,
+      cstart => $tm->tstart,
+      contig => $tm->tid,
+      genome_mapping_id => $tm->genome_mapping_id,
+      mtype => 'gene',
+      mRNAs => [],
+      name => $tm->transcript->gene->name,
+      parent => undef,
+      strand => $tm->strand,
+    };
+    my $gene = $g{$tm->transcript->gene_id};
+    $gene->{cstart} = $tm->tstart if ($gene->{cstart} < $tm->tstart);
+    $gene->{cend} = $tm->tend if ($gene->{cend} > $tm->tend);
+    my $mrna = {
+      id => $tm->transcript_id,
+      additional => $tm->transcript->description,
+      annotation_type => 'transcript',
+      cend => $tm->tend,
+      cstart => $tm->tstart,
+      contig => $tm->tid,
+      genome_mapping_id => $tm->genome_mapping_id,
+      mtype => 'mRNA',
+      exons => [],
+      name => $tm->transcript->name,
+      parent => $tm->transcript->gene_id,
+      strand => $tm->strand,
+      original => $tm,
+    };
+    push @{$gene->{mRNAs}}, $mrna;
+    my @bs = split ',', $tm->blocksizes;
+    my @blocks = split ',', $tm->tstarts;
+    for my $idx (0..$#blocks) {
+      push @{$mrna->{exons}}, {
+        id => $tm->transcript_id.'.'.$idx,
+        additional => undef,
+        annotation_type => 'transcript',
+        cend => $blocks[$idx]+$bs[$idx],
+        cstart => $blocks[$idx],
+        contig => $tm->tid,
+        genome_mapping_id => $tm->genome_mapping_id,
+        mtype => 'exon',
+        name => $tm->transcript_id.'.'.$idx,
+        parent => $tm->transcript_id,
+        strand => $tm->strand,
+      };
+    }
+  }
+  wantarray ? values %g : [ values %g ];
+}
+
 sub import_file {
   my $self = shift;
 

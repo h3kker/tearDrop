@@ -179,6 +179,72 @@ with 'TearDrop::Model::HasFileImport';
 
 sub _is_column_serializable { 1 };
 
+sub as_tree {
+  my ($self, $region) = @_;
+  my $search = $region ? {
+    -and => [
+      contig => $region->{contig},
+      -or => [
+        cstart => { '>',  $region->{start}, '<', $region->{end} },
+        cend => { '<', $region->{end}, '>', $region->{start} },
+        -and => { cstart => { '<', $region->{start} }, cend => { '>', $region->{end} }},
+      ]
+    ]
+  } : undef;
+  
+  my %nodes;
+  for my $gm ($self->search_related('gene_model_mappings', $search)) {
+    if ($gm->parent) {
+      my $p = $gm->parent;
+      $p=~s/\r?\n$//g;
+      if ($p ne $gm->parent) {
+        $gm->parent($p);
+        $gm->update;
+      }
+    }
+    if ($gm->mtype eq 'gene') {
+      $nodes{$gm->id}||={
+        mRNAs => [],
+      };
+      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
+    }
+    elsif ($gm->mtype eq 'mRNA') {
+      $nodes{$gm->parent}||={
+        mRNAs => [],
+      };
+      $nodes{$gm->id}||={
+        exons => [],
+      };
+      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
+      push @{$nodes{$gm->parent}->{mRNAs}}, $nodes{$gm->id};
+    }
+    elsif ($gm->mtype eq 'exon') {
+      $nodes{$gm->parent}||={
+        exons => [],
+      };
+      $nodes{$gm->id}||={};
+      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
+      push @{$nodes{$gm->parent}->{exons}}, $nodes{$gm->id};
+    }
+    else {
+      $nodes{$gm->id}||={};
+      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
+      if ($gm->parent) {
+        $nodes{$gm->parent}||={
+          others => [],
+        };
+        push @{$nodes{$gm->parent}->{others}}, $nodes{$gm->id};
+      }
+    }
+  }
+  my %genes;
+  for my $n (keys %nodes) {
+    $nodes{$n}->{annotation_type} = 'gene_model';
+    $genes{$n}=$nodes{$n} if $nodes{$n}->{mtype} eq 'gene';
+  }
+  wantarray ? values %genes : [ values %genes ];
+}
+
 sub import_file {
   my $self = shift;
 
@@ -187,6 +253,7 @@ sub import_file {
   my @rows;
   while(<IF>) {
     next if m/^#/;
+    chomp;
     my @f = split " ", $_, 9;
     my %sf = map { split "=", $_ } split ";", $f[8];
     if (exists $sf{Note}) {

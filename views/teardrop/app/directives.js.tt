@@ -35,7 +35,6 @@ angular.module('tearDropDirectives', []).
           });
         };
         $scope.runBlast = function(selectedDbs) {
-          console.log(selectedDbs);
           angular.forEach(selectedDbs, function(db) {
             $http.get('[% config.base_uri %]/api/'+$scope.ngModel.type+'s/'+$scope.ngModel.id+'/run_blast', {
               'params': { database: db.name }
@@ -43,7 +42,6 @@ angular.module('tearDropDirectives', []).
               db.status='started';
               $rootScope.updateQueueStatus();
               var queryJobStatus = function(pid) {
-                console.log('here');
                 $timeout(function() {
                   $http.get('[% config.base_uri %]/api/worker/status/'+pid).success(function(jobData) {
                     angular.forEach($scope.dbSources, function(dbs) {
@@ -318,6 +316,245 @@ angular.module('tearDropDirectives', []).
       },
     }
   })
+  .directive('alignmentViewer', function($filter) {
+    return {
+      restrict: 'E',
+      replace: true,
+      templateUrl: '[% config.base_uri %]/app/partials/alignment_viewer.html',
+      scope: {
+        alignmentData: '=data',
+        width: '=?',
+        height: '=?',
+      },
+      compile: function(element, attr) {
+        return {
+          pre: function($scope, element, attr) {
+            if ($scope.width==null) $scope.width=1000;
+            if ($scope.height==null) $scope.height=500;
+            $scope.coverageChartConfig = {
+              options: {
+                "chart": { "type": "area", zoomType: 'x', events: { redraw: function() { $scope.drawAnnotations() } } },
+                "plotOptions": { 
+                  "series": { "stacking":"normal",  }, 
+                  "line": { marker: { enabled: false } },
+                  "scatter": { marker: { radius: 2, enabled: true } },
+                },
+                legend: {
+                  enabled: false,
+                },
+              },
+              series: [],
+              title: { text: '' },
+              loading: false,
+              xAxis: {  },
+              yAxis: [
+                { title: { text: 'Coverage' }, },
+                //{ title: { text: 'Mismatch Rate' }, opposite: true, min: 0 }
+              ],
+              size: { width: $scope.width, height: $scope.height, },
+              func: function(chart) {
+                $scope.chart=chart;
+              },
+            };
+          },
+          post: function($scope, element, attr) {
+            $scope.annoGroup=null;
+            $scope.showMismatch=false;
+            $scope.showStranded=false;
+            $scope.showCoverage=true;
+            $scope.showAnnotations=true;
+            $scope.resetChartData=function() {
+              $scope.samples={};
+              $scope.chartData={
+                mismatch: [],
+                coverage: [],
+                strandedCoverage: [],
+              };
+            }
+            $scope.resetChartData();
+            $scope.generateSeries=function() {
+              $scope.coverageChartConfig.series=[];
+              $scope.coverageChartConfig.xAxis.min=$scope.alignmentData.alignment.data.offset;
+              $scope.coverageChartConfig.xAxis.max=$scope.alignmentData.alignment.data.offset+$scope.alignmentData.alignment.data.length;
+              if ($scope.showCoverage) {
+                angular.forEach($scope.chartData.coverage, function(item) {
+                  if ($scope.samples[item.sample].visible) $scope.coverageChartConfig.series.push(item);
+                });
+              }
+              if ($scope.showMismatch) {
+                angular.forEach($scope.chartData.mismatch, function(item) {
+                  if ($scope.samples[item.sample].visible) $scope.coverageChartConfig.series.push(item);
+                });
+              }
+              if ($scope.showStranded) {
+                angular.forEach($scope.chartData.strandedCoverage, function(item) {
+                  if ($scope.samples[item.sample].visible) $scope.coverageChartConfig.series.push(item);
+                });
+              }
+              /*
+                $scope.chart.renderer.rect($scope.chart.xAxis[0].toPixels(100), $scope.chart.yAxis[0].toPixels(100), 100, 100)
+                  .attr({
+                      'stroke-width': 2,
+                      stroke: 'red',
+                      fill: 'yellow',
+                      zIndex: 3
+                  }).add();
+                  */
+            }
+            $scope.drawAnnotations = function() {
+              $('g#anno').remove();
+              $scope.annoGroup=null;
+              var fillColor = function(ann) {
+                return ann.annotation_type == 'transcript' ? '#ccc' : '#C5FFC5';
+              }
+              var stackHeight=0;
+              var mrnaHeight=15;
+              if ($scope.showAnnotations && $scope.alignmentData.annotations != null && $scope.chart.yAxis[0].dataMin!=null) {
+                $scope.annoGroup = $scope.chart.renderer.g().attr({'id': 'anno'}).add();
+                angular.forEach($scope.alignmentData.annotations, function(gene, geneIdx) {
+                  var convertCoords = function(tann) {
+                    return {
+                      cstart: $scope.chart.xAxis[0].toPixels(tann.cstart),
+                      cend: $scope.chart.xAxis[0].toPixels(tann.cend),
+                    };
+                  }
+
+                  var coords = convertCoords(gene);
+                  var geneGroup = $scope.chart.renderer.g().attr({
+                    'id': 'gene.'+gene.id, 
+                    'transform': 'translate(0,'+($scope.chart.yAxis[0].toPixels(0)-stackHeight)+')' 
+                  }).add($scope.annoGroup);
+                  var geneHeight = mrnaHeight*Math.max(gene.mRNAs.length,1);
+                  stackHeight+=geneHeight;
+                  $scope.chart.renderer.rect(coords.cstart, 1, coords.cend-coords.cstart, geneHeight-2)
+                      .attr({
+                        'stroke-width': 0, 
+                        'fill-opacity': 0.25,
+                        stroke: '#777', 
+                        fill: fillColor(gene) 
+                      }).on('mouseover', function() { 
+                        console.log('here');
+                        gene.hover=true;
+                      }).on('mouseout', function() { 
+                        gene.hover=false;
+                      }).add(geneGroup);
+
+                  angular.forEach($filter('orderBy')(gene.mRNAs, 'cstart'), function(mRNA, mrnaIdx) {
+                    var mrnaGroup = $scope.chart.renderer.g().attr({
+                      'id': 'mRNA.'+mRNA.id,
+                      'transform': 'translate(0,-'+(mrnaIdx*mrnaHeight)+')',
+                    }).add(geneGroup);
+                    var mrnaCoords = convertCoords(mRNA);
+                    $scope.chart.renderer.rect(mrnaCoords.cstart, 3, mrnaCoords.cend-mrnaCoords.cstart, mrnaHeight-6)
+                        .attr({
+                          'stroke-width': 0, 
+                          'fill-opacity': .5,
+                          stroke: 'black', 
+                          fill: fillColor(mRNA) 
+                        }).add(mrnaGroup);
+
+                    angular.forEach(mRNA.exons, function(exon, exIdx) {
+                      var exonCoords = convertCoords(exon);
+                      $scope.chart.renderer.rect(exonCoords.cstart, 2, exonCoords.cend-exonCoords.cstart, mrnaHeight-4, 2)
+                        .attr({
+                          'stroke-width': 2, 
+                          'stroke-opacity': 1,
+                          'fill-opacity': .75,
+                          stroke: '#333', 
+                          fill: fillColor(exon) 
+                        }).add(mrnaGroup);
+                    });
+                  });
+                  $scope.chart.renderer.text(gene.id, $scope.chart.chartWidth-5, geneHeight-2).attr({ 'text-anchor': 'end' }).add(geneGroup);
+
+                });
+              }
+            }
+            $scope.setVisible = function(sample) {
+              sample.visible=!sample.visible;
+              $scope.updateChart();
+            }
+            $scope.setOnlyVisible = function(sample) {
+              sample.visible=true;
+              angular.forEach($scope.samples, function(s) {
+                if (s!==sample) s.visible=false;
+              });
+              $scope.updateChart();
+            }
+            $scope.updateChart = function() {
+              $scope.generateSeries();
+            }
+            $scope.$watch('alignmentData.alignment.loading', function(newVal) {
+              $scope.coverageChartConfig.loading=newVal;
+            });
+            $scope.$watch('alignmentData.alignment.data', function(newVal) {
+              $scope.coverageChartConfig.series=[];
+              $scope.resetChartData();
+              if (newVal==null) return;
+              var sampleIdx=0;
+              angular.forEach(newVal.coverage_plus, function(s, sample) {
+                s.sample=s.name;
+                s.visible=true;
+                s.legendStyle=function() { return { 'background-color': this.visible ? this.color : '#ccc' } };
+                s.color=Highcharts.theme.colors[sampleIdx % Highcharts.theme.colors.length];
+                $scope.samples[s.sample]=s;
+                sampleIdx++;
+
+                tmp=angular.copy(s);
+                tmp.type='line';
+                tmp.name=s.name+'+';
+                tmp.cat='stranded';
+                angular.forEach(s.data, function(v,k) {
+                  tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]-newVal.coverage_minus[sample].data[k] ];
+                  //if (tmp.data[k][1]==0) tmp.data[k]=null;
+                });
+                $scope.chartData.strandedCoverage.push(tmp);
+
+                s.type='line';
+                s.cat='coverage';
+                angular.forEach(s.data, function(v,k) {
+                  //s.data[k] = s.data[k]>0 ? s.data[k] : null;
+                  s.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]+newVal.coverage_minus[sample].data[k]];
+                });
+                $scope.chartData.coverage.push(s);
+
+              });
+              /*
+              angular.forEach(newVal.coverage_minus, function(s, sample) {
+                s.type='line';
+                s.sample=s.name;
+                s.color=$scope.samples[s.sample].color;
+                s.name=s.name+'-';
+                s.cat='stranded';
+                angular.forEach(s.data, function(v,k) {
+                  s.data[k] = s.data[k]>0 ? s.data[k]*-1 : 0;
+                });
+                $scope.chartData.strandedCoverage.push(s);
+              });
+              */
+              angular.forEach(newVal.mismatch, function(s, sample) {
+                s.type='bar';
+                s.sample=s.name;
+                s.color=$scope.samples[s.sample].color;
+                s.name=s.name+' Mis';
+                s.cat='mismatch';
+                //s.yAxis=1;
+                angular.forEach(s.data, function(v,k) {
+                  /*
+                  s.data[k]=data.coverage[sample].data[k]>0 ? 
+                    s.data[k]/data.coverage[sample].data[k] : null;
+                  */
+                  s.data[k]=[$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]>0 ? s.data[k] : null];
+                });
+                $scope.chartData.mismatch.push(s);
+              });
+              $scope.generateSeries();
+            });
+          },
+        };
+      },
+    };
+  })
   .directive('genomeAlignments', function($http, $rootScope) {
     return {
       restrict: 'E',
@@ -326,91 +563,30 @@ angular.module('tearDropDirectives', []).
       scope: {
         mappings: '=',
       },
-      compile: function(element, attr) {
-        return {
-          pre: function($scope, element, attr) {
-            $scope.coverageChartConfig = {
-              options: {
-                "chart": { "type": "area", zoomType: 'x' },
-                "plotOptions": { 
-                  "series": { "stacking":"normal", marker: { enabled: false } }, 
-                },
-              },
-              series: [],
-              title: { text: '' },
-              loading: $scope.alignmentLoading,
-              xAxis: { min: 0, },
-              yAxis: [
-                { title: { text: 'Coverage' }, },
-                { title: { text: 'Mismatch Rate' }, opposite: true, min: 0 }
-              ],
-              size: { width: 800, height: 500, }
-            };
-          },
-          post: function($scope, element, attr) {
-            $scope.loadAnnotations = function(map, reload) {
-              if (reload || map.annotations==null) {
-                map.annotations=[];
-                $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-                    map.annotations=data;
-                }).error($rootScope.errHandler);
-              }
-            }
+      link: function($scope, element, attr) {
+        $scope.loadAnnotations = function(map, reload) {
+          if (reload || map.annotations==null) {
+            map.annotations=[];
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+                map.annotations=data;
+                console.log(map.annotations);
+            }).error($rootScope.errHandler);
+          }
+        }
 
-            $scope.loadGenomeAlignments = function(map, reload) {
-              if (map==null) return;
-              if (reload || map.alignment==null) {
-                map.alignment=[];
-                $scope.alignmentLoading=false;
-                $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
-                  $scope.alignmentLoading=true;
-                  angular.forEach(data.mismatch, function(s, sample) {
-                    s.type='bar';
-                    s.name=s.name+' Mis';
-                    //s.yAxis=1;
-                    angular.forEach(s.data, function(v,k) {
-                      /*
-                      s.data[k]=data.coverage[sample].data[k]>0 ? 
-                        s.data[k]/data.coverage[sample].data[k] : null;
-                      */
-                      s.data[k]=s.data[k]>0 ? s.data[k] : null;
-                    });
-                    $scope.coverageChartConfig.series.push(s);
-                  });
-//                  angular.forEach(data.coverage, function(s, sample) {
-//                    s.type='area';
-//                    angular.forEach(s.data, function(v,k) {
-//                      if (s.data[k]==0) s.data[k]=null;
-//                    });
-//                    $scope.coverageChartConfig.series.push(s);
-//                  });
-                  angular.forEach(data.coverage_plus, function(s, sample) {
-                    s.type='line';
-                    s.name=s.name+'+';
-                    angular.forEach(s.data, function(v,k) {
-                      //s.data[k] = s.data[k]>0 ? s.data[k] : null;
-                      s.data[k] = s.data[k]+data.coverage_minus[sample].data[k];
-                    });
-                    $scope.coverageChartConfig.series.push(s);
-                  });
-                  /*
-                  angular.forEach(data.coverage_minus, function(s, sample) {
-                    s.type='line';
-                    s.name=s.name+'-';
-                    angular.forEach(s.data, function(v,k) {
-                      s.data[k] = s.data[k]>0 ? s.data[k]*-1 : null;
-                    });
-                    $scope.coverageChartConfig.series.push(s);
-                  });
-                  */
-                }).error($rootScope.errHandler);
-              }
-            }
-            $scope.$watchCollection('mappings', function(newMaps) {
-              angular.forEach($scope.mappings, $scope.loadAnnotations);
-            });
-          },
-        };
+        $scope.loadGenomeAlignments = function(map, reload) {
+          if (map==null) return;
+          if (reload || map.alignment==null) {
+            map.alignment={loading: true, data: {}};
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+              map.alignment.data=data;
+              map.alignment.loading=false;
+            }).error($rootScope.errHandler);
+          }
+        }
+        $scope.$watchCollection('mappings', function(newMaps) {
+          angular.forEach($scope.mappings, $scope.loadAnnotations);
+        });
       },
     }
   })
@@ -418,58 +594,11 @@ angular.module('tearDropDirectives', []).
     return {
       restrict: 'E',
       replace: true,
+      scope: {
+        transcript: '=',
+      },
       templateUrl: '[% config.base_uri %]/app/partials/transcript_alignment.html',
-      compile: function(element, attr) {
-        return {
-          pre: function($scope, element, attr) {
-            $scope.coverageChartConfig = {
-              options: {
-                "chart": { "type": "area", zoomType: 'x' },
-                "plotOptions": { 
-                  "series": { "stacking":"normal" }, 
-                },
-              },
-              series: [],
-              title: { text: '' },
-              loading: $scope.transcript.alignmentLoading,
-              xAxis: { min: 0, },
-              yAxis: [
-                { title: { text: 'Coverage' }, },
-                { title: { text: 'Mismatch Rate' }, opposite: true, max: 1, min: 0 }
-              ],
-              size: { width: 800, height: 500, }
-            };
-          },
-          post: function($scope, element, attr) {
-            $scope.$watch('transcript.alignment', function(newValue) {
-              if (newValue != null) {
-                angular.forEach(newValue.mismatch, function(s, sample) {
-                  s.type='line';
-                  s.yAxis=1;
-                  angular.forEach(s.data, function(v,k) {
-                    s.data[k]=newValue.coverage[sample].data[k]>0 ? 
-                      s.data[k]/newValue.coverage[sample].data[k] : null;
-                  });
-                  $scope.coverageChartConfig.series.push(s);
-                });
-                angular.forEach(newValue.coverage, function(s, sample) {
-                  s.type='area';
-                  angular.forEach(s.data, function(v,k) {
-                    if (s.data[k]==0) s.data[k]=null;
-                  });
-                  $scope.coverageChartConfig.series.push(s);
-                });
-              }
-            });
-            $scope.$watch('transcript.nsequence', function(v) {
-              if (v!=null) $scope.coverageChartConfig.xAxis.max=v.length;
-            });
-            $scope.$watch('transcript.alignmentLoading', function(v) {
-              $scope.coverageChartConfig.loading=v;
-            });
-          },
-
-        };
+      link: function($scope, element, attr) {
       },
     }
   })
