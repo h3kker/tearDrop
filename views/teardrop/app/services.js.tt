@@ -1,13 +1,14 @@
 var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 
-var objPrototype = {
+var objPrototype = function($rootScope) {
+  return {
       save: function(postUpdate) {
         this.$save(function(t) {
           t.prepare();
           if (postUpdate!=null) {
             postUpdate();
           }
-        }, this.$rootScope.errHandler);
+        }, $rootScope.errHandler);
       },
       setRating: function(val) {
         this.rating=val;
@@ -23,7 +24,7 @@ var objPrototype = {
         this.save(function(t) {
           if (newTag != null && newTag.tag !== '') {
             newTag.tag='';
-            that.$rootScope.reloadTags();
+            $rootScope.reloadTags();
           }
         });
       },
@@ -41,15 +42,30 @@ var objPrototype = {
           })
         });
       },
+  }
 };
 
-tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http', 'Transcript',
+
+tearDropServices.factory('Assembly', ['$resource',
+  function($resource) {
+    var Assembly = $resource('[% config.base_uri %]/api/assemblies/:id', {id:'@id'}, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    return Assembly;
+  }
+]).factory('Tag', ['$resource',
+  function($resource) {
+    var Tag = $resource('[% config.base_uri %]/api/tags/:tag', {tag:'@tag'}, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    return Tag;
+  }
+]).factory('Gene', ['$resource', '$rootScope', '$http', 'Transcript',
   function($resource, $rootScope, $http, Transcript){
     var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
       query: {method:'GET'},
     });
-    angular.extend(Gene.prototype, objPrototype, {
-      '$rootScope': $rootScope,
+    angular.extend(Gene.prototype, objPrototype($rootScope), {
       type: 'gene',
       prepare: function() {
         this.reviewed=!!this.reviewed;
@@ -86,8 +102,7 @@ tearDropServices.factory('Gene', ['$resource', '$rootScope', '$http', 'Transcrip
     var Transcript = $resource('[% config.base_uri %]/api/transcripts/:id', {id:'@id'}, {
       query: {method:'GET'},
     });
-    angular.extend(Transcript.prototype, objPrototype, {
-      '$rootScope': $rootScope,
+    angular.extend(Transcript.prototype, objPrototype($rootScope), {
       type: 'transcript',
       prepare: function() {
         this.reviewed=!!this.reviewed;

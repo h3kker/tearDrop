@@ -101,22 +101,33 @@ angular.module('tearDropDirectives', []).
          
     }
   }).
-  directive('pagedGrid', function(uiGridConstants, $timeout, $location, $rootScope) {
+  directive('pagedGrid', function(uiGridConstants, $timeout, $location, $rootScope, Assembly, Tag) {
     return {
       restrict: 'E',
       replace: true,
-      template: '<div><button ng-click="param.getFasta()" class="btn btn-xs">Get FASTA file</button><pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination><div ui-grid="gridOptions" class="grid"></div></div>',
+      templateUrl: '[% config.base_uri %]/app/partials/paged_grid.html',
       scope: {
         gridOptions: '=',
         refresh: '=',
         param: '=',
       },
       link: function($scope, element, attr) {
+        $scope.showAssemblySelector=attr.showAssemblySelector;
+        $scope.showTagSelector=attr.showTagSelector;
+        $scope.tags=Tag.query();
+        $scope.assemblies=Assembly.query();
+        $scope.setAssembly = function() {
+          if ($scope.param.filters.assembly_id==null || $scope.param.filters.assembly_id=='') {
+            delete $scope.param.filters.assembly_id;
+          }
+          $scope.param.doRefresh();
+        }
         if ($scope.param.selectedTags==null) $scope.param.selectedTags=[];
         if ($scope.param.sort==null) $scope.param.sort=[];
         if ($scope.param.filters==null) $scope.param.filters={};
         angular.extend($scope.param, {
           addTag: function(newTag) {
+            if (newTag.tag=='') return;
             if (!$scope.param.selectedTags.some(function(t) { return t.tag==newTag.tag })) {
               $scope.param.selectedTags.push(newTag);
               $scope.param.doRefresh();
@@ -184,11 +195,14 @@ angular.module('tearDropDirectives', []).
           });
           gridApi.core.on.filterChanged($scope, function() {
             var grid = this.grid;
-            $scope.param.filters={};
+            //$scope.param.filters={};
             angular.forEach(grid.columns, function(col) {
               angular.forEach(col.filters, function(f) {
                 if (f.term !== null && f.term !== '') {
                   $scope.param.filters[col.field]=f.term;
+                }
+                else {
+                  delete $scope.param.filters[col.field];
                 }
               });
             });

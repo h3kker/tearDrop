@@ -3,16 +3,14 @@
 ## bugs/urgent
 
 - "loading" feedback, error handling ($http interceptor?)
-- hide alignment view when unavailable
-- set url path on de run selection
+- DONE set url path on de run selection
 - deal with multiple alignments => selection, define "favorite"
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
-- assembly selection in views
+- DONE assembly selection in views
 - XXX reciprocal best hit
-- XXX transcript alignment meta: field for "needs prefix"
+- DONE transcript alignment meta: field for "use_original_id"
 - XXX alignment disappears when gene/transcript is saved....
-- XXX fix filtered genome mapping mess
 
 ## big stuff
 
@@ -38,6 +36,7 @@
 
 - genomic alignments
   - DONE display gff annotations and blat mappings
+  - interactive annotations
   - DONE zooming 
   - zoom out (a little) 
   - DONE display coverage, split by strand, with mismatches
@@ -56,6 +55,11 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   * DONE annotate genes and transcripts with best hits
   * DONE set no/good/bad homology tags
 - transfer transcript annotations to genes
+- use/transfer/compare with external annotations
+- analyze genome mapping
+  * intron sizes
+  * coverage
+  * identity
 - analyze coverage
   * categorize high/low
   * look for dips
@@ -69,8 +73,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - DONE filtering
     - DONE display only useful genome mappings 
     - userdefined criteria!
-    - show something when there's no valid mapping
-    - XXX fix mess: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
+    - DONE show something when there's no valid mapping
   - DONE external annotations (GFF)
   - matching parts, gaps, etc.
   - comparison with CDS/exon from external GFFs
@@ -81,6 +84,11 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - only general tags on top?
 - transfer annotations from transcript to gene
 - DONE liftover annotations from transcripts, between projects
+- show current tag counts in overview page
+
+## Differential Expression
+
+- overview over de runs, parameters, contrasts
 
 ## data import
 
@@ -106,4 +114,5 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 - schema versioning, automated migration to new schema
+- fix mess: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 

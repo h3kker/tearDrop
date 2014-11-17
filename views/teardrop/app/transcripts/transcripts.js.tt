@@ -22,7 +22,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     controller: 'TranscriptsDetailCtrl'
   });
 }])
-.controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', '$location', function($rootScope, $scope, $http, $location) {
+.controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', '$location', 'Assembly', function($rootScope, $scope, $http, $location) {
   if ($rootScope.transcripts==null) {
     $rootScope.transcripts={
       'pagingOptions': {

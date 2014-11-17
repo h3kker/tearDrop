@@ -190,12 +190,13 @@ sub comparisons {
     rating => { cmp => '>', column => 'me.rating' }, 
     id => { cmp => 'like', column => 'me.id' },
     assembly => { cmp => '=', column => 'transcript_assemblies.name' },
+    assembly_id => { cmp => '=', column => 'transcripts.assembly_id' },
     name => { cmp => 'like', column => 'me.name' }, 
     description => { cmp => 'like', column => 'me.description' }, 
     'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 
     'reviewed' => { cmp => '=', column => 'me.reviewed' },
     'tags' => { cmp => 'IN', column => 'gene_tags.tag' },
-    'organism' => { cmp => 'like', column => 'transcripts.organism_name' },
+    'organism' => { cmp => 'like', column => 'organism.scientific_name' },
   };
 }
 

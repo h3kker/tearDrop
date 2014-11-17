@@ -109,7 +109,8 @@ sub parse_params {
   }
   for my $k (keys %{params()}) {
     if ($k=~ m/sort-(\d+)-(.+)/) {
-      $sort->[$1]={ '-'.param($k) => 'me.'.$2 };
+      my ($w, $f) = ($1, $2);
+      $sort->[$w]={ '-'.param($k) => $f =~ m#\.# ? $f : 'me.'.$f };
     }
   }
   if (exists params->{'filter.log2_foldchange'}) {
@@ -277,7 +278,7 @@ get '/genes' => sub {
     page => param('page'), 
     rows => param('pagesize') || 50, 
     prefetch => [ 
-      { 'transcripts' => [ 'organism', { 'transcript_tags' => [ 'tag' ] }, ]}, 
+      { 'transcripts' => [ 'organism', ]}, #{ 'transcript_tags' => [ 'tag' ] }, ]}, 
       { 'gene_tags' => [ 'tag' ] } ]
   });
   debug 'done';
@@ -287,7 +288,7 @@ get '/genes' => sub {
     $ser->{organism}=$r->organism;
     $ser->{transcripts} = [ map {
       my $tser = $_->TO_JSON;
-      $tser->{tags} = [ $_->tags ];
+      #$tser->{tags} = [ $_->tags ];
       $tser;
     } $r->transcripts ];
     $ser->{tags} = [ $r->tags ];
@@ -510,6 +511,17 @@ get '/genome_mappings/:id/pileup' => sub {
     type => 'genome',
     alignments => [ map { $_->alignment } $genome->search_related('genome_alignments')->all ],
   )->run;
+};
+
+get '/assemblies' => sub {
+  my @ret = map {
+    my $a = $_;
+    my $ser = $a->TO_JSON;
+    $ser->{transcripts}=$a->transcripts->count+0;
+    $ser->{annotated_transcripts}=$a->transcripts({ name => { '!=' => undef }})->count+0;
+    $ser;
+  } schema(var 'project')->resultset('TranscriptAssembly')->all;
+  \@ret;
 };
 
 get '/db_sources' => sub {

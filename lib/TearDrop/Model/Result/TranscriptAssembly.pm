@@ -216,7 +216,6 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CQ35CwTEJv0B3C2YItUjUw
 
-sub _is_column_serializable { 1 };
 
 use Dancer qw/:moose !status/;
 use Carp;
@@ -226,6 +225,8 @@ use Moo;
 use namespace::clean;
 
 with 'TearDrop::Model::HasFileImport';
+
+sub _is_column_serializable { 1 };
 
 sub import_file {
   my $self = shift;

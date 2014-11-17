@@ -319,7 +319,9 @@ sub comparisons {
   {
     rating => { cmp => '>', column => 'me.rating' }, 
     assembly => { cmp => '=', column => 'transcript_assemblies.name' },
+    assembly_id => { cmp => '=', column => 'me.assembly_id' },
     id => { cmp => 'like', column => 'me.id' },
+    'gene.id' => { cmp => 'like', column => 'gene.id' },
     name => { cmp => 'like', column => 'me.name' }, 
     description => { cmp => 'like', column => 'me.description' }, 
     'best_homolog' => { cmp => 'like', column => 'me.best_homolog' }, 

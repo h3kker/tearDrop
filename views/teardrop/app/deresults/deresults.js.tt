@@ -16,6 +16,12 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
 }])
 
 .controller('DeResultsCtrl', ['$rootScope', '$routeParams', '$scope', '$http', '$location', 'uiGridConstants', function($rootScope, $routeParams, $scope, $http, $location, uiGridConstants) {
+  if ($routeParams.run==null || $routeParams.contrast==null) {
+    if ($rootScope.deresults.selectedDeRun != null) {
+      if ($rootScope.deresults.selectedContrast==null) $rootScope.deresults.selectedContrast=$rootScope.deresults.selectedDeRun.contrasts[0];
+      $location.path('/deresults/'+$rootScope.deresults.selectedDeRun.id+'/'+$rootScope.deresults.selectedContrast.id);
+    }
+  }
 
   if ($rootScope.deresults == null) {
     $rootScope.deresults={
@@ -40,12 +46,14 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     };
   }
   $scope.deRuns=[];
-  $http.get('[% config.base_uri %]/api/deruns').success(function(data) {
+  $http.get('[% config.base_uri %]/api/deruns', { cache: true }).success(function(data) {
     $scope.deRuns=data;
+    /*
     if ($rootScope.deresults.selectedDeRun==null) {
       $rootScope.deresults.selectedDeRun=$scope.deRuns[0];
       $rootScope.deresults.selectedContrast=$scope.deRuns[0].contrasts[0];
     }
+    */
     if ($routeParams.run != null && $routeParams.contrast != null) {
       angular.forEach($scope.deRuns, function(r) {
         if (r.id==$routeParams.run) {
@@ -62,14 +70,14 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
     }
     $scope.$watch('deresults.selectedDeRun', function(newVal, oldVal) {
       if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
-        $rootScope.deresults.doRefresh(true);
+        $location.path('/deresults/'+$rootScope.deresults.selectedDeRun.id+'/'+$rootScope.deresults.selectedDeRun.contrasts[0].id);
       }
-    }, true);
+    });
     $scope.$watch('deresults.selectedContrast', function(newVal, oldVal) {
       if (newVal !== oldVal && newVal !== null && (oldVal == null || newVal.id !== oldVal.id)) {
-        $rootScope.deresults.doRefresh(true);
+        $location.path('/deresults/'+$rootScope.deresults.selectedDeRun.id+'/'+newVal.id);
       }
-    }, true);
+    });
     $rootScope.deresults.doRefresh(true);
   }).error($rootScope.errHandler);
 

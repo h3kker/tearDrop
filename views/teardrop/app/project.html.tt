@@ -1,0 +1,30 @@
+<h1>{{currentProject.title}}</h1>
+
+<h3>Current Assemblies</h3>
+<div class="panel panel-primary" ng-repeat="assembly in assemblies | orderBy:['-is_primary', 'name']">
+ <div class="panel-heading">
+  <h3 class="panel-title"><a href="#/transcripts?filter.assembly_id={{assembly.id}}">{{assembly.name}} <span ng-show="assembly.is_primary">[*]</span></a></h3>
+ </div>
+ <div class="panel-body">
+  <p>{{assembly.description}}</p>
+  <p>
+   {{assembly.transcripts}} transcripts, {{assembly.annotated_transcripts}} annotated
+   <progressbar value="assembly.annotated_transcripts" max="assembly.transcripts"></progressbar>
+  </p>
+
+  <p><button class="btn btn-sm" ng-disabled="assembly.imported">Import <i class="glyphicon" ng-class="{ 'glyphicon-ok text-success': assembly.imported, 'glyphicon-minus text-warning': !assembly.imported }"></i></button></p>
+  <dl>
+   <dt>Program</dt> <dd>{{assembly.program}} <span ng-show="assembly.date">(on {{assembly.assembly_date)</span></dd>
+   <dt>Parameters</dt> <dd><samp style="font-size: .8em">{{assembly.parameters}}</samp></dd>
+   <dt>Output Path</dt> 
+    <dd>
+     {{assembly.path}}
+     <button class="btn btn-xs" disabled>Confirm Checksum</button>
+    </dd>
+   <dt>Prefix</dt>
+    <dd>
+     {{assembly.prefix}} <span ng-show="assembly.add_prefix">(add to FASTA ids on import)</span>
+    </dd> 
+  </dl>
+ </div>
+</div>
