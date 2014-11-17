@@ -106,27 +106,33 @@ sub run {
     my ($out, $err);
     my $mp = harness \@cmd, \undef, \$out, \$err;
     $mp->run or confess "unable to run mpileup: $? $err";
+    debug 'done, parsing output';
 
     $cache->{$_->bam_path} = [] for @run_alignments;
     for my $l (split "\n", $out) {
       my @f = split "\t", $l;
       my $i=1;
       for my $aln (@run_alignments) {
-        my $plus=0; my $mismatch_plus=0; my $minus=0; my $mismatch_minus=0;
+        my $plus=0; my $mismatch_plus=0; my $minus=0; my $mismatch_minus=0; my $ins=0; my $del=0;
         if (defined $f[$i*3+1]) {
-          $plus = () = $f[$i*3+1] =~ m#\.#g;
-          $minus = () = $f[$i*3+1] =~ m#\,#g;
-          $mismatch_plus = () = $f[$i*3+1] =~ m#[ACGTN]#g;
-          $mismatch_minus = () = $f[$i*3+1] =~ m#[acgtn]#g;
+          my $p = $f[$i*3+1];
+          $ins = () = $p =~ m#\+([0-9])+[ACGTNacgtn]+#;
+          $del = () = $p =~ m#\-([0-9])+[ACGTNacgtn]+#;
+          $p=~s/[\-\+]([0-9])+[ACGTNacgtn]+//g;
+
+          $plus = () = $p =~ m#\.#g;
+          $minus = () = $p =~ m#\,#g;
+          $mismatch_plus = () = $p =~ m#[ACGTN]#g;
+          $mismatch_minus = () = $p =~ m#[acgtn]#g;
         }
-        my $depth = $plus+$minus+$mismatch_plus+$mismatch_minus;
+        my $depth = $plus+$minus+$mismatch_plus+$mismatch_minus+$ins;
         push @{$cache->{$aln->bam_path}}, {
           pos => $f[1]+0,
           depth => $depth,
           depth_plus => $plus+$mismatch_plus,
           depth_minus => $plus+$mismatch_minus,
-          mismatch => $mismatch_plus+$mismatch_minus,
-          mismatch_rate => $depth>0 ? ($mismatch_plus+$mismatch_minus)/$depth : 0,
+          mismatch => $mismatch_plus+$mismatch_minus+$ins+$del,
+          mismatch_rate => $depth>0 ? ($mismatch_plus+$mismatch_minus+$ins)/$depth : 0,
         };
         $i++;
       }

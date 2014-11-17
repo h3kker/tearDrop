@@ -92,6 +92,8 @@ __PACKAGE__->add_columns(
   },
   "name",
   { data_type => "text", is_nullable => 0 },
+  "link_template",
+  { data_type => "text", is_nullable => 1 },
   "description",
   { data_type => "text", is_nullable => 1 },
   "sha1",
@@ -194,6 +196,7 @@ sub as_tree {
   
   my %nodes;
   for my $gm ($self->search_related('gene_model_mappings', $search)) {
+    # inline fix old broken imports - remove this at some point XXX
     if ($gm->parent) {
       my $p = $gm->parent;
       $p=~s/\r?\n$//g;
@@ -202,47 +205,37 @@ sub as_tree {
         $gm->update;
       }
     }
-    if ($gm->mtype eq 'gene') {
-      $nodes{$gm->id}||={
-        mRNAs => [],
-      };
-      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
-    }
-    elsif ($gm->mtype eq 'mRNA') {
+    $nodes{$gm->id}||={
+      children => [],
+    };
+    $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
+    if ($gm->parent) {
       $nodes{$gm->parent}||={
-        mRNAs => [],
+        children => [],
       };
-      $nodes{$gm->id}||={
-        exons => [],
-      };
-      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
-      push @{$nodes{$gm->parent}->{mRNAs}}, $nodes{$gm->id};
-    }
-    elsif ($gm->mtype eq 'exon') {
-      $nodes{$gm->parent}||={
-        exons => [],
-      };
-      $nodes{$gm->id}||={};
-      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
-      push @{$nodes{$gm->parent}->{exons}}, $nodes{$gm->id};
-    }
-    else {
-      $nodes{$gm->id}||={};
-      $nodes{$gm->id}->{$_} = $gm->$_ for keys %{$gm->TO_JSON};
-      if ($gm->parent) {
-        $nodes{$gm->parent}||={
-          others => [],
-        };
-        push @{$nodes{$gm->parent}->{others}}, $nodes{$gm->id};
-      }
+      push @{$nodes{$gm->parent}->{children}}, $nodes{$gm->id};
     }
   }
-  my %genes;
+  my %roots;
   for my $n (keys %nodes) {
     $nodes{$n}->{annotation_type} = 'gene_model';
-    $genes{$n}=$nodes{$n} if $nodes{$n}->{mtype} eq 'gene';
+    if ($self->link_template) {
+      my $failed=0;
+      my $temp = $self->link_template;
+      while($temp =~ m#\$\{(\w+)\}#g) {
+        if (defined $nodes{$n}->{$1}) {
+          my $s = $nodes{$n}->{$1};
+          $temp =~ s#\$\{(\w+)\}#$s#;
+        }
+        else {
+          $failed=1;
+        }
+      }
+      $nodes{$n}->{annotation_link} = $temp unless $failed;
+    }
+    $roots{$n}=$nodes{$n} unless $nodes{$n}->{parent};
   }
-  wantarray ? values %genes : [ values %genes ];
+  wantarray ? values %roots : [ values %roots ];
 }
 
 sub import_file {
@@ -251,14 +244,26 @@ sub import_file {
   $self->delete_related('gene_model_mappings');
   open my $IF, "<".$self->path or confess "Open ".$self->path.": $!";
   my @rows;
+  my %auto_ids;
   while(<$IF>) {
     next if m/^#/;
+    next if m/^\+$/;
     chomp;
     my @f = split " ", $_, 9;
-    my %sf = map { split "=", $_ } split ";", $f[8];
-    if (exists $sf{Note}) {
-      $sf{Note}=~tr/\+/ /;
+    my %sf = map { my @subf = split "=", $_; lc($subf[0]), $subf[1] } split ";", $f[8];
+    if (exists $sf{note}) {
+      $sf{note}=~tr/\+/ /;
     }
+    unless($sf{id}) {
+      if ($sf{parent}) {
+        $sf{id}=$sf{parent}.'.'.$f[2];
+        $sf{id}.='.'.($auto_ids{$sf{id}}++);
+      }
+      else {
+        confess "Don't know how to create an automatic id in line $.";
+      }
+    }
+    $sf{Name}||=$sf{ID};
     push @rows, {
       contig => $f[0],
       mtype => $f[2],
@@ -267,10 +272,10 @@ sub import_file {
       # score => $f[5], # ignore
       strand => $f[6],
       # frame => $f[7], # ignore
-      id => $sf{ID},
-      name => $sf{Name},
-      parent => $sf{Parent},
-      additional => $sf{Note},
+      id => $sf{id},
+      name => $sf{name},
+      parent => $sf{parent},
+      additional => $sf{note},
       gene_model_id => $self->id,
     };
     if (@rows >= config->{import_flush_rows}) {

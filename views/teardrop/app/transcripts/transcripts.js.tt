@@ -179,4 +179,5 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   }
   $scope.refresh();
 
-}]);
+}])
+

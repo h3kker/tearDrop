@@ -182,6 +182,14 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       warning "no such sample: ".$s{sample_id};
       next;
     }
+    unless(-f $s{bam_path}) {
+      warning "BAM file ".$s{bam_path}." not found, check path!";
+      next;
+    }
+    unless(-f $s{bam_path}.".bai") {
+      warning "BAM file ".$s{bam_path}." not indexed, please to do so.";
+      next;
+    }
     my $alignment = schema($project)->resultset('Alignment')->search({ bam_path => $s{bam_path} })->first;
     unless($alignment) {
       $alignment = schema($project)->resultset('Alignment')->create({

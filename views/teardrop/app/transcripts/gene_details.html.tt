@@ -41,8 +41,8 @@
  <div class="col-md-12">
   <h5>Annotations in Genomic Region</h5>
   <ol>
-   <li ng-repeat="ann in gene.annotations | filter:{ 'mtype':'gene' } | orderBy:['contig', 'cstart']">
-    {{ann.contig}} {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}} <a href="http://ensembl.gramene.org/Brachypodium_distachyon/Gene/Summary?db=core;g={{ann.name}}">{{ann.name}}</a>
+   <li ng-repeat="ann in gene.annotations | filter:{ 'annotation_type':'gene_model' } | orderBy:['contig', 'cstart']">
+    {{ann.contig}} {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}} <span ng-show="ann.annotation_link"><a href="{{ann.annotation_link}}">{{ann.name}}</a></span>
    </li>
   </ol>
  </div>

@@ -17,11 +17,19 @@
            <accordion close-others="0">
             <accordion-group ng-repeat="ann in map.annotations | orderBy:'cstart' | filter:{'annotation_type': 'transcript'}">
              <accordion-heading>
-              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): <a href="#/genes/{{ann.id}}">{{ann.id}}/{{ann.name}}</a> 
+              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}}/{{ann.name}}
              </accordion-heading>
+             <p><a href="#/genes/{{ann.id}}">{{ann.id}}/{{ann.name}}</a></p>
+             <p>{{ann.description}}</p>
              <ol>
-              <li ng-repeat="trans in ann.mRNAs | orderBy:'cstart'">
+              <li ng-repeat="trans in ann.children | orderBy:'cstart'">
                {{trans.cstart | number}} - {{trans.cend | number}}: <a href="#/transcripts/{{trans.id}}">{{trans.id}}/{{trans.name}}</a>
+               <ol>
+                <li ng-repeat="child in trans.children | orderBy:'cstart'" ng-init="child.hover=false">
+                 {{child.hover}} {{child.cstart | number}} - {{child.cend | number}}: {{child.id}}/{{child.name}}
+                </li>
+               </ol>
+               </ol>
               </li>
              </ol>
             </accordion-group>
@@ -30,14 +38,15 @@
            <accordion close-others="0">
             <accordion-group ng-repeat="ann in map.annotations | orderBy:'cstart' | filter:{'annotation_type': 'gene_model'}">
              <accordion-heading>
-              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name}}
+              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name || ann.id}}
              </accordion-heading>
+             <span ng-show="ann.annotation_link"><a href="{{ann.annotation_link}}">{{ann.name}}</a></span>
              <ol>
-              <li ng-repeat="mrna in ann.mRNAs | orderBy:'cstart'">
-               {{mrna.cstart | number}} - {{mrna.cend | number}}: {{mrna.id}}/{{mrna.name}}
+              <li ng-repeat="child in ann.children | orderBy:'cstart'">
+               {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}/{{child.name}}
                <ol>
-                <li ng-repeat="exon in mrna.exons | orderBy:'cstart'">
-                 {{exon.cstart | number}} - {{exon.cend | number}}: {{exon.id}}/{{exon.name}}
+                <li ng-repeat="child in child.children | orderBy:'cstart'">
+                 {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}/{{child.name}}
                 </li>
                </ol>
               </li>

@@ -424,64 +424,87 @@ angular.module('tearDropDirectives', []).
               var stackHeight=0;
               var mrnaHeight=15;
               if ($scope.showAnnotations && $scope.alignmentData.annotations != null && $scope.chart.yAxis[0].dataMin!=null) {
+                var convertCoords = function(tann) {
+                  return {
+                    cstart: $scope.chart.xAxis[0].toPixels(tann.cstart),
+                    cend: $scope.chart.xAxis[0].toPixels(tann.cend),
+                  };
+                }
                 $scope.annoGroup = $scope.chart.renderer.g().attr({'id': 'anno'}).add();
-                angular.forEach($scope.alignmentData.annotations, function(gene, geneIdx) {
-                  var convertCoords = function(tann) {
-                    return {
-                      cstart: $scope.chart.xAxis[0].toPixels(tann.cstart),
-                      cend: $scope.chart.xAxis[0].toPixels(tann.cend),
-                    };
-                  }
-
-                  var coords = convertCoords(gene);
-                  var geneGroup = $scope.chart.renderer.g().attr({
-                    'id': 'gene.'+gene.id, 
-                    'transform': 'translate(0,'+($scope.chart.yAxis[0].toPixels(0)-stackHeight)+')' 
-                  }).add($scope.annoGroup);
-                  var geneHeight = mrnaHeight*Math.max(gene.mRNAs.length,1);
-                  stackHeight+=geneHeight;
-                  $scope.chart.renderer.rect(coords.cstart, 1, coords.cend-coords.cstart, geneHeight-2)
+                var drawElements = {
+                  gene: function(el) {
+                    var coords = convertCoords(el);
+                    var transY = $scope.chart.yAxis[0].toPixels(0)-stackHeight;
+                    el.group = $scope.chart.renderer.g().attr({
+                      'id': 'gene.'+el.id,
+                      'transform': 'translate(0,'+transY+')'
+                    }).add($scope.annoGroup);
+                    var geneHeight=el.children.length*mrnaHeight;
+                    stackHeight+=geneHeight;
+                    $scope.chart.renderer
+                      .rect(coords.cstart, 1, coords.cend-coords.cstart, geneHeight-2)
                       .attr({
                         'stroke-width': 0, 
                         'fill-opacity': 0.25,
                         stroke: '#777', 
-                        fill: fillColor(gene) 
-                      }).on('mouseover', function() { 
-                        console.log('here');
-                        gene.hover=true;
-                      }).on('mouseout', function() { 
-                        gene.hover=false;
-                      }).add(geneGroup);
+                        fill: fillColor(el) 
+                      }).add(el.group);
+                    angular.forEach(el.children, function(child, childIdx) {
+                      child.parentGroup=el.group;
+                      drawElements[child.mtype](child, childIdx);
+                    });
+                  },
+                  mRNA: function(el, idx) {
+                    var transY = idx*mrnaHeight*-1;
+                    if (el.parentGroup==null) {
+                      transY = $scope.chart.yAxis[0].toPixels(0)-stackHeight;
+                      stackHeight+=mrnaHeight;
+                    }
 
-                  angular.forEach($filter('orderBy')(gene.mRNAs, 'cstart'), function(mRNA, mrnaIdx) {
-                    var mrnaGroup = $scope.chart.renderer.g().attr({
-                      'id': 'mRNA.'+mRNA.id,
-                      'transform': 'translate(0,-'+(mrnaIdx*mrnaHeight)+')',
-                    }).add(geneGroup);
-                    var mrnaCoords = convertCoords(mRNA);
-                    $scope.chart.renderer.rect(mrnaCoords.cstart, 3, mrnaCoords.cend-mrnaCoords.cstart, mrnaHeight-6)
-                        .attr({
-                          'stroke-width': 0, 
-                          'fill-opacity': .5,
-                          stroke: 'black', 
-                          fill: fillColor(mRNA) 
-                        }).add(mrnaGroup);
+                    var coords = convertCoords(el);
+                     el.group = $scope.chart.renderer.g().attr({
+                      'id': 'mRNA.'+el.id,
+                      'transform': 'translate(0,'+transY+')',
+                    }).add(el.parentGroup ? el.parentGroup : $scope.annoGroup);
+                    $scope.chart.renderer
+                      .rect(coords.cstart, 3, coords.cend-coords.cstart, mrnaHeight-6)
+                      .attr({
+                        'stroke-width': 0, 
+                        'fill-opacity': .5,
+                        stroke: 'black', 
+                        fill: fillColor(el) 
+                      }).add(el.group);
 
-                    angular.forEach(mRNA.exons, function(exon, exIdx) {
-                      var exonCoords = convertCoords(exon);
-                      $scope.chart.renderer.rect(exonCoords.cstart, 2, exonCoords.cend-exonCoords.cstart, mrnaHeight-4, 2)
-                        .attr({
+                    var hasExon = el.children.some(function(child) { return child.mtype=='exon' });
+                    angular.forEach(el.children, function(child, childIdx) {
+                      child.parentGroup=el.group;
+                      if (hasExon && child.mtype=='exon') {
+                        drawElements[child.mtype](child, childIdx);
+                      }
+                      else if (!hasExon && child.mtype=='CDS') {
+                        drawElements.exon(child, childIdx);
+                      }
+                    });
+
+                    $scope.chart.renderer.text(el.id, $scope.chart.chartWidth-5, mrnaHeight-2).attr({ 'text-anchor': 'end' }).add(el.group);
+                  },
+                  exon: function(el) {
+                    var coords = convertCoords(el);
+                    $scope.chart.renderer
+                      .rect(coords.cstart, 2, coords.cend-coords.cstart, mrnaHeight-4, 2)
+                      .attr({
                           'stroke-width': 2, 
                           'stroke-opacity': 1,
                           'fill-opacity': .75,
                           stroke: '#333', 
-                          fill: fillColor(exon) 
-                        }).add(mrnaGroup);
-                    });
-                  });
-                  $scope.chart.renderer.text(gene.id, $scope.chart.chartWidth-5, geneHeight-2).attr({ 'text-anchor': 'end' }).add(geneGroup);
-
+                          fill: fillColor(el) 
+                      }).add(el.parentGroup);
+                  },
+                };
+                angular.forEach($scope.alignmentData.annotations, function(root, rootIdx) {
+                  drawElements[root.mtype](root, rootIdx);
                 });
+
               }
             }
             $scope.setVisible = function(sample) {
@@ -583,7 +606,6 @@ angular.module('tearDropDirectives', []).
             map.annotations=[];
             $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
                 map.annotations=data;
-                console.log(map.annotations);
             }).error($rootScope.errHandler);
           }
         }

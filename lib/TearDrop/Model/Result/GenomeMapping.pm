@@ -226,7 +226,7 @@ sub as_tree {
       contig => $tm->tid,
       genome_mapping_id => $tm->genome_mapping_id,
       mtype => 'gene',
-      mRNAs => [],
+      children => [],
       name => $tm->transcript->gene->name,
       parent => undef,
       strand => $tm->strand,
@@ -243,17 +243,17 @@ sub as_tree {
       contig => $tm->tid,
       genome_mapping_id => $tm->genome_mapping_id,
       mtype => 'mRNA',
-      exons => [],
+      children => [],
       name => $tm->transcript->name,
       parent => $tm->transcript->gene_id,
       strand => $tm->strand,
       original => $tm,
     };
-    push @{$gene->{mRNAs}}, $mrna;
+    push @{$gene->{children}}, $mrna;
     my @bs = split ',', $tm->blocksizes;
     my @blocks = split ',', $tm->tstarts;
     for my $idx (0..$#blocks) {
-      push @{$mrna->{exons}}, {
+      push @{$mrna->{children}}, {
         id => $tm->transcript_id.'.'.$idx,
         additional => undef,
         annotation_type => 'transcript',
@@ -261,7 +261,7 @@ sub as_tree {
         cstart => $blocks[$idx],
         contig => $tm->tid,
         genome_mapping_id => $tm->genome_mapping_id,
-        mtype => 'exon',
+        mtype => 'CDS',
         name => $tm->transcript_id.'.'.$idx,
         parent => $tm->transcript_id,
         strand => $tm->strand,

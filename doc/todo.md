@@ -11,6 +11,8 @@
 - XXX reciprocal best hit
 - DONE transcript alignment meta: field for "use_original_id"
 - XXX alignment disappears when gene/transcript is saved....
+  - XXX move mappings and alignments out of object!!!
+- DONE GFF3 parsing to tree: do not require gene as root, should be able to use CDS and exon
 
 ## big stuff
 
@@ -116,3 +118,13 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - schema versioning, automated migration to new schema
 - fix mess: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 
+## djamei specific
+
+- replace ustilago assembly fasta ids with chrnames from gertrud
+  - in genome mapping
+  - in alignments
+  - in fasta (duh)
+  - ...?
+- align to usti with star?
+- align to transcripts with bwa?
+- import getrud gff for usti

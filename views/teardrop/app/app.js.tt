@@ -11,8 +11,8 @@ var tearDrop = angular.module('TearDrop', [
   'tearDropDirectives',
   'TearDrop.transcripts',
   'TearDrop.deresults'
-]).
-config(['$routeProvider', function($routeProvider) {
+])
+.config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/', {
     templateUrl: '[% config.base_uri %]/app/home.html',
     controller: 'RootCtrl'
@@ -154,6 +154,8 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
   Highcharts.setOptions(Highcharts.theme);
 
 });
+
+
 
 /**
  * Grid-light theme for Highcharts JS

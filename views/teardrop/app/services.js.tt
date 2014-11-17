@@ -3,8 +3,11 @@ var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 var objPrototype = function($rootScope) {
   return {
       save: function(postUpdate) {
+        var savedMappings = this.mappings;
+        delete this.mappings;
         this.$save(function(t) {
           t.prepare();
+          this.mappings=savedMappings;
           if (postUpdate!=null) {
             postUpdate();
           }
