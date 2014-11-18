@@ -50,7 +50,7 @@
 
 <div class="row">
  <div class="col-md-12">
-  <span ng-repeat="tag in gene.tags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="gene.removeTag(tag)"></i></span>
+  <span ng-repeat="tag in gene.tags | orderBy:'tag'" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="gene.removeTag(tag)"></i></span>
  </div>
 </div>
 
@@ -116,7 +116,7 @@
        </accordion>
       </div>
      </div>
-     <div class="row" ng-repeat="transcript in gene.transcripts">
+     <div class="row" ng-repeat="transcript in gene.transcripts" ng-init="alignData={}">
       <div class="col-md-12">
        <div class="panel panel-primary">
         <div class="panel-heading">
@@ -135,8 +135,9 @@
          <div class="row">
           <div class="col-md-12">
            <h4>Genome Mappings</h4>
+           <p>{{transcript.transcript_mapping_count}} total mappings, {{transcript.mappings.length}} accepted</p>
            <ol>
-            <li ng-repeat="map in transcript.transcript_mappings | orderBy:'match_ratio'">
+            <li ng-repeat="map in transcript.mappings | orderBy:'match_ratio'">
              {{map.tid}} {{map.tstart | number}}-{{map.tend | number}} ({{map.match_ratio*100}}%)
             </li>
            </ol>
@@ -154,9 +155,9 @@
          <div class="row">
           <div class="col-md-12">
            <accordion>
-            <accordion-group open="transcript.loadAlignment()">
+            <accordion-group open="transcript.loadAlignment(alignData)">
              <accordion-heading>View Alignment</accordion-heading>
-             <transcript-alignment transcript="transcript"></transcript-alignment>
+             <transcript-alignment align-data="alignData" transcript="transcript"></transcript-alignment>
             </accordion-group>
            </accordion>
           </div>
@@ -176,7 +177,7 @@
     </div>
     <div class="row">
      <div class="col-md-12">
-      <genome-alignments mappings="gene.mappings"></genome-alignments>
+      <genome-alignments mappings="mappings"></genome-alignments>
      </div>
     </div>
     <div>

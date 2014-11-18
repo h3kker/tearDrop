@@ -15,18 +15,18 @@
           <div class="col-md-12">
            <h5>Other Transcripts</h5>
            <accordion close-others="0">
-            <accordion-group ng-repeat="ann in map.annotations | orderBy:'cstart' | filter:{'annotation_type': 'transcript'}">
+            <accordion-group ng-repeat="ann in map.annotations | orderBy:['cstart', 'cend'] | filter:{'annotation_type': 'transcript'}">
              <accordion-heading>
-              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}}/{{ann.name}}
+              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name || ann.id}}</span> <i class="glyphicon glyphicon-eye-open" ng-click="loadGenomeAlignments(map, ann, true)"></i>
              </accordion-heading>
-             <p><a href="#/genes/{{ann.id}}">{{ann.id}}/{{ann.name}}</a></p>
+             <p><a href="#/genes/{{ann.id}}">{{ann.id}}<span ng-show="ann.name">/{{ann.name}}</span></a></p>
              <p>{{ann.description}}</p>
              <ol>
-              <li ng-repeat="trans in ann.children | orderBy:'cstart'">
-               {{trans.cstart | number}} - {{trans.cend | number}}: <a href="#/transcripts/{{trans.id}}">{{trans.id}}/{{trans.name}}</a>
-               <ol>
-                <li ng-repeat="child in trans.children | orderBy:'cstart'" ng-init="child.hover=false">
-                 {{child.hover}} {{child.cstart | number}} - {{child.cend | number}}: {{child.id}}/{{child.name}}
+              <li ng-repeat="trans in ann.children | orderBy:['cstart', 'cend']" ng-init="trans.expand=false">
+               {{trans.cstart | number}} - {{trans.cend | number}}: <a href="#/transcripts/{{trans.id}}">{{trans.id}}/{{trans.name}}</a> <i class="glyphicon" ng-class="{ 'glyphicon-plus-sign': !trans.expand, 'glyphicon-minus-sign': trans.expand }" ng-click="trans.expand=!trans.expand"></i>
+               <ol ng-show="trans.expand">
+                <li ng-repeat="child in trans.children | orderBy:['cstart', 'cend']" ng-init="child.hover=false">
+                 {{child.hover}} {{child.cstart | number}} - {{child.cend | number}}: {{child.id}}<span ng-show="child.name">/{{child.name}}</span>
                 </li>
                </ol>
                </ol>
@@ -36,19 +36,22 @@
            </accordion>
            <h5>Annotations</h5>
            <accordion close-others="0">
-            <accordion-group ng-repeat="ann in map.annotations | orderBy:'cstart' | filter:{'annotation_type': 'gene_model'}">
+            <accordion-group ng-repeat="ann in map.annotations | orderBy:['cstart', 'cend'] | filter:{'annotation_type': 'gene_model'}">
              <accordion-heading>
-              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name || ann.id}}
+              {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name || ann.id}} <i class="glyphicon glyphicon-eye-open" ng-click="loadGenomeAlignments(map, ann, true)"></i>
              </accordion-heading>
-             <span ng-show="ann.annotation_link"><a href="{{ann.annotation_link}}">{{ann.name}}</a></span>
+             <p><span ng-show="ann.annotation_link"><i class="glyphicon glyphicon-new-window"></i> <a href="{{ann.annotation_link}}">{{ann.name || ann.id}}</a></span></p>
+             <p>{{ann.additional}}</p>
              <ol>
-              <li ng-repeat="child in ann.children | orderBy:'cstart'">
-               {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}/{{child.name}}
-               <ol>
-                <li ng-repeat="child in child.children | orderBy:'cstart'">
-                 {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}/{{child.name}}
+              <li ng-repeat="child in ann.children | orderBy:['cstart', 'cend']" ng-init="child.expand=false">
+               {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}<span ng-show="child.name">/{{child.name}}</span> <i class="glyphicon" ng-class="{ 'glyphicon-plus-sign': !child.expand, 'glyphicon-minus-sign': child.expand }" ng-click="child.expand=!child.expand"></i>
+
+               <ol ng-show="child.expand">
+                <li ng-repeat="child in child.children | orderBy:['cstart', 'cend']">
+                 {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}<span ng-show="child.name">/{{child.name}}</span>
                 </li>
                </ol>
+
               </li>
              </ol>
             </accordion-group>
@@ -62,7 +65,7 @@
              <accordion-heading>View Alignment</accordion-heading>
               <div class="row"><div class="col-md-12">
                {{map.alignment.loading}}
-               <alignment-viewer data="map"></alignment-viewer>
+               <alignment-viewer load="loadGenomeAlignments" data="map"></alignment-viewer>
               </div></div>
             </accordion-group>
            </accordion>

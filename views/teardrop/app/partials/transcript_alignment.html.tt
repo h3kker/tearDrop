@@ -1,7 +1,7 @@
 <div class="container-fluid">
      <div class="row">
       <div class="col-md-12">
-       <alignment-viewer data="transcript"></alignment-viewer>
+       <alignment-viewer data="alignData"></alignment-viewer>
       </div>
      </div>
 </div>

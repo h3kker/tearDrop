@@ -83,6 +83,12 @@ tearDropServices.factory('Assembly', ['$resource',
         });
         this.transcripts=newT;
       },
+      loadMappings: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/mappings').success(function(data) {
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
       loadBlastResults: function(callback) {
         var that=this;
         $http.get('[% config.base_uri %]/api/genes/'+this.id+'/blast_results').success(function(data) {
@@ -110,6 +116,12 @@ tearDropServices.factory('Assembly', ['$resource',
       prepare: function() {
         this.reviewed=!!this.reviewed;
       },
+      loadMappings: function(callback) {
+        var that=this;
+        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/mappings').success(function(data) {
+          if (callback!=null) callback(data);
+        }).error($rootScope.errHandler);
+      },
       loadBlastResults: function(callback) {
         var that=this;
         $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/blast_results').success(function(data) {
@@ -124,13 +136,13 @@ tearDropServices.factory('Assembly', ['$resource',
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
       },
-      loadAlignment: function(reload) {
-        if (reload || this.alignment==null) {
-          this.alignment={loading: true, data: []};
+      loadAlignment: function(alignData, reload) {
+        if (reload || alignData.alignment==null) {
+          alignData.alignment={loading: true, data: {}};
           var that=this;
           $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/pileup').success(function(data) {
-            that.alignment.loading=false;
-            that.alignment.data=data;
+            alignData.alignment.loading=false;
+            alignData.alignment.data=data;
           }).error($rootScope.errHandler);
         }
       },

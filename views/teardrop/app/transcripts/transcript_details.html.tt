@@ -83,22 +83,23 @@
       <h3>Homology Searches</h3>
      </div>
     </div>     
-     <blast-grid ng-model="transcript" grid-options="blastGridOptions"></blast-grid>
+    <blast-grid ng-model="transcript" grid-options="blastGridOptions"></blast-grid>
    </tab>
    <tab>
-    <tab-heading>Genome Aligments</tab-heading>
+    <tab-heading>Genome Aligment</tab-heading>
     <div class="row">
      <div class="col-md-12">
       <h3>Genome Alignments</h3>
+      <p>{{transcript.transcript_mapping_count}} total mappings, {{mappings.length}} accepted</p>
      </div>
-     <div class="row">
-      <div class="col-md-12">
-       <genome-alignments mappings="transcript.transcript_mappings"></genome-alignments>
-      </div>
+    </div>
+    <div class="row">
+     <div class="col-md-12">
+      <genome-alignments mappings="mappings"></genome-alignments>
      </div>
     </div>
    </tab>
-   <tab select="transcript.loadAlignment()"> 
+   <tab select="transcript.loadAlignment(alignData)" ng-init="alignData={}"> 
    <!--tab-->
     <tab-heading>Transcript Alignment</tab-heading>
     <div class="row">
@@ -107,7 +108,8 @@
      </div>
      <div class="row">
       <div class="col-md-12">
-       <transcript-alignment transcript="transcript"></transcript-alignment>
+       <transcript-alignment transcript="transcript" align-data="alignData"></transcript-alignment>
+
       </div>
      </div>
     </div>

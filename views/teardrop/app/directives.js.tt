@@ -337,6 +337,7 @@ angular.module('tearDropDirectives', []).
       templateUrl: '[% config.base_uri %]/app/partials/alignment_viewer.html',
       scope: {
         alignmentData: '=data',
+        load: '=?',
         width: '=?',
         height: '=?',
       },
@@ -349,7 +350,7 @@ angular.module('tearDropDirectives', []).
               options: {
                 "chart": { "type": "area", zoomType: 'x', events: { redraw: function() { $scope.drawAnnotations() } } },
                 "plotOptions": { 
-                  "series": { "stacking":"normal",  }, 
+                  //"series": { "stacking":"normal",  }, 
                   "line": { marker: { enabled: false } },
                   "scatter": { marker: { radius: 2, enabled: true } },
                 },
@@ -377,6 +378,20 @@ angular.module('tearDropDirectives', []).
             $scope.showStranded=false;
             $scope.showCoverage=true;
             $scope.showAnnotations=true;
+            $scope.reload=function() {
+              $scope.load($scope.alignmentData, $scope.alignmentData.region, true);
+            };
+            var zoomFactor=.5;
+            $scope.zoomOut=function() {
+              var by=Math.round($scope.alignmentData.alignment.data.length*zoomFactor);
+              $scope.alignmentData.region={cstart: $scope.alignmentData.region.cstart-by, cend: $scope.alignmentData.region.cend+by};
+              $scope.reload();
+            }
+            $scope.zoomIn=function() {
+              var by=Math.round($scope.alignmentData.alignment.data.length*zoomFactor);
+              $scope.alignmentData.region={cstart: $scope.alignmentData.region.cstart-by, cend: $scope.alignmentData.region.cend+by};
+              $scope.reload();
+            }
             $scope.resetChartData=function() {
               $scope.samples={};
               $scope.chartData={
@@ -542,7 +557,8 @@ angular.module('tearDropDirectives', []).
                 tmp.name=s.name+'+';
                 tmp.cat='stranded';
                 angular.forEach(s.data, function(v,k) {
-                  tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]-newVal.coverage_minus[sample].data[k] ];
+                  //tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]-newVal.coverage_minus[sample].data[k] ];
+                  tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k] ];
                   //if (tmp.data[k][1]==0) tmp.data[k]=null;
                 });
                 $scope.chartData.strandedCoverage.push(tmp);
@@ -556,7 +572,6 @@ angular.module('tearDropDirectives', []).
                 $scope.chartData.coverage.push(s);
 
               });
-              /*
               angular.forEach(newVal.coverage_minus, function(s, sample) {
                 s.type='line';
                 s.sample=s.name;
@@ -564,17 +579,17 @@ angular.module('tearDropDirectives', []).
                 s.name=s.name+'-';
                 s.cat='stranded';
                 angular.forEach(s.data, function(v,k) {
-                  s.data[k] = s.data[k]>0 ? s.data[k]*-1 : 0;
+                  s.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]*-1 ];
                 });
                 $scope.chartData.strandedCoverage.push(s);
               });
-              */
               angular.forEach(newVal.mismatch, function(s, sample) {
                 s.type='bar';
                 s.sample=s.name;
                 s.color=$scope.samples[s.sample].color;
                 s.name=s.name+' Mis';
                 s.cat='mismatch';
+                s.stacking='normal';
                 //s.yAxis=1;
                 angular.forEach(s.data, function(v,k) {
                   /*
@@ -610,13 +625,20 @@ angular.module('tearDropDirectives', []).
           }
         }
 
-        $scope.loadGenomeAlignments = function(map, reload) {
+        $scope.loadGenomeAlignments = function(map, region, reload) {
+          console.log('load!');
           if (map==null) return;
           if (reload || map.alignment==null) {
+            var start = map.tstart, end = map.tend;
+            if (region!=null) {
+              start=region.cstart;
+              end=region.cend;
+            }
             map.alignment={loading: true, data: {}};
-            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+            $http.get('[% config.base_uri %]/api/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: start, tend: end}}).success(function(data) {
               map.alignment.data=data;
               map.alignment.loading=false;
+              map.region={cstart: start, cend: end};
             }).error($rootScope.errHandler);
           }
         }
@@ -632,6 +654,7 @@ angular.module('tearDropDirectives', []).
       replace: true,
       scope: {
         transcript: '=',
+        alignData: '=',
       },
       templateUrl: '[% config.base_uri %]/app/partials/transcript_alignment.html',
       link: function($scope, element, attr) {

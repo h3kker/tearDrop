@@ -208,6 +208,13 @@ post '/transcripts/:id' => sub {
   forward config->{base_uri}.'/api/transcripts/'.$rs->id, {}, { method => 'GET' };
 };
 
+get '/transcripts/:id/mappings' => sub {
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id'), { prefetch => [
+    'organism', 'gene', { 'transcript_tags' => 'tag' },
+  ]}) || send_error 'not found', 404;
+  $rs->filtered_mappings;
+};
+
 get '/transcripts/:id/blast_results' => sub {
   my $trans = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my @results;
@@ -343,10 +350,9 @@ get '/genes/:id' => sub {
     my $tser = $_->TO_JSON;
     $tser->{tags} = [ $_->tags ];
     $tser->{transcript_mapping_count} = $_->transcript_mappings->count;
-    $tser->{transcript_mappings} = [ $_->filtered_mappings ];
+    $tser->{mappings} = [ $_->filtered_mappings ];
     $tser;
   } $gene->transcripts ];
-  $ser->{mappings} = $gene->filtered_mappings;
   $ser->{annotations} = $gene->gene_model_annotations;
   $ser->{tags} = [ $gene->tags ];
   $ser->{de_results} = [];
@@ -371,6 +377,11 @@ post '/genes/:id' => sub {
   $rs->update_tags(@{$upd->{tags}});
   $rs->update;
   forward config->{base_uri}.'/api/genes/'.$rs->id, {}, { method => 'GET' };
+};
+
+get '/genes/:id/mappings' => sub {
+  my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  $rs->filtered_mappings;
 };
 
 get '/genes/:id/fasta' => sub {
