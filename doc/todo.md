@@ -3,25 +3,22 @@
 ## bugs/urgent
 
 - "loading" feedback, error handling ($http interceptor?)
-- DONE set url path on de run selection
 - deal with multiple alignments => selection, define "favorite"
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
-- DONE assembly selection in views
 - XXX reciprocal best hit
+- DONE set url path on de run selection
+- DONE assembly selection in views
 - DONE transcript alignment meta: field for "use_original_id"
-- XXX alignment disappears when gene/transcript is saved....
-  - XXX move mappings and alignments out of object!!!
+- DONE alignment disappears when gene/transcript is saved....
 - DONE GFF3 parsing to tree: do not require gene as root, should be able to use CDS and exon
 
 ## big stuff
 
-- DONE multiple projects: master database with separate dbs for projects
-  - DONE create template and provide scripts to setup project db
 - blast search in transcript assemblies (see also reciprocal best hit)
   - extract ref seq from blast db 
   - fasta text field
-- DONE import GFF files with genome annotations
+- transcript-transcript relationships for assembly comparisons
 - job manager
   * DONE via db table
   * DONE worker process started on request
@@ -31,16 +28,19 @@
   * race condition safety: provide one fifo per worker (tmpdir?), select task for update in transaction; 
   * cannot start job with post_processing command (does not survive de/serialisation)
   * one dedicated worker process started separately? comms with REST?
+- DONE import GFF files with genome annotations
 - DONE refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions) (in the end concat id with assembly-specific id prefix)
-- transcript-transcript relationships for assembly comparisons
+- DONE multiple projects: master database with separate dbs for projects
+  - DONE create template and provide scripts to setup project db
 
 ## visualisation
 
 - genomic alignments
-  - DONE display gff annotations and blat mappings
   - interactive annotations
+  - DONE display gff annotations and blat mappings
+  - DONE zoom out (a little) 
+  - DONE focus on other annotations in area
   - DONE zooming 
-  - zoom out (a little) 
   - DONE display coverage, split by strand, with mismatches
 - multiple sequence alignment viewer
   - blast results
@@ -53,9 +53,6 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## automated annotation workflow
 
-- DONE run blast in background
-  * DONE annotate genes and transcripts with best hits
-  * DONE set no/good/bad homology tags
 - transfer transcript annotations to genes
 - use/transfer/compare with external annotations
 - analyze genome mapping
@@ -67,26 +64,30 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   * look for dips
   * possible introns (via genomic coverage, use annotation where available)
 - generate rating from tags
+- DONE run blast in background
+  * DONE annotate genes and transcripts with best hits
+  * DONE set no/good/bad homology tags
 
 ## manual curation
 
-- DONE transcript view: integrate into gene view, move transcript alignment view there
 - display more details for genomic mapping
+  - matching parts, gaps, etc.
+  - comparison with CDS/exon from external GFFs
   - DONE filtering
     - DONE display only useful genome mappings 
     - userdefined criteria!
-    - DONE show something when there's no valid mapping
-  - DONE external annotations (GFF)
-  - matching parts, gaps, etc.
-  - comparison with CDS/exon from external GFFs
-  - weird things like transcripts mapped over several 100 kb
+    - DONE show something when there''s no valid mapping
+    - show bad mappings
+    - point out weird things like transcripts mapped over several 100 kb
+- transfer annotations from transcript to gene
 - DONE split tags into categories, 
   - display categorized tags in each tab
   - find good space for alignment/mapping tags
   - only general tags on top?
-- transfer annotations from transcript to gene
-- DONE liftover annotations from transcripts, between projects
 - show current tag counts in overview page
+- DONE liftover annotations from transcripts, between projects
+- DONE transcript view: integrate into gene view, move transcript alignment view there
+- DONE external annotations (GFF)
 
 ## Differential Expression
 
@@ -116,15 +117,15 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 - schema versioning, automated migration to new schema
-- fix mess: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
+- fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 
 ## djamei specific
 
-- replace ustilago assembly fasta ids with chrnames from gertrud
-  - in genome mapping
-  - in alignments
-  - in fasta (duh)
-  - ...?
-- align to usti with star?
 - align to transcripts with bwa?
-- import getrud gff for usti
+- DONE replace ustilago assembly fasta ids with chrnames from gertrud
+  - DONE in genome mapping
+  - DONE in alignments
+  - DONE in fasta (duh)
+  - ...?
+- DONE align to usti with star?
+- DONE import getrud gff for usti
