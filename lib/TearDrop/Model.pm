@@ -1,6 +1,8 @@
 use utf8;
 package TearDrop::Model;
 
+our $VERSION="0.01";
+
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 

@@ -6,6 +6,7 @@
 - deal with multiple alignments => selection, define "favorite"
 - refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
+- unroll mappings to annotations, don't load them separately for each map
 - XXX reciprocal best hit
 - DONE set url path on de run selection
 - DONE assembly selection in views
@@ -37,6 +38,7 @@
 
 - genomic alignments
   - interactive annotations
+  - reload annotations on zoom
   - DONE display gff annotations and blat mappings
   - DONE zoom out (a little) 
   - DONE focus on other annotations in area
@@ -53,12 +55,16 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## automated annotation workflow
 
-- transfer transcript annotations to genes
+- transfer/sync annotations between transcripts and genes
 - use/transfer/compare with external annotations
+  * bulk overlapping
+  * make table with relationship between genes/transcripts and genes/mRNA from ann
+  * transfer annotations
 - analyze genome mapping
   * intron sizes
   * coverage
   * identity
+- create features for transcripts (UTR, reading frames, CDS, ...)
 - analyze coverage
   * categorize high/low
   * look for dips
@@ -73,6 +79,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - display more details for genomic mapping
   - matching parts, gaps, etc.
   - comparison with CDS/exon from external GFFs
+  - feature link table
   - DONE filtering
     - DONE display only useful genome mappings 
     - userdefined criteria!
@@ -118,6 +125,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 - schema versioning, automated migration to new schema
 - fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
+- integrate genome mappings and external annotations, they have many things in common
 
 ## djamei specific
 

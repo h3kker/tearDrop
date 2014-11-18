@@ -530,6 +530,8 @@ get '/assemblies' => sub {
     my $ser = $a->TO_JSON;
     $ser->{transcripts}=$a->transcripts->count+0;
     $ser->{annotated_transcripts}=$a->transcripts({ name => { '!=' => undef }})->count+0;
+    #$ser->{genes}=schema(var 'project')->resultset('Gene')->search({ 'transcripts.assembly_id' => $a->id }, { prefetch => [ 'transcripts' ] })->count+0;
+    #$ser->{annotated_genes}=schema(var 'project')->resultset('Gene')->search({ 'transcripts.assembly_id' => $a->id, 'me.name' => { '!=' => undef }}, { prefetch => [ 'transcripts' ] })->count+0;
     $ser;
   } schema(var 'project')->resultset('TranscriptAssembly')->all;
   \@ret;
