@@ -26,24 +26,36 @@ sub start_worker {
     info 'worker started with pid '.$pid;
     return;
   }
-  for my $j ($self->queued_jobs->all) {
-    $self->start_job($j);
+  if (config->{worker}{fifo}) {
+    for my $j ($self->queued_jobs->all) {
+      $self->start_job($j);
+    }
+    unless(-e config->{worker}{fifo}) {
+      mkfifo(config->{worker}{fifo}, 0700) or confess 'mkfifo '.config->{worker}{fifo}." failed: $!";
+    }
+    open(FIFO, "<".config->{worker}{fifo}) or confess "open ".config->{worker}{fifo}." failed: $!";
+    while(1) {
+      while(<FIFO>) {
+        debug 'wakey!';
+        for my $j ($self->queued_jobs->all) {
+          $self->start_job($j);
+        }
+        debug 'yawn.';
+      }
+    }
+    close FIFO;
   }
-  unless(-e config->{worker_fifo}) {
-    mkfifo(config->{worker_fifo}, 0700) or confess 'mkfifo '.config->{worker_fifo}." failed: $!";
-  }
-  open(FIFO, "<".config->{worker_fifo}) or confess "open ".config->{worker_fifo}." failed: $!";
-  while(1) {
-    while(<FIFO>) {
+  else {
+    while(1) {
       debug 'wakey!';
       for my $j ($self->queued_jobs->all) {
         $self->start_job($j);
       }
       debug 'yawn.';
+      sleep(config->{worker}{poll_interval}||30);
     }
   }
   info 'closing worker?';
-  close FIFO;
 }
 
 sub job_started {
@@ -105,7 +117,7 @@ sub enqueue {
   alarm(10);
   try {
     debug 'signalling worker';
-    open(OUT, ">".config->{worker_fifo}) or confess("open ".config->{worker_fifo}.": $!");
+    open(OUT, ">".config->{worker}{fifo}) or confess("open ".config->{worker}{fifo}.": $!");
     print OUT "job queued\n";
     close OUT;
   } catch {

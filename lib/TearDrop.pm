@@ -25,7 +25,10 @@ sub setup_projects {
 }
 setup_projects();
 
-my $worker;
+require TearDrop::Worker::DB;
+my $worker = new TearDrop::Worker::DB;
+$worker->start_worker;
+
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
   var 'project' => cookie 'project';
@@ -38,11 +41,6 @@ hook 'before' => sub {
     warning 'invalid project cookie '.var 'project';
     delete cookies->{project};
   };
-  unless($worker) {
-    require TearDrop::Worker::DB;
-    $worker = new TearDrop::Worker::DB;
-    $worker->start_worker;
-  }
 };
 
 # make sure user variable is available in all views
