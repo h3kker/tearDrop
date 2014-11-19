@@ -117,9 +117,8 @@ __PACKAGE__->add_columns(
 
 =cut
 
-__PACKAGE__->add_unique_constraint(
-  "de_results_de_run_id_contrast_id_transcript_id_key",
-  ["de_run_id", "contrast_id", "transcript_id"],
+__PACKAGE__->set_primary_key(
+  "de_run_id", "contrast_id", "transcript_id",
 );
 
 =head1 RELATIONS
@@ -175,12 +174,31 @@ __PACKAGE__->belongs_to(
 
 sub _is_column_serializable { 1 };
 
+__PACKAGE__->belongs_to(
+  'transcript',
+  'TearDrop::Model::Result::Transcript',
+  { 'foreign.id' => 'self.transcript_id' }
+);
+__PACKAGE__->belongs_to(
+  'gene',
+  'TearDrop::Model::Result::Gene',
+  { 'foreign.id' => 'self.transcript_id' }
+);
+
 sub comparisons {
   {
     base_mean => { cmp => '>', column => 'me.base_mean' }, 
     adjp => { cmp => '<', column => 'me.adjp' }, 
     pvalue => { cmp => '<', column => 'me.pvalue' }, 
     'transcript_id' => { cmp => 'like', column => 'me.transcript_id' },
+    # fields from the funky join!
+    'gene.id' => { cmp => 'like', column => 'gene.id' },
+    'organism.scientific_name' => { cmp => 'like', column => 'organism.scientific_name' },
+    'transcript' => { cmp => 'like', column => '%TRANS%.name' },
+    'name' => { cmp => 'like', column => '%TRANS%.name' },
+    'description' => { cmp => 'like', column => '%TRANS%.description' },
+    'tags' => { cmp => 'IN', column => '%TRANS%_tags.tag' },
+    'transcript.rating' => { cmp => '>', column => '%TRANS%.rating' },
   };
 }
 

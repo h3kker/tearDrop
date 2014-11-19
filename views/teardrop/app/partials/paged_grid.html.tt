@@ -1,20 +1,24 @@
 <div>
  <p>
-  <form class="form-inline" role="form" ng-if="showTagSelector">
-   <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag in tags">
-    <option value=""><i>pick tag...</i></option>
-   </select>
-   <button class="btn btn-sm" ng-click="param.addTag(selectedTag)">Add</button>
-   Assembly: <select class="form-control input-sm" name="assembly" ng-model="param.filters.assembly_id" ng-change="setAssembly()" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'" ng-show="showAssemblySelector">
-    <option value="">ALL</option>
-   </select>
+  <form class="form-inline" role="form" ng-if="showTagSelector || showAssemblySelector || param.getFasta">
+   <span ng-if="showTagSelector">
+    <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag in tags">
+     <option value=""><i>pick tag...</i></option>
+    </select>
+    <button class="btn btn-sm" ng-click="param.addTag(selectedTag)">Add</button>
+   </span>
+   <span ng-if="showAssemblySelector"> 
+    Assembly: <select class="form-control input-sm" name="assembly" ng-model="param.filters.assembly_id" ng-change="setAssembly()" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'">
+     <option value="">ALL</option>
+    </select>
+   </span>
+   <button ng-if="param.getFasta" ng-show="param.pagingOptions.total_items" ng-click="param.getFasta()" class="btn btn-sm"><i class="glyphicon glyphicon-download-alt"></i> Download FASTA ({{param.pagingOptions.total_items}} sequences)</button>
   </form>
-  <button ng-click="param.getFasta()" class="btn btn-sm">Get FASTA file</button>
  </p>
  <p>
   <span ng-repeat="tag in param.selectedTags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="param.removeTag(tag)"></i></span>
  </p>
- 
- <pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination>
+ <pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination> 
+ <div ng-show="!loading && gridOptions.data.length==0" class="alert alert-warning">Inte Data...</div>
  <div ui-grid="gridOptions" class="grid"></div>
 </div>

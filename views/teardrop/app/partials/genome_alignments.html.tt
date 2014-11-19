@@ -45,7 +45,6 @@
              <ol>
               <li ng-repeat="child in ann.children | orderBy:['cstart', 'cend']" ng-init="child.expand=false">
                {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}<span ng-show="child.name">/{{child.name}}</span> <i class="glyphicon" ng-class="{ 'glyphicon-plus-sign': !child.expand, 'glyphicon-minus-sign': child.expand }" ng-click="child.expand=!child.expand"></i>
-
                <ol ng-show="child.expand">
                 <li ng-repeat="child in child.children | orderBy:['cstart', 'cend']">
                  {{child.cstart | number}} - {{child.cend | number}}: {{child.mtype}} {{child.id}}<span ng-show="child.name">/{{child.name}}</span>

@@ -7,11 +7,11 @@
    <div class="col-md-1">
     <button class="btn btn-sm" ng-click="runBlast(selectedDbs)" ng-disabled="selectedDbs.length==0">Run BLAST</button>
    </div>
-   <div class="col-md-3 col-md-offset-1">
-    <select class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | filter:{ category: 'homology' } | orderBy:'tag'"></select>
-   </div>
-   <div class="col-md-1">
-    <button class="btn btn-sm" ng-click="ngModel.addTags(selectedTags)">Add</button>
+   <div class="col-md-4">
+    <form class="form-inline" role="form">
+    <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag group by tag.category for tag in tags | filter:{ category: 'homology' } | orderBy:'tag'"><option value="">Tag...</option></select>
+    <button class="btn btn-sm" ng-click="ngModel.addTag(selectedTag, newTag)">Add</button>
+    </form>
    </div>
   </div>
   <div class="row">

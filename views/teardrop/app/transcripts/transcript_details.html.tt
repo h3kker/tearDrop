@@ -18,7 +18,7 @@
 
  <div class="col-md-3">
   <h5>Tags</h5>
-  <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag for tag
+  <select multiple class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag
  in tags"></select>
   <form class="form-inline" role="form">
    <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
@@ -29,7 +29,7 @@
     <option value="danger">Bad!</option>
    </select>
   </form>
-  <button class="btn btn-sm" ng-click="transcript.addTags(selectedTags, newTag)">Add</button>
+  <button class="btn btn-sm" ng-click="transcript.addTag(selectedTag, newTag)">Add</button>
  </div>
 </div>
 

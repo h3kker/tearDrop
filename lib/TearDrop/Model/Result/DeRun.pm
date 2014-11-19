@@ -191,7 +191,39 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BtYK8YD3NrXkv4wSmC2d+A
 
+use Dancer qw/:moose !status/;
+
 sub _is_column_serializable { 1 };
+
+sub get_results {
+  my $self = shift;
+  my @param = @_;
+  if (defined $param[0]) {
+    my $new_search;
+    for my $k (keys %{$param[0]}) {
+      my $ok=$k;
+      my $join_tbl = $self->count_table->aggregate_genes ? 'gene' : 'transcript';
+      $k=~s/%TRANS%/$join_tbl/g;
+      $new_search->{$k} = $param[0]->{$ok};
+    }
+    $param[0]=$new_search;
+  }
+  $param[1]||={};
+  $param[1]->{prefetch}||=[];
+
+  if ($self->count_table->aggregate_genes) {
+    push @{$param[1]->{prefetch}}, { 
+      'gene' => [ { 'transcripts' => [ 'organism', ]}, { 'gene_tags' => [ 'tag' ] } ]
+    };
+    return $self->de_results(@param);
+  }
+  else {
+    push @{$param[1]->{prefetch}}, { 
+      'transcript' => [ 'organism', { 'trancript_tags' => 'tag' } ]
+    };
+    return $self->de_results(@param);
+  }
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

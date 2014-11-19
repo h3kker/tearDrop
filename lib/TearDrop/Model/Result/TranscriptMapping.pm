@@ -229,5 +229,19 @@ sub is_good {
   return 1;
 }
 
+sub annotations {
+  my ($self, $context) = @_;
+  $context||=100;
+
+  my @ret;
+  push @ret, @{$self->genome_mapping->as_tree({ contig => $self->tid, 
+    start => $self->tstart - $context, end  => $self->tend + $context}, { filter => 1 })};
+  for my $mod ($self->genome_mapping->organism_name->gene_models) {
+    push @ret, @{$mod->as_tree({ contig => $self->tid, start => $self->tstart - $context, 
+      end => $self->tend + $context})};
+  }
+  wantarray ? @ret : \@ret;
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

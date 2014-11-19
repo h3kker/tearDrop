@@ -4,9 +4,10 @@
 
 - "loading" feedback, error handling ($http interceptor?)
 - deal with multiple alignments => selection, define "favorite"
-- search by transcript/gene fields in de result table
-- XXX unroll mappings to annotations, don't load them separately for each map
+- select favorite assembly. maybe it's time to make users?
 - XXX reciprocal best hit
+- DONE search by transcript/gene fields in de result table
+- DONE unroll mappings to annotations, don't load them separately for each map
 - DONE set url path on de run selection
 - DONE assembly selection in views
 - DONE transcript alignment meta: field for "use_original_id"
@@ -63,6 +64,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## automated annotation workflow
 
+- XXX bulk blast out of order due to workqueue rebuild, and this is currently the only automated annotation :-(
 - transfer/sync annotations between transcripts and genes
 - use/transfer/compare with external annotations
   * bulk overlapping
@@ -134,14 +136,4 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - schema versioning, automated migration to new schema
 - fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 - integrate genome mappings and external annotations, they have many things in common
-
-## djamei specific
-
-- align to transcripts with bwa?
-- DONE replace ustilago assembly fasta ids with chrnames from gertrud
-  - DONE in genome mapping
-  - DONE in alignments
-  - DONE in fasta (duh)
-  - ...?
-- DONE align to usti with star?
-- DONE import getrud gff for usti
+- users (+external auth)

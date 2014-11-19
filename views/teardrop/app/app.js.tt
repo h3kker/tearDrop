@@ -4,7 +4,7 @@
 var tearDrop = angular.module('TearDrop', [
   'ngCookies',
   'ngRoute',
-  'nvd3ChartDirectives',
+  'cgBusy',
   'highcharts-ng',
   'angular-growl',
   'tearDropServices',
@@ -35,6 +35,10 @@ var tearDrop = angular.module('TearDrop', [
 tearDrop.config(['growlProvider', '$httpProvider', function(growlProvider, $httpProvider) {
     growlProvider.globalTimeToLive(5000);
 }]);
+tearDrop.value('cgBusyDefaults', {
+  message: 'Loading Mist from Misthaufen',
+  delay: 150,
+});
 
 
 tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
@@ -57,8 +61,38 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
   }
   var workQueueStatus;
   $rootScope.workerStatus={};
+  var jobList = function(st) {
+    var ret={};
+    angular.forEach(st, function(cat) {
+      angular.forEach(cat, function(j) {
+        ret[j.id]=j;
+      });
+    });
+    return ret;
+  }
+  var jobMessages = {
+    queued: { category: 'warning', msg: function(j) { return "Queued Job "+j.class } },
+    running: { category: 'info', msg: function(j) { return "Started Job "+j.class+" at "+new Date(Number(j.started)*1000).toTimeString() } },
+    done: { category: 'success', msg: function(j) { return "Job "+j.class+" done, took "+(Math.round(j.elapsed*10)/10)+" secs." } },
+    failed: { category: 'error', msg: function(j) { return "Onoz, job "+j.class+" failed!" } },
+  }
   $rootScope.updateQueueStatus = function(success) {
     $http.get('[% config.base_uri %]/api/worker/status').success(function(d) {
+      if (!angular.equals($rootScope.workerStatus, d)) {
+        var oldJobs = jobList($rootScope.workerStatus);
+        var newJobs = jobList(d);
+        angular.forEach(newJobs, function(nj) {
+          angular.forEach(jobMessages, function(st, status) {
+            if (nj.status==status && (!oldJobs[nj.id] || oldJobs[nj.id].status != status)) {
+              delete oldJobs[nj.id];
+              growl[st.category](st.msg(nj));
+            }
+          });
+          angular.forEach(oldJobs, function(oj) {
+            growl[jobMessages.done.category](jobMessages.done.msg(oj));
+          });
+        });
+      }
       $rootScope.workerStatus=d;
       if (success!=null) success(d);
     });
@@ -94,6 +128,9 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
       growl.error(err);
     }
   };
+  // should be some service or something
+  $rootScope.busyPromise = null;
+
   Highcharts.theme = {
      colors: ["#7cb5ec", "#f7a35c", "#90ee7e", "#7798BF", "#aaeeee", "#ff0066", "#eeaaee",
         "#55BF3B", "#DF5353", "#7798BF", "#aaeeee"],

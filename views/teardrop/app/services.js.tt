@@ -18,11 +18,12 @@ var objPrototype = function($rootScope) {
         this.reviewed=true;
         this.save();
       },
-      addTags: function(selectedTags, newTag) {
+      addTag: function(selectedTag, newTag) {
+        console.log('hre');
         if (newTag != null && newTag.tag !== '') {
-          selectedTags.push(newTag);
+          selectedTag=newTag;
         }
-        this.tags = this.tags.concat(selectedTags);
+        this.tags = this.tags.concat(selectedTag);
         var that=this;
         this.save(function(t) {
           if (newTag != null && newTag.tag !== '') {

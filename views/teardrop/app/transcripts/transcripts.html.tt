@@ -1,5 +1,4 @@
 <h1>Transcripts</h1>
-
 <div class="row">
  <div class="col-md-12">
   <paged-grid param="transcripts" grid-options="gridOptions" refresh="refresh" show-assembly-selector="1" show-tag-selector="1"></paged-grid>

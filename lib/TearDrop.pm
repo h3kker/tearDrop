@@ -93,6 +93,9 @@ sub parse_params {
   if ($comparisons->isa('DBIx::Class::ResultSet')) {
     $comparisons = $comparisons->result_class->new->comparisons;
   }
+  elsif (!ref $comparisons) {
+    $comparisons = schema(var 'project')->resultset($comparisons)->result_class->new->comparisons;
+  }
   for my $field (keys %$comparisons) {
     if (exists params->{'filter.'.$field}) {
       my $col=$comparisons->{$field}{column};
@@ -125,7 +128,7 @@ get '/transcripts' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
   
-  parse_params(schema(var 'project')->resultset('Transcript'), $filter, $sort);
+  parse_params('Transcript', $filter, $sort);
   debug $sort;
   debug $filter;
   my $rs = schema(var 'project')->resultset('Transcript')->search($filter, { 
@@ -157,7 +160,7 @@ get '/transcripts/fasta' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
   
-  parse_params(schema(var 'project')->resultset('Transcript'), $filter, $sort);
+  parse_params('Transcript', $filter, $sort);
   debug $sort;
   debug $filter;
   my $rs = schema(var 'project')->resultset('Transcript')->search($filter, { 
@@ -182,7 +185,6 @@ get '/transcripts/:id' => sub {
   $tser->{organism} = $rs->organism;
   $tser->{tags} = [ $rs->tags ];
   $tser->{transcript_mapping_count} = $rs->transcript_mappings->count;
-  $tser->{transcript_mappings} = [ $rs->filtered_mappings ];
   $tser->{annotations} = $rs->gene_model_annotations;
   $tser->{de_results} = [];
   for my $der (schema(var 'project')->resultset('DeResult')->search({ transcript_id => $rs->id },
@@ -208,10 +210,15 @@ post '/transcripts/:id' => sub {
 };
 
 get '/transcripts/:id/mappings' => sub {
-  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id'), { prefetch => [
-    'organism', 'gene', { 'transcript_tags' => 'tag' },
-  ]}) || send_error 'not found', 404;
-  $rs->filtered_mappings;
+  my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
+  my $maps = $rs->filtered_mappings;
+  my @ret;
+  for my $m (@$maps) {
+    my $m_ser = $m->TO_JSON;
+    $m_ser->{annotations} = [ $m->annotations ];
+    push @ret, $m_ser;
+  }
+  \@ret;
 };
 
 get '/transcripts/:id/blast_results' => sub {
@@ -276,7 +283,7 @@ get '/genes' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
 
-  parse_params(schema(var 'project')->resultset('Gene'), $filter, $sort);
+  parse_params('Gene', $filter, $sort);
   debug $sort;
   debug $filter;
   my $rs = schema(var 'project')->resultset('Gene')->search($filter, { 
@@ -316,7 +323,7 @@ get '/genes/fasta' => sub {
   my $filter = {};
   my $sort = [ { -asc => 'me.id' } ];
 
-  parse_params(schema(var 'project')->resultset('Gene'), $filter, $sort);
+  parse_params('Gene', $filter, $sort);
   debug $sort;
   debug $filter;
   my $rs = schema(var 'project')->resultset('Gene')->search($filter, { 
@@ -380,7 +387,14 @@ post '/genes/:id' => sub {
 
 get '/genes/:id/mappings' => sub {
   my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
-  $rs->filtered_mappings;
+  my $maps = $rs->filtered_mappings;
+  my @ret;
+  for my $m (@$maps) {
+    my $m_ser = $m->TO_JSON;
+    $m_ser->{annotations} = [ $m->annotations ];
+    push @ret, $m_ser;
+  }
+  \@ret;
 };
 
 get '/genes/:id/fasta' => sub {
@@ -442,7 +456,7 @@ get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
   my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  parse_params(schema(var 'project')->resultset('DeResult'), $filters, $sort);
+  parse_params('DeResult', $filters, $sort);
   my $rs = schema(var 'project')->resultset('DeResult')->search($filters, { 
     order_by => $sort,
   });
@@ -456,24 +470,27 @@ get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
 
 
 get '/deruns/:id/contrasts/:contrast_id/results' => sub {
+  schema(var 'project')->storage->debug(1);
   my $de_run = schema(var 'project')->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
-  my $is_gene = $de_run->count_table->aggregate_genes;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];
-  parse_params(schema(var 'project')->resultset('DeResult'), $filters, $sort);
+  parse_params('DeResult', $filters, $sort);
   debug $filters;
   debug $sort;
-  my $rs = schema(var 'project')->resultset('DeResult')->search($filters, { 
+  my @ret;
+  my $rs = $de_run->get_results($filters, { 
     order_by => $sort,
     page => param('page'), 
     rows => param('pagesize') || 50, 
   });
-  my @ret;
   for my $r ($rs->all) {
     my $ser = $r->TO_JSON;
-    $ser->{transcript}=schema(var 'project')->resultset($is_gene ? 'Gene' : 'Transcript')->find($r->transcript_id);
+    my $obj = $de_run->count_table->aggregate_genes ? 'gene' : 'transcript';
+    $ser->{transcript} = $r->$obj->TO_JSON;
+    $ser->{transcript}{$_} = $r->$obj->$_ for qw/organism tags/;
     push @ret, $ser;
   }
+  schema(var 'project')->storage->debug(1);
   if (param('page')) {
     return {
       total_items => $rs->pager->total_entries,

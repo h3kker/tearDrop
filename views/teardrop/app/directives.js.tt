@@ -146,11 +146,11 @@ angular.module('tearDropDirectives', []).
             $scope.param.pagingOptions[k]=v;
           }
           if (k.match(/^sort-/)) {
-            var s=k.split('-');
+            var s=k.split('-', 3);
             $scope.param.sort[s[1]]={ field: s[2], direction: v };
           }
-          if (k.match(/^filter\./)) {
-            var s=k.split('.');
+          var s = k.match(/^filter\.(.+)/);
+          if (s) {
             if (s[1]==='tags') {
               angular.forEach(v, function(wanted) {
                 angular.forEach($rootScope.tags, function(tag) {
@@ -234,8 +234,9 @@ angular.module('tearDropDirectives', []).
         $scope.param.doRefresh = function(force) {
           var p = $scope.param.generateUrlParams(angular.copy($scope.param.pagingOptions));
           if (force || $scope.curParams===null || !angular.equals(p, $scope.curParams)) {
+            $scope.loading=true;
             $scope.curParams=p;
-            $scope.refresh(p);
+            $scope.refresh(p, function() { $scope.loading=false });
           }
         }
         $scope.$watch('param.pagingOptions', function (newVal, oldVal) {

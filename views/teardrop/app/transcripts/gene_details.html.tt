@@ -23,7 +23,7 @@
  </div>
  <div class="col-md-3">
   <h5>Tags</h5>
-  <select class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'"></select>
+  <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'"></select>
   <form class="form-inline" role="form">
    <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
    <select ng-model="newTag.level" class="form-control input-sm">
@@ -33,7 +33,7 @@
     <option value="danger">Bad!</option>
    </select>
   </form>
-  <button class="btn btn-sm" ng-click="gene.addTags(selectedTags, newTag)">Add</button>
+  <button class="btn btn-sm" ng-click="gene.addTag(selectedTag, newTag)">Add</button>
  </div>
 </div>
 
@@ -50,7 +50,10 @@
 
 <div class="row">
  <div class="col-md-12">
+  <p>
+  <span ng-if="transcript.tags.length==0" class="label label-default">No tags...</span>
   <span ng-repeat="tag in gene.tags | orderBy:'tag'" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="gene.removeTag(tag)"></i></span>
+  </p>
  </div>
 </div>
 
@@ -145,16 +148,14 @@
          </div>
          <div class="row">
           <div class="col-md-12">
-           <h4>Sequence</h4>
-           <pre>
+           <accordion close-others="0">
+            <accordion-group>
+             <accordion-heading>Sequence</accordion-heading>
+             <pre>
 &gt;{{transcript.id}}
 {{transcript.nsequence}}
-           </pre>
-          </div>
-         </div>
-         <div class="row">
-          <div class="col-md-12">
-           <accordion>
+             </pre>
+            </accordion-group>
             <accordion-group open="transcript.loadAlignment(alignData)">
              <accordion-heading>View Alignment</accordion-heading>
              <transcript-alignment align-data="alignData" transcript="transcript"></transcript-alignment>
