@@ -37,7 +37,7 @@
        </li>
       </ul>
       <p class="navbar-text navbar-right">
-       Pending Jobs: <span class="label label-default">{{workerStatus.queued}}</span>/<span class="label label-success">{{workerStatus.running}}</span>/<span class="label label-danger">{{workerStatus.failed}}</span>
+       Pending Jobs: <span class="label label-default">{{workerStatus.queued.length}}</span>/<span class="label label-success">{{workerStatus.running.length}}</span>/<span class="label label-danger">{{workerStatus.failed.length}}</span>
       </p>
     </div>
   </div>

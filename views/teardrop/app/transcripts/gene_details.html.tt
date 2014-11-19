@@ -23,7 +23,7 @@
  </div>
  <div class="col-md-3">
   <h5>Tags</h5>
-  <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'"></select>
+  <select class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'"></select>
   <form class="form-inline" role="form">
    <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
    <select ng-model="newTag.level" class="form-control input-sm">

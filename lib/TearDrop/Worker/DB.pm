@@ -10,22 +10,20 @@ use Mouse;
 
 use Try::Tiny;
 use Carp;
+use Parallel::ForkManager;
 
 extends 'TearDrop::Worker';
 
-use TearDrop::Task::BLAST;
-use TearDrop::Task::MAFFT;
-use TearDrop::Task::Mpileup;
-
 use POSIX qw(mkfifo :errno_h);
+
+has 'pm' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
+  my $self = shift;
+  my $pm = Parallel::ForkManager->new($self->threads);
+  $pm;
+});
 
 sub start_worker {
   my $self = shift;
-  my $pid = fork;
-  if ($pid) {
-    info 'worker started with pid '.$pid;
-    return;
-  }
   if (config->{worker}{fifo}) {
     for my $j ($self->queued_jobs->all) {
       $self->start_job($j);
@@ -55,6 +53,7 @@ sub start_worker {
       sleep(config->{worker}{poll_interval}||30);
     }
   }
+
   info 'closing worker?';
 }
 
@@ -111,20 +110,15 @@ sub enqueue {
   });
   $task->id($queue_item->id);
   debug 'task '.ref($task).' queued with id '.$task->id;
-  $SIG{ALRM} = sub {
-    $self->new->start_worker;
-  };
-  alarm(10);
-  try {
-    debug 'signalling worker';
-    open(OUT, ">".config->{worker}{fifo}) or confess("open ".config->{worker}{fifo}.": $!");
+  unless ($self->daemon_status) {
+    debug 'restarting daemon';
+    $self->start_working;
+  }
+  if (config->{worker}{fifo}) {
+    open(OUT, ">".config->{worker_fifo}) or confess("open ".config->{worker_fifo}.": $!");
     print OUT "job queued\n";
     close OUT;
-  } catch {
-    info 'worker process has gone away? hopefully we got a new one now.';
-  };
-  alarm(0);
-  $SIG{ALRM}=undef;
+  }
   $task;
 }
 

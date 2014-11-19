@@ -10,7 +10,7 @@ has 'post_processing' => ( is => 'rw', isa => 'CodeRef | Undef', predicate => 'h
 
 has 'project' => ( is => 'rw', isa => 'Str' );
 has 'result' => ( is => 'rw', isa => 'ArrayRef | Undef' );
-has 'id' => ( is => 'rw', isa => 'Int' );
+has 'id' => ( is => 'rw', isa => 'Str' );
 has 'pid' => ( is => 'rw', isa => 'Int | Undef' );
 has 'status' => ( is => 'rw', isa => 'Str | Undef' );
 

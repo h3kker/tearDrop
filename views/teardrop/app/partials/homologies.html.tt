@@ -1,14 +1,14 @@
 <div>
   <div class="row">
    <div class="col-md-4">
-    <select multiple class="form-control" ng-model="selectedDbs" ng-options="db.description+' ('+db.status+')' for db in dbSources">
+    <select multiple class="form-control" ng-model="selectedDbs" ng-options="db.description+' ('+db.status+')' for db in dbSources" size="{{dbSources.length}}">
     </select>
    </div>
    <div class="col-md-1">
-    <button class="btn" ng-click="runBlast(selectedDbs)" ng-disabled="selectedDbs.length==0">Run BLAST</button>
+    <button class="btn btn-sm" ng-click="runBlast(selectedDbs)" ng-disabled="selectedDbs.length==0">Run BLAST</button>
    </div>
    <div class="col-md-3 col-md-offset-1">
-    <select multiple class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | filter:{ category: 'homology' } | orderBy:'tag'"></select>
+    <select class="form-control input-sm" ng-model="selectedTags" ng-options="tag.tag group by tag.category for tag in tags | filter:{ category: 'homology' } | orderBy:'tag'"></select>
    </div>
    <div class="col-md-1">
     <button class="btn btn-sm" ng-click="ngModel.addTags(selectedTags)">Add</button>

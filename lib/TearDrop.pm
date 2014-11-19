@@ -25,12 +25,13 @@ sub setup_projects {
 }
 setup_projects();
 
-require TearDrop::Worker::DB;
-my $worker = new TearDrop::Worker::DB;
-$worker->start_worker;
+require TearDrop::Worker::Redis;
+my $worker = new TearDrop::Worker::Redis;
+$worker->start_working;
 
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
+  debug request->path;
   var 'project' => cookie 'project';
   if (var('project') && !exists config->{plugins}{DBIC}{var 'project'}) {
     send_error 'invalid project: '.var('project'), 500;
