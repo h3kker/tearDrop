@@ -4,9 +4,8 @@
 
 - "loading" feedback, error handling ($http interceptor?)
 - deal with multiple alignments => selection, define "favorite"
-- refactor old worker to backup worker, or e.g. for batch blast
 - search by transcript/gene fields in de result table
-- unroll mappings to annotations, don't load them separately for each map
+- XXX unroll mappings to annotations, don't load them separately for each map
 - XXX reciprocal best hit
 - DONE set url path on de run selection
 - DONE assembly selection in views
@@ -17,22 +16,31 @@
 ## big stuff
 
 - blast search in transcript assemblies (see also reciprocal best hit)
-  - extract ref seq from blast db 
-  - fasta text field
+  - pick ref seq from installed blast db 
+  - input text field for any fasta
+  - blastx/tblastx/blastn etc
 - transcript-transcript relationships for assembly comparisons
-- job manager
-  * DONE via db table
-  * DONE worker process started on request
-  * DONE respawn worker process on fail
-  * DONE signal worker with fifo, use fifo to check if worker alive, restart if no response
-  * DONE use YAML to de/serialize tasks
-  * race condition safety: provide one fifo per worker (tmpdir?), select task for update in transaction; 
-  * cannot start job with post_processing command (does not survive de/serialisation)
-  * one dedicated worker process started separately? comms with REST?
 - DONE import GFF files with genome annotations
 - DONE refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions) (in the end concat id with assembly-specific id prefix)
 - DONE multiple projects: master database with separate dbs for projects
   - DONE create template and provide scripts to setup project db
+
+## job dispatcher
+
+- cannot start job with post_processing command (does not survive de/serialisation)??
+- "in memory" dispatcher for bulk jobs? submit to redis/db queue and have dedicated dispatcher?
+- DONE start only one work dispatcher, controlled with PID file
+  - XXX (re)start with web server, but not with script jobs, move to before hook again?
+  - XXX stop with web server?
+  - DONE respawn worker process on fail
+- DONE Redis Queue 
+  - XXX figure out Storable f*ckup in upstream module? replace with YAML?
+- DONE Database Queue
+  - DONE via db table
+  - DONE FIFO signalling on new jobs
+  - DONE FIFO signalling optional (fallback on polling)
+  - DONE use YAML to de/serialize tasks
+  - select for update (make sure no other worker picks up same task)
 
 ## visualisation
 

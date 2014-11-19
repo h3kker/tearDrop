@@ -1,0 +1,13 @@
+share/musicbase-schema/*
+share/musicbase-schema.db
+armin_data
+bower_components/
+config.yml
+dump.rdb
+lib/TearDrop/Old/
+logs/
+node_modules/
+.Rincr_history
+.Rhistory
+sessions/
+share/
