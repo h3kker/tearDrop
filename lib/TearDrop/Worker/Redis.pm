@@ -8,7 +8,6 @@ use Dancer qw/:moose !status/;
 use Mouse;
 
 use Try::Tiny;
-use Parallel::Prefork;
 
 use Redis::JobQueue qw/DEFAULT_SERVER DEFAULT_PORT/;
 use Redis::JobQueue::Job qw/STATUS_WORKING STATUS_COMPLETED STATUS_FAILED STATUS_CREATED/;
