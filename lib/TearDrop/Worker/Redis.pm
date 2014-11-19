@@ -72,7 +72,6 @@ sub run_job {
 sub enqueue {
   my ($self, $task) = @_;
   debug 'queuing job '.ref($task);
-  debug $self->serialize_task($task);
   my $job = Redis::JobQueue::Job->new({
     queue => $self->redis_queue,
     workload => $task,
@@ -103,7 +102,7 @@ sub job_status {
 
 sub serialize_job {
   my ($self, $j) = @_;
-  my %status_map = ( +STATUS_CREATED => 'queued', +STATUS_WORKING => 'running', +STATUS_FAILED => 'failed', +STATUS_COMPLETED => 'done');
+  my %status_map = ( STATUS_CREATED, 'queued', STATUS_WORKING, 'running', STATUS_FAILED, 'failed', STATUS_COMPLETED, 'done');
   {
     id => $j->id,
     pid => $j->meta_data('pid'),

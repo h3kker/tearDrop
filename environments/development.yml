@@ -10,6 +10,7 @@ logger: "console"
 # core is the lowest, it shows Dancer's core log messages as well as yours
 # (debug, info, warning and error)
 log: "debug"
+logger_format: "%T [%P] %L @%D> %m in %f l. %l"
 
 # should Dancer consider warnings as critical errors?
 warnings: 1
@@ -25,3 +26,5 @@ show_errors: 1
 # DO NOT EVER USE THIS FEATURE IN PRODUCTION 
 # OR TINY KITTENS SHALL DIE WITH LOTS OF SUFFERING
 auto_reload: 0
+
+

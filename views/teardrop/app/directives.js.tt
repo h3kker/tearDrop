@@ -53,13 +53,13 @@ angular.module('tearDropDirectives', []).
                       queryJobStatus(pid);
                     }
                     else if (jobData.status == 'done') {
+                      $rootScope.updateQueueStatus();
                       $scope.loadHomologs(true);
                     }
                   });
                 }, 5000);
               }
               if (d.id) {
-                db.status('failed?');
                 queryJobStatus(d.id);
               }
             }).error($rootScope.errHandler);
