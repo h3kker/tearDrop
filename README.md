@@ -20,15 +20,15 @@ account for the other half. I should remember to replace this with a real depend
 
 1. Create teardrop database user and master database
 
-  > psql -U postgres
-  postgres=# create user teardrop createdb;
-  postgres=# create database teardrop_master owner teardrop;
+    > psql -U postgres
+    postgres=# create user teardrop createdb;
+    postgres=# create database teardrop_master owner teardrop;
 
 2. Set up master schema
 
 Should maybe provide a script.
 
-> > psql -U teardrop teardrop_master < db/master_schema.sql
+    > psql -U teardrop teardrop_master < db/master_schema.sql
 
 ### Configuration
 
@@ -36,16 +36,16 @@ Create skeleton config
 
 Edit `config.yml` in the base directory. At the very least it needs to have the configuration for the master database
 
-  plugins:
-    DBIC:
-     default:
-       dsn: dbi:Pg:dbname=teardrop_master;host=gecko
-       schema_class: TearDrop::Master::Model
-       user: teardrop
-       options:
-         RaiseError: 1
-         PrintError: 1
-         auto_savepoint: 1
+    plugins:
+      DBIC:
+       default:
+         dsn: dbi:Pg:dbname=teardrop_master;host=gecko
+         schema_class: TearDrop::Master::Model
+         user: teardrop
+         options:
+           RaiseError: 1
+           PrintError: 1
+           auto_savepoint: 1
 
 Project databases will be configured on the fly from a table in the master schema.
 
@@ -53,7 +53,7 @@ Project databases will be configured on the fly from a table in the master schem
 
 ... must be set up in the database now. Once it's in the table `projects`, you can do:
 
-  > perl bin/deploy_project.pl -p [projectname]
+    > perl bin/deploy_project.pl -p [projectname]
 
 This will create all the tables, constraints and indices.
 
@@ -61,7 +61,7 @@ This will create all the tables, constraints and indices.
 
 Start development instance:
 
-  > perl bin/app.pl 
+    > perl bin/app.pl 
 
 Point your browser to [http://localhost:3000/teardrop](http://localhost:3000/teardrop)
 
@@ -71,7 +71,7 @@ You might want to create a wrapper shell script to set up paths and start TearDr
 
 Currently: Create a bunch of CSV files. Maybe the term bunch needs some expanded clarification. Set up base data:
 
-  > perl bin/import_metadata.pl -p [project] -b [basedir] 
+    > perl bin/import_metadata.pl -p [project] -b [basedir] 
 
 To import all your nice big data files referenced in the tables, use option `--files`.
 
