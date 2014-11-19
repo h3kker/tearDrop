@@ -27,11 +27,10 @@ has 'jq' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
   Redis::JobQueue->new(redis => $_[0]->redis_server);
 });
 
-sub start_worker {
+sub run_dispatcher {
   my $self = shift;
   debug 'waiting...';
   while(my $job = $self->jq->get_next_job(queue => $self->redis_queue, blocking => 1)) {
-    debug 'XXXstarting '.$job->id;
     $self->run_job($job);
     debug 'waiting...';
   }
@@ -49,6 +48,7 @@ sub run_job {
     return;
   }
   else {
+    $0 = 'teardrop worker ('.$item->id.')';
     try {
       debug 'starting '.$item->id.' class '.$item->meta_data('task_class');
       $item->status(STATUS_WORKING);
@@ -72,7 +72,6 @@ sub run_job {
 
 sub enqueue {
   my ($self, $task) = @_;
-  #confess 'worker died?' unless $self->daemon_status;
   debug 'queuing job '.ref($task);
   debug $self->serialize_task($task);
   my $job = Redis::JobQueue::Job->new({
@@ -89,32 +88,23 @@ sub enqueue {
 
 sub status {
   my ($self) = @_;
-  confess 'worker died?' unless $self->daemon_status;
-  my %status_map = ( STATUS_CREATED.'' => 'queued', STATUS_WORKING.'' => 'running', STATUS_FAILED.'' => 'failed', STATUS_COMPLETED.'' => 'done');
   my $ret = { queued => [], running => [], failed => [], done => 0 };
   for my $id ($self->jq->get_job_ids(status => [ STATUS_CREATED, STATUS_WORKING, STATUS_FAILED ])) {
-    my $j = $self->jq->load_job($id);
-    push @{$ret->{$status_map{$j->status}}}, {
-      id => $j->id,
-      pid => $j->meta_data('pid'),
-      queue => $j->queue,
-      created => $j->created,
-      started => $j->started,
-      completed => $j->completed,
-      failed => $j->failed,
-      elapsed => $j->elapsed,
-      class => $j->meta_data('task_class'),
-    };
+    my $j = $self->serialize_job($self->jq->load_job($id));
+    push @{$ret->{$j->{status}}}, $j;
   }
   $ret;
 }
 
 sub job_status {
   my ($self, $id) = @_;
-  debug 'job status '.$id;
-  my %status_map = ( STATUS_CREATED.'' => 'queued', STATUS_WORKING.'' => 'running', STATUS_FAILED.'' => 'failed', STATUS_COMPLETED.'' => 'done');
 
-  my $j = $self->jq->load_job($id);
+  $self->serialize_job($self->jq->load_job($id));
+}
+
+sub serialize_job {
+  my ($self, $j) = @_;
+  my %status_map = ( +STATUS_CREATED => 'queued', +STATUS_WORKING => 'running', +STATUS_FAILED => 'failed', +STATUS_COMPLETED => 'done');
   {
     id => $j->id,
     pid => $j->meta_data('pid'),
@@ -127,18 +117,6 @@ sub job_status {
     elapsed => $j->elapsed,
     class => $j->meta_data('task_class'),
   };
-}
-
-sub deserialize_item {
-  my ($self, $item) = @_;
-  my $o = YAML::Load($item->workload);
-  $o->project($item->meta_data('project'));
-  $o;
-}
-
-sub serialize_task {
-  my ($self, $task) = @_;
-  YAML::Dump($task);
 }
 
 1;

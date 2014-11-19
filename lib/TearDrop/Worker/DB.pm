@@ -22,11 +22,11 @@ has 'pm' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
   $pm;
 });
 
-sub start_worker {
+sub run_dispatcher {
   my $self = shift;
   if (config->{worker}{fifo}) {
     for my $j ($self->queued_jobs->all) {
-      $self->start_job($j);
+      $self->run_job($j);
     }
     unless(-e config->{worker}{fifo}) {
       mkfifo(config->{worker}{fifo}, 0700) or confess 'mkfifo '.config->{worker}{fifo}." failed: $!";
@@ -36,7 +36,7 @@ sub start_worker {
       while(<FIFO>) {
         debug 'wakey!';
         for my $j ($self->queued_jobs->all) {
-          $self->start_job($j);
+          $self->run_job($j);
         }
         debug 'yawn.';
       }
@@ -47,7 +47,7 @@ sub start_worker {
     while(1) {
       debug 'wakey!';
       for my $j ($self->queued_jobs->all) {
-        $self->start_job($j);
+        $self->run_job($j);
       }
       debug 'yawn.';
       sleep(config->{worker}{poll_interval}||30);
@@ -72,7 +72,7 @@ sub queued_jobs {
   schema->resultset('Workqueue')->search({status => 'queued'}, { orderBy => [ { -asc => 'batch ' }, { -desc => 'submit_date' } ]})
 }
 
-sub start_job {
+sub run_job {
   my ($self, $item) = @_;
   my $pid = $self->pm->start;
   if ($pid) {
@@ -82,6 +82,7 @@ sub start_job {
     $item->update;
     return;
   }
+  $0 = 'teardrop worker ('.$item->id.')';
   try {
     debug 'starting '.$item->id.' class '.$item->class;
     my $task = $self->deserialize_item($item);

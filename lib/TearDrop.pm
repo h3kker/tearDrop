@@ -27,7 +27,7 @@ setup_projects();
 
 require TearDrop::Worker::Redis;
 my $worker = new TearDrop::Worker::Redis;
-$worker->start_working;
+$worker->restart_working;
 
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
@@ -551,6 +551,5 @@ get '/worker/status' => sub {
 get '/worker/status/:job' => sub {
   $worker->job_status(param 'job');
 };
-
 
 true;

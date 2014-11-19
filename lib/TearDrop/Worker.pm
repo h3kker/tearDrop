@@ -45,8 +45,17 @@ sub start_working {
     info 'worker started with pid '.$pid;
     return;
   }
-  $0 = 'teardrop worker';
-  $self->start_worker;
+  $0 = 'teardrop work dispatcher';
+  $self->run_dispatcher;
+}
+
+sub restart_working {
+  my $self = shift;
+  if (my $pid = $self->daemon_status) {
+    info 'killing old worker '.$pid.' (no retirement here)';
+    $self->daemon->Kill_Daemon();
+  }
+  $self->start_working;
 }
 
 sub daemon_status {
