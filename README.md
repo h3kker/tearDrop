@@ -20,9 +20,9 @@ account for the other half. I should remember to replace this with a real depend
 
 1. Create teardrop database user and master database
 
-    > psql -U postgres
-    postgres=# create user teardrop createdb;
-    postgres=# create database teardrop_master owner teardrop;
+     > psql -U postgres
+     postgres=# create user teardrop createdb;
+     postgres=# create database teardrop_master owner teardrop;
 
 2. Set up master schema
 
