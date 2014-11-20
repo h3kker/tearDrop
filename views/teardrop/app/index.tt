@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="[% config.base_uri %]/css/app.css"/>
   <link rel="stylesheet" href="[% config.base_uri %]/css/bootstrap.css" media="all">
   <link rel="stylesheet" href="[% config.base_uri %]/css/ui-grid-unstable.css">
-  <link rel="stylesheet" href="[% config.base_uri %]/css/font-awesome.css">
+  <link rel="stylesheet" href="[% config.base_uri %]/css/font-awesome.min.css">
   <link rel="stylesheet" href="[% config.base_uri %]/css/angular-growl.min.css">
   <link rel="stylesheet" href="[% config.base_uri %]/css/angular-busy.min.css">
 </head>

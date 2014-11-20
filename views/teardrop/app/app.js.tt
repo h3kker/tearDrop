@@ -41,7 +41,7 @@ tearDrop.value('cgBusyDefaults', {
 });
 
 
-tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
+tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, growl) {
   $rootScope.currentProject=null;
   $rootScope.projects=[];
   $rootScope.reloadProjects = function() {
@@ -56,7 +56,6 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
   $rootScope.setProject = function(project) {
     $cookies.project=project.name;
     $rootScope.currentProject=project;
-    $rootScope.reloadTags();
     $rootScope.reloadDbSources();
   }
   var workQueueStatus;
@@ -111,12 +110,10 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, growl) {
     });
   }
   
-  $rootScope.tags=[];
-  $rootScope.reloadTags = function() {
-    $http.get('[% config.base_uri %]/api/tags').success(function(d) {
-      $rootScope.tags=d;
-    });
-  }
+  $rootScope.$on('clearTagCache' , function() {
+    $cacheFactory.get('$http').remove('[% config.base_uri %]/api/tags');
+    $rootScope.$broadcast('reloadTags');
+  });
 
   $rootScope.errHandler=function(err) {
     console.log(err);

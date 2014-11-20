@@ -247,42 +247,58 @@ angular.module('tearDropDirectives', []).
       },
     }
   }).
+  directive('addTags', function($rootScope, Tag) {
+    return {
+      restrict: 'E',
+      replace: true,
+      templateUrl: '[% config.base_uri %]/app/partials/addtags.html',
+      scope: {
+        ngModel: '=',
+        tagFilter: '@',
+      },
+      link: function($scope, element, attr) {
+        $scope.tags=Tag.query();
+        if ($scope.tagFilter) {
+          $scope.parsedFilter=$scope.$eval($scope.tagFilter);
+        }
+        $scope.newTag={};
+        $scope.newTag.level='info';
+        $scope.$on('reloadTags', function() {
+          $scope.tags=Tag.query();
+        });
+      },
+    }
+  }).
   directive('clickToEdit', function() {
-    var editorTemplate = '<span class="click-to-edit">' +
-      '<span ng-hide="view.editorEnabled">' +
-        '{{value}} ' +
-        '<button class="btn btn-xs" ng-click="enableEditor()"><span class="glyphicon glyphicon-pencil"></span></button>' +
-      '</span>' +
-      '<span ng-show="view.editorEnabled">' +
-        '<input type="text" ng-model="view.editableValue">' +
-        '<span class="btn-group">'+
-         '<button class="btn btn-xs btn-success" ng-click="save()"><span class="glyphicon glyphicon-ok"></span></button>' +
-         '<button class="btn btn-xs btn-warning" ng-click="disableEditor()"><span class="glyphicon glyphicon-remove"></span></button>' +
-        '</span>'+
-       '</span>' +
-      '</span>';
     return {
       restrict: 'A',
       replace: true, 
-      template: editorTemplate,
+      transclude: true,
+      templateUrl: '[% config.base_uri %]/app/partials/editable.html',
       require: '^ngModel',
       scope: {
         saveCallback: '=',
+        selectValues: '=?',
+        editType: '=?',
       },
       link: function($scope, element, attr, ngModelCtrl) {
-        ngModelCtrl.$formatters.push(function(modelValue) {
-          return modelValue;
-        });
+        $scope.selectOptions=attr.selectOptions;
+        if ($scope.editType==null) {
+          $scope.editType=$scope.selectOptions != null ? 'select' : 'text';
+        }
+        console.log($scope.editType);
         ngModelCtrl.$render = function() {
           $scope.value=ngModelCtrl.$viewValue;
         }
-        ngModelCtrl.$parsers.push(function(viewValue) {
-          return viewValue;
-        });
         $scope.view = {
           editableValue: $scope.value,
           editorEnabled: false,
         };
+        $scope.$watch('view.editableValue', function(newVal) {
+          if ($scope.editType=='text' && newVal != null && newVal.length > 80) {
+            $scope.editType='textarea';
+          }
+        });
         $scope.$watch('value', function() {
           if (ngModelCtrl.$viewValue !== $scope.value) {
             ngModelCtrl.$setViewValue($scope.value);
@@ -670,8 +686,8 @@ angular.module('tearDropDirectives', []).
      template: '<div>'+
        '<span ng-show="ngModel.name">{{ngModel.name}}</span>'+
        '<span ng-show="!ngModel.name && ngModel.reviewed"><em>Unknown</em></span>'+
-       '<span ng-show="ngModel.reviewed" class="glyphicon glyphicon-ok-sign"></span>'+
-       '<span ng-hide="ngModel.reviewed" style="font-size: 1.2em" class="text-warning glyphicon glyphicon-question-sign"></span>'+
+       '<span ng-show="ngModel.reviewed" class="fa fa-check-circle"></span>'+
+       '<span ng-hide="ngModel.reviewed" style="font-size: 1.2em" class="text-warning fa fa-question-circle"></span>'+
       '</div>',
      scope: {
       ngModel: '=',

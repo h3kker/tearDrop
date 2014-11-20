@@ -1,0 +1,20 @@
+ <span>
+  <div ng-hide="view.editorEnabled" class="form-group form-inline">
+    <p class="form-control-static" ng-transclude></p>
+    <p class="form-control-static">
+     <button class="btn btn-xs" ng-click="enableEditor()"><span class="fa fa-pencil-square-o"></span></button>
+    </p>
+  </div>
+  <div ng-show="view.editorEnabled" ng-switch="editType" class="form-group form-inline">
+   <span ng-switch-when="text"><input type="text" style="width:85%" class="form-control input-sm" ng-model="view.editableValue"></span>
+   <textarea ng-switch-when="textarea" style="width:85%" ng-model="view.editableValue" rows="4" class="form-control input-sm"></textarea>
+   <select ng-switch-when="select" ng-model="view.editableValue" class="form-control input-sm" ng-options="{{ selectOptions }}">
+   </select>
+  </span>
+  <span ng-show="view.editorEnabled">
+   <span class="btn-group">
+     <button class="btn btn-sm btn-success" ng-click="save()"><span class="fa fa-save"></span></button>
+     <button class="btn btn-sm btn-warning" ng-click="disableEditor()"><span class="fa fa-undo"></span></button>
+   </span>
+  </div>
+ </span>

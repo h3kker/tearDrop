@@ -1,0 +1,15 @@
+ <div class="form-group">
+  <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag group by tag.category for tag in tags | filter:parsedFilter | orderBy:'tag'">
+   <option value="">Pick Tag</option>
+  </select>
+  <div class="form-inline" role="form">
+   <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Add custom tag...">
+   <select ng-model="newTag.level" class="form-control input-sm">
+    <option value="info">Info</option>
+    <option value="success">Good</option>
+    <option value="warning">Not so good</option>
+    <option value="danger">Bad!</option>
+   </select>
+   <button class="btn btn-sm" ng-disabled="!selectedTag && !newTag.tag" ng-click="ngModel.addTag(selectedTag, newTag)">Add</button>
+  </div>
+ </div>

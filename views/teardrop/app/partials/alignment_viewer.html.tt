@@ -14,7 +14,7 @@
   </div>
    <ul class="list-group alignment-samples">
     <li class="list-group-item" ng-repeat="sample in samples" ng-dblclick="setOnlyVisible(sample)" ng-click="setVisible(sample)" ng-class="{ 'text-muted': !sample.visible }">
-     {{sample.sample}} <span class="badge" ng-style="sample.legendStyle()"><i class="glyphicon" ng-class="{ 'glyphicon-ok': sample.visible, 'glyphicon-remove': !sample.visible }"></i></span> 
+     {{sample.sample}} <span class="badge" ng-style="sample.legendStyle()"><i class="fa" ng-class="{ 'fa-check-square-o': sample.visible, 'fa-square-o': !sample.visible }"></i></span> 
     </li>
    </ul>
 
@@ -22,8 +22,8 @@
  <div class="col-md-10">
   <highchart id="coverage" config="coverageChartConfig"></highchart>
    <div class="btn-group" role="group" ng-show="load">
-    <button class="btn btn-sm" ng-click="zoomOut()"><i class="glyphicon glyphicon-zoom-out"></i></button>
-    <button class="btn btn-sm" ng-click="zommIn()"><i class="glyphicon glyphicon-zoom-in"></i></button>
+    <button class="btn btn-sm" ng-click="zoomOut()"><i class="fa fa-search-minus"></i></button>
+    <button class="btn btn-sm" ng-click="zoomIn()"><i class="fa fa-search-plus"></i></button>
    </div>
  </div>
 </div>

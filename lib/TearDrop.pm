@@ -60,8 +60,8 @@ get '/' => sub {
 
 get '/roadmap' => sub {
   my $todo = read_file_content(path('doc', 'todo.md'));
-  $todo =~ s|DONE(.*)$|<span class="text-muted"><i class="glyphicon glyphicon-ok"></i>$1</span>|mg;
-  $todo =~ s|XXX(.*)$|<span class="bg-danger"><i class="glyphicon glyphicon-fire text-danger"></i>$1</span>|mg;
+  $todo =~ s|DONE(.*)$|<span class="text-muted"><i class="fa fa-check-circle"></i>$1</span>|mg;
+  $todo =~ s|XXX(.*)$|<span class="bg-danger"><i class="fa fa-fire text-danger"></i>$1</span>|mg;
   template 'teardrop/roadmap', { roadmap => markdown $todo };
 };
 
@@ -204,6 +204,7 @@ post '/transcripts/:id' => sub {
   my $rs = schema(var 'project')->resultset('Transcript')->find(param('id')) || send_error 'not found', 404;
   my $upd = params('body');
   $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
+  $rs->organism_name($upd->{organism}{name}) if $upd->{organism};
   $rs->update_tags(@{$upd->{tags}});
   $rs->update;
   forward config->{base_uri}.'/api/transcripts/'.$rs->id, {}, { method => 'GET' };
@@ -559,6 +560,10 @@ get '/db_sources' => sub {
 
 get '/tags' => sub {
   [ schema(var 'project')->resultset('Tag')->all ];
+};
+
+get '/organisms' => sub {
+  [ schema(var 'project')->resultset('Organism')->all ];
 };
 
 get '/worker/status' => sub {

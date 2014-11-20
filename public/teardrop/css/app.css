@@ -37,8 +37,18 @@
   width: 1000px;
 }
 
-.click-to-edit input {
-  width: 450px;
+.theader div.form-group {
+  margin-bottom: 0px;
+}
+
+.theader div.form-group .control-label {
+  padding-top: 6px;
+}
+
+.theader div.form-control,p.form-control-static {
+  margin-bottom: 0px;
+  padding-bottom: 6px;
+  padding-top: 6px;
 }
 
 .list-group.alignment-samples .list-group-item {
@@ -48,4 +58,10 @@
 .list-group.alignment-samples .list-group-item .badge {
   font-size: 1em;
   min-width: 15px;
+}
+
+.panel h4.panel-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
 }

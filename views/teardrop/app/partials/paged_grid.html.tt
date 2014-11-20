@@ -12,11 +12,11 @@
      <option value="">ALL</option>
     </select>
    </span>
-   <button ng-if="param.getFasta" ng-show="param.pagingOptions.total_items" ng-click="param.getFasta()" class="btn btn-sm"><i class="glyphicon glyphicon-download-alt"></i> Download FASTA ({{param.pagingOptions.total_items}} sequences)</button>
+   <button ng-if="param.getFasta" ng-show="param.pagingOptions.total_items" ng-click="param.getFasta()" class="btn btn-sm"><i class="fa fa-download"></i> Download FASTA ({{param.pagingOptions.total_items}} sequences)</button>
   </form>
  </p>
  <p>
-  <span ng-repeat="tag in param.selectedTags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="param.removeTag(tag)"></i></span>
+  <span ng-repeat="tag in param.selectedTags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="fa fa-remove" ng-click="param.removeTag(tag)"></i></span>
  </p>
  <pagination items-per-page="param.pagingOptions.pagesize" total-items="param.pagingOptions.total_items" ng-model="param.pagingOptions.page" max-size="10" class="pagination-sm" boundary-links="true" rotate="false"></pagination> 
  <div ng-show="!loading && gridOptions.data.length==0" class="alert alert-warning">Inte Data...</div>

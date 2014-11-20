@@ -7,29 +7,57 @@
 <div class="row">
  <div class="col-md-6">
   <p><reviewed description ng-model="transcript"></p>
-  <dt>Name</dt> <dd click-to-edit ng-model="transcript.name" save-callback="transcript.save"></dd>
-  <dt>Description</dt> <dd click-to-edit ng-model="transcript.description" save-callback="transcript.save"></dd>
-  <dt>Organism</dt> <dd>{{transcript.organism.scientific_name||'-'}}</dd>
-  <dt>Best Homolog</dt> <dd>{{transcript.best_homolog || '-'}}</dd>
-  <dt>Gene</dt> <dd><a href="#/genes/{{transcript.gene_id}}">{{transcript.gene_id}}</a></dd>
-  <dt>Rating</dt> <dd><rating ng-model="transcript.rating" max="10" ng-click="transcript.setRating(transcript.rating)"></rating></dd>
-  <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="transcript.reviewed" ng-change="transcript.save()"></dd>
+  <form class="form-horizontal theader" role="form">
+   <div class="form-group">
+    <label for="transcript.name" class="col-md-2 control-label">Name</label>
+    <div class="col-md-8">
+     <span click-to-edit ng-model="transcript.name" save-callback="save">{{transcript.name}}</span>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="transcript.description" class="col-md-2 control-label">Description</label>
+    <div class="col-md-8">
+     <span click-to-edit ng-model="transcript.description" save-callback="save">{{transcript.description}}</span>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="transcript.best_homolog" class="col-md-2 control-label">Best Homolog</label>
+    <div class="col-md-8">
+     <p class="form-control-static">{{transcript.best_homolog || '-'}}</p>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="transcript.gene" class="col-md-2 control-label">Gene</label>
+    <div class="col-md-8">
+     <p class="form-control-static"><a href="#/genes/{{transcript.gene_id}}">{{transcript.gene_id}}</a></p>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="transcript.organism" class="col-md-2 control-label">Organism</label>
+    <div class="col-md-8">
+     <span click-to-edit ng-model="transcript.organism" select-options="organism as organism.scientific_name for organism in selectValues" select-values="organisms" save-callback="save">{{transcript.organism.scientific_name}}</span>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="transcript.rating" class="col-md-2 control-label">Rating</label>
+    <div class="col-md-8">
+     <p class="form-control-static"><rating ng-model="transcript.rating" max="10" ng-click="transcript.setRating(transcript.rating)"></rating></p>
+    </div>
+   </div>
+   <div class="form-group">
+    <div class="col-md-8 col-md-offset-2">
+     <label>
+      <input type="checkbox" ng-model="transcript.reviewed" ng-change="transcript.save()">
+      Reviewed
+     </label>
+    </div>
+   </div>
+  </form>
  </div>
 
  <div class="col-md-3">
   <h5>Tags</h5>
-  <select multiple class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag
- in tags"></select>
-  <form class="form-inline" role="form">
-   <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
-   <select ng-model="newTag.level" class="form-control input-sm">
-    <option value="info">Info</option>
-    <option value="success">Good</option>
-    <option value="warning">Not so good</option>
-    <option value="danger">Bad!</option>
-   </select>
-  </form>
-  <button class="btn btn-sm" ng-click="transcript.addTag(selectedTag, newTag)">Add</button>
+  <add-tags ng-model="transcript"></add-tags>
  </div>
 </div>
 
@@ -53,7 +81,7 @@
   <h4>Tags</h4>
   <p>
   <span ng-if="transcript.tags.length==0" class="label label-default">No tags...</span>
-  <span ng-repeat="tag in transcript.tags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="transcript.removeTag(tag)"></i></span>
+  <span ng-repeat="tag in transcript.tags" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="fa fa-remove" ng-click="transcript.removeTag(tag)"></i></span>
   </p>
  </div>
 </div>
@@ -88,9 +116,14 @@
    <tab>
     <tab-heading>Genome Aligment</tab-heading>
     <div class="row">
-     <div class="col-md-12">
+     <div class="col-md-6">
       <h3>Genome Alignments</h3>
       <p>{{transcript.transcript_mapping_count}} total mappings, {{mappings.length}} accepted</p>
+     </div>
+     <div class="col-md-3">
+      <div style="margin-top: 1em">
+       <add-tags ng-model="transcript" tag-filter="{category: 'mapping'}"></add-tags>
+      </div>
      </div>
     </div>
     <div class="row">
@@ -103,16 +136,21 @@
    <!--tab-->
     <tab-heading>Transcript Alignment</tab-heading>
     <div class="row">
-     <div class="col-md-12">
+     <div class="col-md-6">
       <h3>Transcript Alignment</h3>
      </div>
-     <div class="row">
-      <div class="col-md-12">
-       <transcript-alignment transcript="transcript" align-data="alignData"></transcript-alignment>
-
+     <div class="col-md-3">
+      <div style="margin-top: 1em">
+       <add-tags ng-model="transcript" tag-filter="{category: 'transcript alignment'}"></add-tags>
       </div>
      </div>
     </div>
+    <div class="row">
+     <div class="col-md-12">
+      <transcript-alignment transcript="transcript" align-data="alignData"></transcript-alignment>
+     </div>
+    </div>
+   </div>
    </tab>
   </tabset>
  </div>

@@ -2,9 +2,9 @@
 
 ## bugs/urgent
 
-- "loading" feedback, error handling ($http interceptor?)
 - deal with multiple alignments => selection, define "favorite"
 - select favorite assembly. maybe it's time to make users?
+- notifications about jobs don't work so well
 - XXX reciprocal best hit
 - DONE search by transcript/gene fields in de result table
 - DONE unroll mappings to annotations, don't load them separately for each map
@@ -13,6 +13,7 @@
 - DONE transcript alignment meta: field for "use_original_id"
 - DONE alignment disappears when gene/transcript is saved....
 - DONE GFF3 parsing to tree: do not require gene as root, should be able to use CDS and exon
+- DONE "loading" feedback ($http interceptor? -> use angular-busy)
 
 ## big stuff
 
@@ -98,10 +99,13 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
     - point out weird things like transcripts mapped over several 100 kb
 - transfer annotations from transcript to gene
 - DONE split tags into categories, 
-  - display categorized tags in each tab
-  - find good space for alignment/mapping tags
+  - DONE display categorized tags in each tab
+  - DONE find good space for alignment/mapping tags
   - only general tags on top?
 - show current tag counts in overview page
+- DONE refactor 1000 tag forms to tag edit directive
+- refactor 1000 tag lists to tag display directive
+- tag admin (merge, change, ...)
 - DONE liftover annotations from transcripts, between projects
 - DONE transcript view: integrate into gene view, move transcript alignment view there
 - DONE external annotations (GFF)
@@ -137,3 +141,5 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 - integrate genome mappings and external annotations, they have many things in common
 - users (+external auth)
+- better engineering of "loading" message
+- central error handling for API calls

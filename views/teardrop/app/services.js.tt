@@ -3,11 +3,8 @@ var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 var objPrototype = function($rootScope) {
   return {
       save: function(postUpdate) {
-        var savedMappings = this.mappings;
-        delete this.mappings;
         this.$save(function(t) {
           t.prepare();
-          this.mappings=savedMappings;
           if (postUpdate!=null) {
             postUpdate();
           }
@@ -19,8 +16,7 @@ var objPrototype = function($rootScope) {
         this.save();
       },
       addTag: function(selectedTag, newTag) {
-        console.log('hre');
-        if (newTag != null && newTag.tag !== '') {
+        if (newTag != null && newTag.tag) {
           selectedTag=newTag;
         }
         this.tags = this.tags.concat(selectedTag);
@@ -28,7 +24,7 @@ var objPrototype = function($rootScope) {
         this.save(function(t) {
           if (newTag != null && newTag.tag !== '') {
             newTag.tag='';
-            $rootScope.reloadTags();
+            $rootScope.$broadcast('clearTagCache');
           }
         });
       },
@@ -56,6 +52,13 @@ tearDropServices.factory('Assembly', ['$resource',
       query: {method:'GET', isArray:true, cache:true },
     });
     return Assembly;
+  }
+]).factory('Organism', ['$resource',
+  function($resource) {
+    var Organism = $resource('[% config.base_uri %]/api/organisms/:id', {id:'@id'}, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    return Organism;
   }
 ]).factory('Tag', ['$resource',
   function($resource) {
@@ -116,6 +119,11 @@ tearDropServices.factory('Assembly', ['$resource',
       type: 'transcript',
       prepare: function() {
         this.reviewed=!!this.reviewed;
+      },
+      setOrganism: function() {
+        console.log(this);
+        this.organism=this.organism.scientific_name;
+        this.save();
       },
       loadMappings: function(callback) {
         var that=this;

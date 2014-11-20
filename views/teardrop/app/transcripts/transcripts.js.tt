@@ -61,10 +61,11 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ).error($rootScope.errHandler);
   }
 }])
-.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'Transcript', function($rootScope, $routeParams, $scope, $http, Transcript) {
+.controller('TranscriptsDetailCtrl', ['$rootScope', '$routeParams', '$scope', '$http', 'Transcript', 'Organism', function($rootScope, $routeParams, $scope, $http, Transcript, Organism) {
   $scope.newTag={tag:'', level:'info'};
   $scope.selectedDbs=[];
   $scope.selectedTags=[];
+  $scope.organisms=Organism.query();
   $scope.blastGridOptions={
     enableFiltering: true,
     showFooter: true,
@@ -78,6 +79,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       });
     },
   };
+  $scope.save = function() { $scope.transcript.save(); }
   $scope.mappings=[];
   $scope.transcriptDbSources = angular.copy($rootScope.dbSources);
   $scope.refresh = function() {
@@ -177,6 +179,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     }).error($rootScope.errHandler);
   }
 
+  $scope.save = function() { $scope.gene.save(); }
   $scope.mappings=[];
   $scope.refresh = function() {
     $scope.gene = Gene.get({id: $routeParams.id}, function(data) {

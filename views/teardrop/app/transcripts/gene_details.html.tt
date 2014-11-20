@@ -7,39 +7,62 @@
 <div class="row">
  <div class="col-md-6">
   <p><reviewed-description ng-model="gene"></p>
-  <dl>
-   <dt>Name</dt> <dd click-to-edit ng-model="gene.name" save-callback="gene.save"></dd>
-   <dt>Description</dt> <dd click-to-edit ng-model="gene.description" save-callback="gene.save"></dd>
-   <dt>Best Homolog</dt> <dd>{{gene.best_homolog || '-'}}</dd>
-   <dt>Organism(s)</dt> 
-    <dd><span ng-if="gene.organism.length<2">{{gene.organism[0].scientific_name || '-'}}</span>
-     <ul ng-if="gene.organism.length>1">
-      <li ng-repeat="org in gene.organisms">{{org.scientific_name}} ({{org.count}} transcripts)
-     </ul>
-    </dd>
-   <dt>Rating</dt> <dd><rating ng-model="gene.rating" max="10" ng-click="gene.setRating(gene.rating)"></rating></dd>
-   <dt>Reviewed</dt> <dd><input type="checkbox" ng-model="gene.reviewed" ng-change="gene.save()"></dd>
-  </dl>
+  <form class="form-horizontal theader" role="form">
+   <div class="form-group">
+    <label for="gene.name" class="col-md-2 control-label">Name</label>
+    <div class="col-md-8">
+     <span click-to-edit ng-model="gene.name" save-callback="save">{{gene.name}}</span>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="gene.description" class="col-md-2 control-label">Description</label>
+    <div class="col-md-8">
+     <span click-to-edit ng-model="gene.description" save-callback="save">{{gene.description}}</span>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="gene.best_homolog" class="col-md-2 control-label">Best Homolog</label>
+    <div class="col-md-8">
+     <p class="form-control-static">{{gene.best_homolog || '-'}}</p>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="gene.organism" class="col-md-2 control-label">Organism</label>
+    <div class="col-md-8">
+     <p class="form-control-static">
+      <span ng-if="gene.organism.length<2">{{gene.organism[0].scientific_name || '-'}}</span>
+      <ul ng-if="gene.organism.length>1">
+       <li ng-repeat="org in gene.organisms">{{org.scientific_name}} ({{org.count}} transcripts)
+      </ul>
+     </p>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="gene.rating" class="col-md-2 control-label">Rating</label>
+    <div class="col-md-8">
+     <p class="form-control-static"><rating ng-model="gene.rating" max="10" ng-click="gene.setRating(gene.rating)"></rating></p>
+    </div>
+   </div>
+   <div class="form-group">
+    <div class="col-md-8 col-md-offset-2">
+     <label>
+      <input type="checkbox" ng-model="gene.reviewed" ng-change="gene.save()">
+      Reviewed
+     </label>
+    </div>
+   </div>
+  </form>
  </div>
  <div class="col-md-3">
   <h5>Tags</h5>
-  <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'"></select>
-  <form class="form-inline" role="form">
-   <input type="text" ng-model="newTag.tag" class="form-control input-sm" placeholder="Custom...">
-   <select ng-model="newTag.level" class="form-control input-sm">
-    <option value="info">Info</option>
-    <option value="success">Good</option>
-    <option value="warning">Not so good</option>
-    <option value="danger">Bad!</option>
-   </select>
-  </form>
+  <add-tags ng-model="gene"></add-tag>
   <button class="btn btn-sm" ng-click="gene.addTag(selectedTag, newTag)">Add</button>
  </div>
 </div>
 
 <div class="row" ng-if="gene.annotations.length">
  <div class="col-md-12">
-  <h5>Annotations in Genomic Region</h5>
+  <h4>Annotations in Genomic Region</h4>
   <ol>
    <li ng-repeat="ann in gene.annotations | filter:{ 'annotation_type':'gene_model' } | orderBy:['contig', 'cstart']">
     {{ann.contig}} {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}} <span ng-show="ann.annotation_link"><a href="{{ann.annotation_link}}">{{ann.name}}</a></span>
@@ -52,7 +75,7 @@
  <div class="col-md-12">
   <p>
   <span ng-if="transcript.tags.length==0" class="label label-default">No tags...</span>
-  <span ng-repeat="tag in gene.tags | orderBy:'tag'" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="glyphicon glyphicon-remove" ng-click="gene.removeTag(tag)"></i></span>
+  <span ng-repeat="tag in gene.tags | orderBy:'tag'" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="fa fa-remove" ng-click="gene.removeTag(tag)"></i></span>
   </p>
  </div>
 </div>
@@ -93,10 +116,15 @@
    <tab>
     <tab-heading>Transcripts</tab-heading>
     <div class="row">
-     <div class="col-md-12">
+     <div class="col-md-6">
       <h3>Transcripts
       <a role="button" class="btn btn-default btn-xs" href="[% config.base_uri %]/api/genes/{{gene.id}}/fasta">Get FASTA file</a>
       </h3>
+     </div>
+     <div class="col-md-3">
+      <div style="margin-top: 1em">
+       <add-tags ng-model="gene" tag-filter="{category: 'transcript alignment'}"></add-tags>
+      </div>
      </div>
     </div>
     <div ng-if="gene.transcripts">
@@ -172,8 +200,13 @@
    <tab>
     <tab-heading>Genome Alignments</tab-heading>
     <div class="row">
-     <div class="col-md-12">
+     <div class="col-md-6">
       <h3>Genome Alignments</h3>
+     </div>
+     <div class="col-md-3">
+      <div style="margin-top: 1em">
+       <add-tags ng-model="gene" tag-filter="{category: 'mapping'}"></add-tags>
+      </div>
      </div>
     </div>
     <div class="row">
