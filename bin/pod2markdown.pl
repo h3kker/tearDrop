@@ -20,7 +20,7 @@ find(sub {
   return unless m#\.pm$#;
   my $out_name = $File::Find::name;
   $out_name =~ s#^lib(\b)#$base$1#;
-  $out_name =~ s#\.pm$#.pod#;
+  $out_name =~ s#\.pm$#.md#;
   $out_name = File::Spec->catfile($curwd,$out_name);
   my $markdown;
   my $parser = TearDrop::Util::Pod::Markdown->new;
