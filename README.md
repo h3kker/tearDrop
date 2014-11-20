@@ -5,14 +5,33 @@ transcriptome analysis problems will be solved.
 
 ## Roadmap
 
-Make sure to read [doc/todo.md](doc/todo.md)
+[doc/todo.md](doc/todo.md) contains the master plan. In case you're interested
+in helping out, there's also [doc/treasure_map.md](doc/treasure_map.md) to show
+you around the code and provide weak rationalizations for why I did stuff they
+way I did it.
 
 ## Installation
 
 Requires a sheepload of Perl modules, most prominently Dancer and DBIx::Class.
-These will clone half of CPAN on your computer to satisfy their needs. That is
+These will install half of CPAN on your computer to satisfy their needs. That is
 not enough, however, so dependencies like Mouse, Moose and Moo (don't ask)
-account for the other half. I should remember to replace this with a real dependency list.
+account for the other half. I should remember to replace this with a real
+dependency list and possibly also fill some of the nice files that help to
+automagically install everything.
+
+Whatever you think you're doing, consider using
+[PerlBrew](http://perlbrew.pl/). You can install your favorite current Perl
+version and all modules without admin rights or interfering with the system
+perl.
+
+After that, you can install the necessary modules like this:
+
+    > perlbrew use stable
+    > perlbrew install-cpanm # in case you haven't done so already
+    > cpanm -i Dancer DBIx::Class
+
+If you don't like PerlBrew, skip steps 1 and 2 (I would still recommend using [cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7016/lib/App/cpanminus.pm))
+
 
 ### Database Setup
 

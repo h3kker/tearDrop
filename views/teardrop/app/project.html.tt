@@ -1,30 +1,60 @@
 <h1>{{currentProject.title}}</h1>
 
-<h3>Current Assemblies</h3>
-<div class="panel panel-primary" ng-repeat="assembly in assemblies | orderBy:['-is_primary', 'name']">
- <div class="panel-heading">
-  <h3 class="panel-title"><a href="#/transcripts?filter.assembly_id={{assembly.id}}">{{assembly.name}} <span ng-show="assembly.is_primary"><i class="fa fa-certificate"></i></span></a></h3>
- </div>
- <div class="panel-body">
-  <p>{{assembly.description}}</p>
-  <p>
-   {{assembly.transcripts}} transcripts, {{assembly.annotated_transcripts}} annotated
-   <progressbar value="assembly.annotated_transcripts" max="assembly.transcripts"></progressbar>
-  </p>
+<tabset>
+ <tab>
+  <tab-heading>
+   Current Assemblies
+  </tab-heading>
+  <div class="panel panel-primary" ng-repeat="assembly in assemblies | orderBy:['-is_primary', 'name']">
+   <div class="panel-heading">
+    <h3 class="panel-title"><a href="#/transcripts?filter.assembly_id={{assembly.id}}">{{assembly.name}} <span ng-show="assembly.is_primary"><i class="fa fa-certificate"></i></span></a></h3>
+   </div>
+   <div class="panel-body">
+    <p>{{assembly.description}}</p>
+    <p>
+     {{assembly.transcripts}} transcripts, {{assembly.annotated_transcripts}} annotated
+     <progressbar value="assembly.annotated_transcripts" max="assembly.transcripts"></progressbar>
+    </p>
 
-  <p><button class="btn btn-sm" ng-disabled="assembly.imported">Import <i class="fa" ng-class="{ 'fa-check text-success': assembly.imported, 'fa-cloud-upload text-warning': !assembly.imported }"></i></button></p>
-  <dl>
-   <dt>Program</dt> <dd>{{assembly.program}} <span ng-show="assembly.date">(on {{assembly.assembly_date)</span></dd>
-   <dt>Parameters</dt> <dd><samp style="font-size: .8em">{{assembly.parameters}}</samp></dd>
-   <dt>Output Path</dt> 
-    <dd>
-     {{assembly.path}}
-     <button class="btn btn-xs" disabled>Confirm Checksum</button>
-    </dd>
-   <dt>Prefix</dt>
-    <dd>
-     {{assembly.prefix}} <span ng-show="assembly.add_prefix">(add to FASTA ids on import)</span>
-    </dd> 
-  </dl>
- </div>
-</div>
+    <p><button class="btn btn-sm" ng-disabled="assembly.imported">Import <i class="fa" ng-class="{ 'fa-check text-success': assembly.imported, 'fa-cloud-upload text-warning': !assembly.imported }"></i></button></p>
+    <dl>
+     <dt>Program</dt> <dd>{{assembly.program}} <span ng-show="assembly.date">(on {{assembly.assembly_date)</span></dd>
+     <dt>Parameters</dt> <dd><samp style="font-size: .8em">{{assembly.parameters}}</samp></dd>
+     <dt>Output Path</dt> 
+      <dd>
+       {{assembly.path}}
+       <button class="btn btn-xs" disabled>Confirm Checksum</button>
+      </dd>
+     <dt>Prefix</dt>
+      <dd>
+       {{assembly.prefix}} <span ng-show="assembly.add_prefix">(add to FASTA ids on import)</span>
+      </dd> 
+    </dl>
+   </div>
+  </div>
+ </tab>
+ <tab>
+  <tab-heading>
+   Samples
+  </tab-heading>
+  XXX Fill me
+ </tab>
+ <tab>
+  <tab-heading>
+   Annotations
+  </tab-heading>
+  XXX Fill me
+ </tab>
+ <tab>
+  <tab-heading>
+   Alignments
+  </tab-heading>
+  XXX Fill me
+ </tab>
+ <tab>
+  <tab-heading>
+   Meta Stuff
+  </tab-heading>
+  XXX Fill me with Blast DBs, Organisms etc.
+ </tab>
+</tabset>
