@@ -24,10 +24,7 @@ sub setup_projects {
   }
 }
 setup_projects();
-
-require TearDrop::Worker::Redis;
-my $worker = new TearDrop::Worker::Redis;
-$worker->restart_working;
+my $worker;
 
 hook 'before' => sub {
   header 'Access-Control-Allow-Origin' => '*';
@@ -42,6 +39,9 @@ hook 'before' => sub {
     warning 'invalid project cookie '.var 'project';
     delete cookies->{project};
   };
+  require TearDrop::Worker::Redis;
+  $worker = new TearDrop::Worker::Redis;
+  $worker->start_working;
 };
 
 # make sure user variable is available in all views
@@ -388,7 +388,9 @@ post '/genes/:id' => sub {
 
 get '/genes/:id/mappings' => sub {
   my $rs = schema(var 'project')->resultset('Gene')->find(param('id')) || send_error 'not found', 404;
+  schema(var 'project')->storage->debug(1);
   my $maps = $rs->filtered_mappings;
+  schema(var 'project')->storage->debug(0);
   my @ret;
   for my $m (@$maps) {
     my $m_ser = $m->TO_JSON;
@@ -471,7 +473,7 @@ get '/deruns/:id/contrasts/:contrast_id/results/fasta' => sub {
 
 
 get '/deruns/:id/contrasts/:contrast_id/results' => sub {
-  schema(var 'project')->storage->debug(1);
+  #schema(var 'project')->storage->debug(1);
   my $de_run = schema(var 'project')->resultset('DeRun')->find(param 'id') || send_error 'no such de run', 404;
   my $filters = {de_run_id => param('id'), 'contrast_id' => param('contrast_id')};
   my $sort = [{ -asc => 'adjp' }];

@@ -65,7 +65,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.newTag={tag:'', level:'info'};
   $scope.selectedDbs=[];
   $scope.selectedTags=[];
-  scope.organisms=Organism.prototype.getAll();
+  $scope.organisms=Organism.prototype.getAll();
   $scope.$on('reload'+Organism.prototype.cacheName, function() {
     $scope.organisms=Organism.prototype.getAll();
   });

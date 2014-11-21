@@ -70,11 +70,18 @@ Project databases will be configured on the fly from a table in the master schem
 
 ### Your First Project
 
-... must be set up in the database now. Once it's in the table `projects`, you can do:
+There is a command line script to help you get started with new projects. Try
 
-    > perl bin/deploy_project.pl -p [projectname]
+    > perl bin/deploy_project.pl --help_deploy
 
-This will create all the tables, constraints and indices.
+to get a short usage message. To set up a new project, do this:
+
+    > perl bin/deploy_project.pl --create --project [shortname] --title "[display name]" -g [group]
+
+This sets up a new project database and creates the structure and lookup tables as copies from
+the master schema. 
+
+Ignore the `group` value for now, it must be set, but is not used. 
 
 ## Startup
 
@@ -88,11 +95,7 @@ You might want to create a wrapper shell script to set up paths and start TearDr
 
 ## Importing Data
 
-Currently: Create a bunch of CSV files. Maybe the term bunch needs some expanded clarification. Set up base data:
-
-    > perl bin/import_metadata.pl -p [project] -b [basedir] 
-
-To import all your nice big data files referenced in the tables, use option `--files`.
+Please have a look at [doc/importing data.md](doc/importing_data.md).
 
 ## What now?
 

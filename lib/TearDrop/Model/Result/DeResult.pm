@@ -174,15 +174,33 @@ __PACKAGE__->belongs_to(
 
 sub _is_column_serializable { 1 };
 
+=head2 transcript
+
+Type: belongs_to
+
+Related object: L<TearDrop::Model::Result::Transcript>
+Related object: L<TearDrop::Model::Result::Gene>
+
+Note: This is not a foreign key in the database! The C<transcript_id> field
+refers to a L<TearDrop::Model::Result::Gene> if the count table is aggregated,
+to a L<TearDrop::Model::Result::Transcript> if not. XXX could be replaced with a virtual view.
+
+C<add_fk_index => 0> and C<is_foreign_key_constraint> 0> are set to avoid
+deployment when creating new projects.
+
+=cut
+
 __PACKAGE__->belongs_to(
   'transcript',
   'TearDrop::Model::Result::Transcript',
-  { 'foreign.id' => 'self.transcript_id' }
+  { 'foreign.id' => 'self.transcript_id' },
+  { add_fk_index => 0, join_type => 'LEFT', is_foreign_key_constraint => 0, },
 );
 __PACKAGE__->belongs_to(
   'gene',
   'TearDrop::Model::Result::Gene',
-  { 'foreign.id' => 'self.transcript_id' }
+  { 'foreign.id' => 'self.transcript_id' },
+  { add_fk_index => 0, join_type => 'LEFT', is_foreign_key_constraint => 0, },
 );
 
 sub comparisons {

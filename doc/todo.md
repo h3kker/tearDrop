@@ -21,7 +21,12 @@
   - pick ref seq from installed blast db 
   - input text field for any fasta
   - blastx/tblastx/blastn etc
-- transcript-transcript relationships for assembly comparisons
+- relationships between transcripts and annotations (graph structure)
+  - edge evidence types: sequence clustering/alignment; genome mapping; 
+  - edge categories: match (redundant_to), partial overlap (prefix, postfix, infix_longer, infix_shorter), qualitative (intron, cds, splice_variant, split, same_gene)
+  - transcript-transcript relationships for assembly comparisons
+  - transcript-annotation relationships (enough to do it via genome mappings?)
+  - use bwa mem instead of blat/cdhit/uclust??
 - DONE import GFF files with genome annotations
 - DONE refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions) (in the end concat id with assembly-specific id prefix)
 - DONE multiple projects: master database with separate dbs for projects
@@ -97,7 +102,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
     - DONE show something when there''s no valid mapping
     - show bad mappings
     - point out weird things like transcripts mapped over several 100 kb
-- transfer annotations from transcript to gene
+- transfer annotations from transcript to gene and back
 - DONE split tags into categories, 
   - DONE display categorized tags in each tab
   - DONE find good space for alignment/mapping tags
@@ -138,7 +143,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - transcript alignments
   - meta: organisms, blast dbs, conditions
 - data exports?
-- transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
+- transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping, annotations), low complexity/repeats, etc)
 - DONE refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface (at least in annotation JSON)
 - use bioperl to run/parse blast?
 - look at bioperl interfaces to go annotations and online databases

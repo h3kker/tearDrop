@@ -3,19 +3,27 @@
 use warnings;
 use strict;
 
-use Getopt::Long;
-
-BEGIN {
-  Getopt::Long::Configure('pass_through');
-}
+use Getopt::Long::Descriptive;
 
 use Dancer ':script';
 use Dancer::Plugin::DBIC 'schema';
 use Try::Tiny;
+use File::Spec;
 
-use TearDrop;
+use TearDrop::Cmd;
 
-my ($project, $bdir, $keys, $import_files);
+my ($opt, $usage) = describe_options(
+  '%c %o [key1] [key2...]',
+  [ 'keys|k', 'dump list of valid keys and exit', { implies => [ 'project', 'basedir' ] } ],
+  [ 'project|p=s', 'project name', { required => 1 } ],
+  [ 'import_files|f', 'also import referenced files (may take a while)', ],
+  [ 'basedir|b=s', 'directory with all the CSV data', { required => 1 } ],
+  [],
+  [ 'help_import', 'this message.', { implies => [ 'project', 'basedir' ] } ],
+  [],
+  [ 'If you do not provide any keys, all tables will be imported by default.' ],
+);
+print $usage->text, exit if $opt->help_import;
 
 my %tbl_src = qw/
   db_sources DbSource 
@@ -29,15 +37,13 @@ my %tbl_src = qw/
   de_runs special
 /;
 
-GetOptions('keys|k' => \$keys, 'files|f' => \$import_files, 'project|p=s' => \$project, 'basedir|b=s' => \$bdir) || die "Usage!";
 
-if ($keys) {
-  print join "\n", keys %tbl_src;
+if ($opt->keys) {
+  print "Valid keys:\n\t";
+  print join "\n\t", keys %tbl_src;
   print "\n";
   exit;
 }
-
-die "Usage: $0 --project [project] --basedir [basedir] [table?]" unless $project && $bdir;
 
 my %wanted = map { $_ => 1 } @ARGV;
 
@@ -62,7 +68,7 @@ for my $table (keys %tbl_src) {
   next if $tbl_src{$table} eq 'special';
   next if scalar keys %wanted && !exists $wanted{$table};
   info 'import '.$table;
-  my $source_file = sprintf "%s/%s.csv" => $bdir, $table;
+  my $source_file = File::Spec->catfile($opt->dir, $table.".csv"); 
   unless (-f $source_file) {
     warning "File $source_file not found, skipping\n";
     next;
@@ -71,8 +77,8 @@ for my $table (keys %tbl_src) {
     my %s = @_;
     info "   insert ".$s{name};
     try {
-      my $rs = schema($project)->resultset($tbl_src{$table})->update_or_create(\%s);
-      if ($import_files && $rs->can('import_file')) {
+      my $rs = schema($opt->project)->resultset($tbl_src{$table})->update_or_create(\%s);
+      if ($opt->import_files && $rs->can('import_file')) {
         info '   import file '.$rs->path;
         $rs->import_file;
       }
@@ -84,11 +90,11 @@ for my $table (keys %tbl_src) {
 
 if (!scalar keys %wanted || exists $wanted{genome_annotations}) {
   info 'import genome_annotations';
-  read_csv("$bdir/genome_annotations.csv", sub {
+  read_csv(File::Spec->catfile($opt->bdir, "genome_annotations.csv"), sub {
     my %s = @_;
     debug "   insert ".$s{name};
-    my $model = schema($project)->resultset('GeneModel')->update_or_create(\%s);
-    if ($import_files) {
+    my $model = schema($opt->project)->resultset('GeneModel')->update_or_create(\%s);
+    if ($opt->import_files) {
       info '   import file '.$model->path;
       $model->import_file;
     }
@@ -98,39 +104,39 @@ if (!scalar keys %wanted || exists $wanted{genome_annotations}) {
 if (!scalar keys %wanted || exists $wanted{samples}) {
   info 'import samples';
   my %conditions;
-  read_csv("$bdir/samples.csv", sub {
+  read_csv(File::Spec->catfile($opt->bdir, "samples.csv"), sub {
     my %s = @_;
     debug "   insert ".$s{name};
     unless ($conditions{$s{condition}}) {
-      $conditions{$s{condition}} = schema($project)->resultset('Condition')->find_or_create({
+      $conditions{$s{condition}} = schema($opt->project)->resultset('Condition')->find_or_create({
         name => $s{condition},
       });
     }
     $s{description}||=$s{name};
-    schema($project)->resultset('Sample')->update_or_create(\%s);
+    schema($opt->project)->resultset('Sample')->update_or_create(\%s);
   });
 }
 
 if (!scalar keys %wanted || exists $wanted{genome_mappings}) {
   info 'import genome_mappings';
-  read_csv("$bdir/genome_mappings.csv", sub {
+  read_csv(File::Spec->catfile($opt->bdir, "genome_mappings.csv"), sub {
     my %s = @_;
     debug '   insert '.$s{genome}.' '.$s{assembly}.' '.$s{program};
-    my $organism = schema($project)->resultset('Organism')->find($s{genome});
+    my $organism = schema($opt->project)->resultset('Organism')->find($s{genome});
     unless ($organism) {
       warning "no such genome: ".$s{genome};
       next;
     }
-    my $transcripts = schema($project)->resultset('TranscriptAssembly')->search({ name => $s{assembly}})->first;
+    my $transcripts = schema($opt->project)->resultset('TranscriptAssembly')->search({ name => $s{assembly}})->first;
     unless ($transcripts) {
       warning "no such transcript assembly: ".$s{assembly};
       next;
     }
-    my $genome_mapping = schema($project)->resultset('GenomeMapping')->search({
+    my $genome_mapping = schema($opt->project)->resultset('GenomeMapping')->search({
       path => $s{path}
     })->first;
     unless($genome_mapping) {
-      $genome_mapping = schema($project)->resultset('GenomeMapping')->create({
+      $genome_mapping = schema($opt->project)->resultset('GenomeMapping')->create({
         program => $s{program},
         parameters => $s{parameters},
         transcript_assembly_id => $transcripts->id,
@@ -139,7 +145,7 @@ if (!scalar keys %wanted || exists $wanted{genome_mappings}) {
         path => $s{path},
       });
     }
-    if ($import_files) {
+    if ($opt->import_files) {
       info '   import file '.$genome_mapping->path;
       $genome_mapping->import_file;
     }
@@ -149,12 +155,12 @@ if (!scalar keys %wanted || exists $wanted{genome_mappings}) {
 
 if (!scalar keys %wanted || exists $wanted{de_runs}) {
   info 'import de_runs';
-  read_csv("$bdir/de_run_contrasts.csv", sub {
+  read_csv(File::Spec->catfile($opt->bdir, "de_run_contrasts.csv"), sub {
     my %s = @_;
     debug '   insert '.$s{count_table}.' '.$s{base_condition}.' '.$s{contrast_condition};
-    my $assembly = schema($project)->resultset('TranscriptAssembly')->find({ name => $s{assembly} }) || die 'Invalid assembly: '.$s{assembly};
-    my $count_table = schema($project)->resultset('CountTable')->update_or_create({ name => $s{count_table}, aggregate_genes => $s{aggregate_genes} });
-    my $contrast = schema($project)->resultset('Contrast')->update_or_create({ base_condition => $s{base_condition}, contrast_condition => $s{contrast_condition} });
+    my $assembly = schema($opt->project)->resultset('TranscriptAssembly')->find({ name => $s{assembly} }) || die 'Invalid assembly: '.$s{assembly};
+    my $count_table = schema($opt->project)->resultset('CountTable')->update_or_create({ name => $s{count_table}, aggregate_genes => $s{aggregate_genes} });
+    my $contrast = schema($opt->project)->resultset('Contrast')->update_or_create({ base_condition => $s{base_condition}, contrast_condition => $s{contrast_condition} });
     my $de = $count_table->update_or_create_related('de_runs', {
       name => $s{count_table}, 
       description => $s{count_table},
@@ -165,7 +171,7 @@ if (!scalar keys %wanted || exists $wanted{de_runs}) {
       needs_prefix => $s{needs_prefix},
       path => $s{path}
     });
-    if ($import_files) {
+    if ($opt->import_files) {
       info '   import file '.$de_contrast->path;
       $de_contrast->import_file(id_prefix => $assembly->prefix);
     }
@@ -174,10 +180,10 @@ if (!scalar keys %wanted || exists $wanted{de_runs}) {
 
 if (!scalar keys %wanted || exists $wanted{alignments}) {
   info 'import alignments';
-  read_csv("$bdir/alignments.csv", sub {
+  read_csv(File::Spec->catfile($opt->bdir, "alignments.csv"), sub {
     my %s = @_;
     debug '   insert '.$s{program}.' '.$s{sample_id};
-    my $sample = schema($project)->resultset('Sample')->search({ name => $s{sample_id} })->first;
+    my $sample = schema($opt->project)->resultset('Sample')->search({ name => $s{sample_id} })->first;
     unless($sample) {
       warning "no such sample: ".$s{sample_id};
       next;
@@ -190,9 +196,9 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       warning "BAM file ".$s{bam_path}." not indexed, please to do so.";
       next;
     }
-    my $alignment = schema($project)->resultset('Alignment')->search({ bam_path => $s{bam_path} })->first;
+    my $alignment = schema($opt->project)->resultset('Alignment')->search({ bam_path => $s{bam_path} })->first;
     unless($alignment) {
-      $alignment = schema($project)->resultset('Alignment')->create({
+      $alignment = schema($opt->project)->resultset('Alignment')->create({
         program => $s{program},
         sample_id => $sample->id,
         bam_path => $s{bam_path},
@@ -210,7 +216,7 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
       warn 'unable to read stats for '.$alignment->bam_path.": $_";
     };
 
-    my $assembly = schema($project)->resultset($s{type} eq 'transcriptome' ? 'TranscriptAssembly' : 'Organism')->search({ name => $s{assembly} })->first;
+    my $assembly = schema($opt->project)->resultset($s{type} eq 'transcriptome' ? 'TranscriptAssembly' : 'Organism')->search({ name => $s{assembly} })->first;
     unless($assembly) {
       warn "no such assembly: ".$s{assembly};
       next;
@@ -221,7 +227,7 @@ if (!scalar keys %wanted || exists $wanted{alignments}) {
     $vals{alignment_id} = $alignment->id;
 
     my $res = $s{type} eq 'transcriptome' ? 'TranscriptomeAlignment' : 'GenomeAlignment';
-    schema($project)->resultset($res)->update_or_create(\%vals);
+    schema($opt->project)->resultset($res)->update_or_create(\%vals);
   });
 }
 
