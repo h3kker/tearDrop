@@ -129,8 +129,14 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## nice to have
 
-- overview page (general assembly stats)
-- sample, alignments, assembly pages (necessary for data import via web)
+- overview pages 
+  - DONE assemblies with basic stats **still needs edit**
+  - DONE samples with edit
+  - DONE annotations **still needs edit**
+  - DONE genome alignments **still needs edit**
+    - alignment overview graph 
+  - transcript alignments
+  - meta: organisms, blast dbs, conditions
 - data exports?
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping) etc)
 - DONE refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface (at least in annotation JSON)

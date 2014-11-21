@@ -1,5 +1,18 @@
 /* app css stylesheet */
 
+.navbar.navbar-default {
+  background-color: #4E5517;
+  border-radius: 0;
+}
+.navbar.navbar-default .navbar-text {
+  color: #fff;
+}
+.navbar.navbar-default .navbar-nav > li > a {
+  color: #fff;
+  text-transform: none;
+  font-size: 14px;
+}
+
 .menu {
   list-style: none;
   border-bottom: 0.1em solid black;
