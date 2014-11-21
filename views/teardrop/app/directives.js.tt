@@ -1,5 +1,5 @@
 angular.module('tearDropDirectives', []).
-  directive('blastGrid', function(uiGridConstants, $rootScope, $http, $timeout) {
+  directive('blastGrid', function(uiGridConstants, $rootScope, $http, $timeout, DbSource) {
     return {
       restrict: 'E',
       replace: true,
@@ -11,7 +11,11 @@ angular.module('tearDropDirectives', []).
       link: function($scope, element, attr) {
         $scope.tags=$rootScope.tags;
         $scope.selectedDbs=[];
-        $scope.dbSources=angular.copy($rootScope.dbSources);
+        $scope.dbSources=[];
+        $scope.dbSources=DbSource.prototype.getAll();
+        $scope.$on('reload'+DbSource.prototype.cacheName, function() {
+          $scope.dbSources=DbSource.prototype.getAll();
+        });
         angular.extend($scope.gridOptions, {
           showFooter: true,
           enableFiltering: true,
@@ -115,13 +119,15 @@ angular.module('tearDropDirectives', []).
       link: function($scope, element, attr) {
         $scope.showAssemblySelector=attr.showAssemblySelector;
         $scope.showTagSelector=attr.showTagSelector;
-        $scope.tags=Tag.query();
-        $scope.assemblies=Assembly.query();
-        $scope.setAssembly = function() {
-          if ($scope.param.filters.assembly_id==null || $scope.param.filters.assembly_id=='') {
-            delete $scope.param.filters.assembly_id;
+        $scope.tags=Tag.prototype.getAll();
+        if ($scope.showAssemblySelector) {
+          $scope.assemblies=Assembly.prototype.getAll();
+          $scope.setAssembly = function() {
+            if ($scope.param.filters.assembly_id==null || $scope.param.filters.assembly_id=='') {
+              delete $scope.param.filters.assembly_id;
+            }
+            $scope.param.doRefresh();
           }
-          $scope.param.doRefresh();
         }
         if ($scope.param.selectedTags==null) $scope.param.selectedTags=[];
         if ($scope.param.sort==null) $scope.param.sort=[];
@@ -244,6 +250,7 @@ angular.module('tearDropDirectives', []).
             $scope.param.doRefresh();
           }
         }, true);
+        $scope.param.doRefresh();
       },
     }
   }).
@@ -257,14 +264,14 @@ angular.module('tearDropDirectives', []).
         tagFilter: '@',
       },
       link: function($scope, element, attr) {
-        $scope.tags=Tag.query();
+        $scope.tags=Tag.prototype.getAll();
         if ($scope.tagFilter) {
           $scope.parsedFilter=$scope.$eval($scope.tagFilter);
         }
         $scope.newTag={};
         $scope.newTag.level='info';
-        $scope.$on('reloadTags', function() {
-          $scope.tags=Tag.query();
+        $scope.$on('reload'+Tag.prototype.cacheName, function() {
+          $scope.tags=Tag.prototype.getAll();
         });
       },
     }

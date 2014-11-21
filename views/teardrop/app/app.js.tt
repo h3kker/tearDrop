@@ -5,6 +5,8 @@ var tearDrop = angular.module('TearDrop', [
   'ngCookies',
   'ngRoute',
   'cgBusy',
+  'ui.grid.edit',
+  'ui.grid.cellNav',
   'highcharts-ng',
   'angular-growl',
   'tearDropServices',
@@ -28,8 +30,73 @@ var tearDrop = angular.module('TearDrop', [
     return $rootScope.currentProject != null && proj.name==$rootScope.currentProject.name;
   }
 }])
-.controller('ProjectCtrl', ['$rootScope', '$scope', 'Assembly', function($rootScope, $scope, Assembly) {
-  $scope.assemblies=Assembly.query();
+.controller('ProjectCtrl', ['$rootScope', '$scope', 'Assembly', 'Sample', 'Organism', 'Condition', 'GeneModel', 'Alignment', 'uiGridConstants', function($rootScope, $scope, Assembly, Sample, Organism, Condition, GeneModel, Alignment, uiGridConstants) {
+  $scope.conditions=Condition.prototype.getAll();
+  $scope.loadAssemblies=function() {
+    $scope.assemblies=Assembly.prototype.getAll();
+    $scope.$on('reload'+Assembly.prototype.cacheName, function() {
+      $scope.loadAssemblies();
+    });
+  }
+  $scope.loadSamples=function() {
+    $scope.sampleGridOptions.data=Sample.prototype.getAll();
+    $scope.$on('reload'+Sample.prototype.cacheName, function() {
+      $scope.loadSamples();
+    });
+  }
+  $scope.loadOrganisms=function() {
+    $scope.organisms=Organism.prototype.getAll();
+    $scope.$on('reload'+Organism.prototype.cacheName, function() {
+      $scope.loadOrganisms();
+    });
+  }
+  $scope.loadAlignments=function() {
+    $scope.alignments=Alignment.prototype.getAll();
+    $scope.$on('reload'+Alignment.prototype.cacheName, function() {
+      $scope.loadAlignments();
+    });
+  }
+  $scope.loadAnnotations=function() {
+    $scope.annotations=GeneModel.prototype.getAll();
+    $scope.$on('reload'+GeneModel.prototype.cacheName, function() {
+      $scope.loadAnnotations();
+    });
+  }
+
+  $scope.sampleGridOptions={
+    //showFooter: true,
+    minRowsToShow: 15,
+    multiSelect: true,
+    enableRowSelection: true,
+
+    columnDefs: [
+      { name: 'F', type: 'boolean', field: 'flagged', cellTemplate: '<div class="ui-grid-cell-contents"><i class="fa" ng-class="'+"{ 'fa-check-circle text-success': !row.entity.flagged, 'fa-ban text-danger': row.entity.flagged }"+'"></i></div>', enableCellEdit: true, width: '5%' },
+      { name: 'Id', field: 'forskalle_id', cellTemplate: '<div class="ui-grid-cell-contents"><span ng-show="{{COL_FIELD}}"><a href="http://ngs.csf.ac.at/forskalle/#/samples/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></span><span ng-hide="{{COL_FIELD}}">{{row.entity.id}}</span></div>', enableCellEdit: true, width: '7%', },
+      { name: 'Name', field: 'name', enableCellEdit: true, width: '15%', },
+      { name: 'Description', field: 'description', enableCellEdit: true, width: '*',},
+      { name: 'Condition', field: 'condition.name', editableCellTemplate: 'ui-grid/dropdownEditor', editDropdownOptionsArray: $scope.conditions, editDropdownIdLabel: 'name', editDropdownValueLabel: 'name', sort: { direction: uiGridConstants.ASC, priority: 0 }, width: '10%'},
+      { name: 'Rep', field: 'replicate_number', enableCellEdit: true, sort: { direction: uiGridConstants.ASC, priority: 1 }, width: '5%'},
+      //{ name: 'Alignments', field: 'alignments.length', enableCellEdit: false, width: '10%' },
+    ],
+  };
+  $scope.sampleGridOptions.onRegisterApi = function(gridApi) {
+    $scope.sampleGridApi=gridApi;
+    gridApi.edit.on.afterCellEdit($scope,function(rowEntity, colDef, newValue, oldValue){
+      if (!angular.equals(newValue, oldValue)) rowEntity.save();
+    });
+  }
+  $scope.deleteSamples=function() {
+    angular.forEach($scope.sampleGridApi.selection.getSelectedRows(), function(d) {
+      d.delete(function() { $scope.loadSamples() });
+    });
+  }
+  $scope.addSample=function() {
+    var newSample = new Sample({ name: 'give me a name...', condition: $scope.conditions[0] });
+    $scope.sampleGridOptions.data.push(newSample);
+    //XXX make me work
+    //$scope.sampleGridApi.cellNav.scrollTo( $scope.sampleGridApi.grid, $scope, $scope.sampleGridOptions.data[$scope.sampleGridOptions.data.length-1], $scope.sampleGridOptions.columnDefs[1]); 
+  }
+
 }]);
 
 tearDrop.config(['growlProvider', '$httpProvider', function(growlProvider, $httpProvider) {
@@ -42,6 +109,7 @@ tearDrop.value('cgBusyDefaults', {
 
 
 tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, growl) {
+  $rootScope.growl=growl;
   $rootScope.currentProject=null;
   $rootScope.projects=[];
   $rootScope.reloadProjects = function() {
@@ -56,7 +124,9 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, grow
   $rootScope.setProject = function(project) {
     $cookies.project=project.name;
     $rootScope.currentProject=project;
-    $rootScope.reloadDbSources();
+    angular.forEach(['Tag', 'Organism', 'Sample', 'Assembly', 'DbSource'], function(cache) {
+      $rootScope.$broadcast('clear'+cache+'Cache');
+    });
   }
   var workQueueStatus;
   $rootScope.workerStatus={};
@@ -102,18 +172,6 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, grow
     }, 30000);
   }
   $rootScope.updateQueueStatus(queryQueueStatus);
-
-  $rootScope.dbSources=[];
-  $rootScope.reloadDbSources = function() {
-    $http.get('[% config.base_uri %]/api/db_sources').success(function(d) {
-      $rootScope.dbSources=d;
-    });
-  }
-  
-  $rootScope.$on('clearTagCache' , function() {
-    $cacheFactory.get('$http').remove('[% config.base_uri %]/api/tags');
-    $rootScope.$broadcast('reloadTags');
-  });
 
   $rootScope.errHandler=function(err) {
     console.log(err);

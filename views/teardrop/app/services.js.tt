@@ -1,15 +1,52 @@
 var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 
+var setupCache = function($rootScope, $cacheFactory, name, key) {
+  $rootScope.$on('clear'+name , function() {
+    $cacheFactory.get('$http').remove(key);
+    $rootScope.$broadcast('reload'+name);
+  });
+  return { cacheName: name, clearCache: function() { $rootScope.$broadcast('clear'+cache); }, };
+}
+
 var objPrototype = function($rootScope) {
   return {
-      save: function(postUpdate) {
-        this.$save(function(t) {
-          t.prepare();
-          if (postUpdate!=null) {
-            postUpdate();
-          }
-        }, $rootScope.errHandler);
+      save: function(postUpdate, errHandler) {
+        return this.$save(function(t) {
+          if (t.prepare != null) t.prepare();
+          if (postUpdate!=null) postUpdate(t);
+          $rootScope.growl.success('All your changes were acceptable.');
+        }, function(err) {
+          $rootScope.errHandler(err);
+          if (errHandler!=null) errHandler(err);
+        });
       },
+      delete: function(postUpdate, errHandler) {
+        return this.$delete(function(t) {
+          if (postUpdate!=null) postUpdate(t);
+          $rootScope.growl.success('Dispatched with extreme prejudice.');
+        }, function(err) {
+          $rootScope.errHandler(err);
+          if (errHandler!=null) errHandler(err);
+        });
+      },
+      getAll: function(postUpdate, errHandler) {
+        var a=[];
+        this.$query(function(t) {
+          angular.forEach(t, function(e) {
+            a.push(e);
+            if (e.prepare != null) e.prepare();
+          });
+          if (postUpdate!=null) postUpdate(t);
+        }, function(err) {
+          $rootScope.errHandler(err);
+          if (errHandler!=null) errHandler(err);
+        });
+        return a;
+      },
+  };
+}
+var transcriptPrototype = function($rootScope) {
+  return angular.extend(objPrototype($rootScope), {
       setRating: function(val) {
         this.rating=val;
         this.reviewed=true;
@@ -42,37 +79,113 @@ var objPrototype = function($rootScope) {
           })
         });
       },
-  }
+  });
 };
 
 
-tearDropServices.factory('Assembly', ['$resource',
-  function($resource) {
+tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
     var Assembly = $resource('[% config.base_uri %]/api/assemblies/:id', {id:'@id'}, {
       query: {method:'GET', isArray:true, cache:true },
     });
+    angular.extend(Assembly.prototype, 
+      setupCache($rootScope, $cacheFactory, 'AssemblyCache', '[% config.base_uri %]/api/assemblies'),
+      objPrototype($rootScope)
+    );
     return Assembly;
   }
-]).factory('Organism', ['$resource',
-  function($resource) {
+]).factory('DbSource', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
+    var DbSource = $resource('[% config.base_uri %]/api/db_sources/:id', {id:'@id'}, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    angular.extend(DbSource.prototype, 
+      setupCache($rootScope, $cacheFactory, 'DbSourceCache', '[% config.base_uri %]/api/db_sources'),
+      objPrototype($rootScope)
+    );
+    return DbSource;
+  }
+]).factory('Organism', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
     var Organism = $resource('[% config.base_uri %]/api/organisms/:id', {id:'@id'}, {
       query: {method:'GET', isArray:true, cache:true },
     });
+    angular.extend(Organism.prototype, 
+      setupCache($rootScope, $cacheFactory, 'OrganismCache', '[% config.base_uri %]/api/organisms'),
+      objPrototype($rootScope)
+    );
     return Organism;
   }
-]).factory('Tag', ['$resource',
-  function($resource) {
+]).factory('Tag', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
     var Tag = $resource('[% config.base_uri %]/api/tags/:tag', {tag:'@tag'}, {
       query: {method:'GET', isArray:true, cache:true },
     });
+    angular.extend(Tag.prototype, 
+      setupCache($rootScope, $cacheFactory, 'TagCache', '[% config.base_uri %]/api/tags'),
+      objPrototype($rootScope)
+    );
     return Tag;
+  }
+]).factory('Condition', ['$resource', '$rootScope', '$cacheFactory', 
+  function($resource, $rootScope, $cacheFactory) {
+    var Condition = $resource('[% config.base_uri %]/api/conditions/:name', {name:'@name'}, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    angular.extend(Condition.prototype, 
+      setupCache($rootScope, $cacheFactory, 'ConditionCache', '[% config.base_uri %]/api/conditions'),
+      objPrototype($rootScope)
+    );
+    return Condition;
+  }
+]).factory('Sample', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
+    var Sample = $resource('[% config.base_uri %]/api/samples/:id', { id: '@id' }, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    angular.extend(Sample.prototype, 
+      setupCache($rootScope, $cacheFactory, 'SampleCache', '[% config.base_uri %]/api/samples'),
+      objPrototype($rootScope), {
+        prepare: function() {
+          this.flagged=!!this.flagged;
+        },
+    });
+    return Sample;
+  }
+]).factory('GeneModel', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
+    var GeneModel = $resource('[% config.base_uri %]/api/gene_models/:id', { id: '@id' }, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    angular.extend(GeneModel.prototype, 
+      setupCache($rootScope, $cacheFactory, 'GeneModelCache', '[% config.base_uri %]/api/gene_models'),
+      objPrototype($rootScope), {
+        prepare: function() {
+          this.flagged=!!this.flagged;
+        },
+    });
+    return GeneModel;
+  }
+]).factory('Alignment', ['$resource', '$rootScope', '$cacheFactory',
+  function($resource, $rootScope, $cacheFactory) {
+    var Alignment = $resource('[% config.base_uri %]/api/alignments/:id', { id: '@id' }, {
+      query: {method:'GET', isArray:true, cache:true },
+    });
+    angular.extend(Alignment.prototype, 
+      setupCache($rootScope, $cacheFactory, 'AlignmentCache', '[% config.base_uri %]/api/alignments'),
+      objPrototype($rootScope), {
+        prepare: function() {
+          this.flagged=!!this.flagged;
+        },
+    });
+    return Alignment;
   }
 ]).factory('Gene', ['$resource', '$rootScope', '$http', 'Transcript',
   function($resource, $rootScope, $http, Transcript){
     var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
       query: {method:'GET'},
     });
-    angular.extend(Gene.prototype, objPrototype($rootScope), {
+    angular.extend(Gene.prototype, transcriptPrototype($rootScope), {
       type: 'gene',
       prepare: function() {
         this.reviewed=!!this.reviewed;
@@ -115,13 +228,12 @@ tearDropServices.factory('Assembly', ['$resource',
     var Transcript = $resource('[% config.base_uri %]/api/transcripts/:id', {id:'@id'}, {
       query: {method:'GET'},
     });
-    angular.extend(Transcript.prototype, objPrototype($rootScope), {
+    angular.extend(Transcript.prototype, transcriptPrototype($rootScope), {
       type: 'transcript',
       prepare: function() {
         this.reviewed=!!this.reviewed;
       },
       setOrganism: function() {
-        console.log(this);
         this.organism=this.organism.scientific_name;
         this.save();
       },

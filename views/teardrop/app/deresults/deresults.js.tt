@@ -78,7 +78,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
         $location.path('/deresults/'+$rootScope.deresults.selectedDeRun.id+'/'+newVal.id);
       }
     });
-    $rootScope.deresults.doRefresh(true);
+    $scope.deresults.doRefresh(true);
   }).error($rootScope.errHandler);
 
   $scope.gridOptions = {

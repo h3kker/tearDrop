@@ -2,10 +2,10 @@
  <p>
   <form class="form-inline" role="form" ng-if="showTagSelector || showAssemblySelector || param.getFasta">
    <span ng-if="showTagSelector">
-    <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag for tag in tags">
-     <option value=""><i>pick tag...</i></option>
+    <select class="form-control input-sm" ng-model="selectedTag" ng-options="tag.tag group by tag.category for tag in tags | orderBy:'tag'">
+     <option value="">pick tag...</option>
     </select>
-    <button class="btn btn-sm" ng-click="param.addTag(selectedTag)">Add</button>
+    <button class="btn btn-sm" ng-disabled="!selectedTag" ng-click="param.addTag(selectedTag)">Add</button>
    </span>
    <span ng-if="showAssemblySelector"> 
     Assembly: <select class="form-control input-sm" name="assembly" ng-model="param.filters.assembly_id" ng-change="setAssembly()" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'">

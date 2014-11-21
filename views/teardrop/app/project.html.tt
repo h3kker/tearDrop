@@ -1,7 +1,7 @@
 <h1>{{currentProject.title}}</h1>
 
 <tabset>
- <tab>
+ <tab select="loadAssemblies()">
   <tab-heading>
    Current Assemblies
   </tab-heading>
@@ -33,21 +33,81 @@
    </div>
   </div>
  </tab>
- <tab>
+ <tab select="loadSamples()">
   <tab-heading>
    Samples
   </tab-heading>
-  XXX Fill me
+  <div class="container-fluid">
+   <div class="row">
+    <div class="col-md-10 col-md-offset-1">
+     <div ui-grid="sampleGridOptions" class="grid-fw" ui-grid-selection ui-grid-edit ui-grid-cellNav></div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-10 col-md-offset-1">
+     <p class="text-center">
+     <div class="btn-group" role="group">
+      <button class="btn btn-sm" ng-click="addSample()"><i class="fa fa-plus"></i> Add Sample</button>
+      <button class="btn btn-sm" ng-click="deleteSamples()" ng-disabled="sampleGridApi.selection.getSelectedRows().length==0"><i class="fa fa-trash"></i> Delete Sample(s)</button>
+     </div>
+     </p>
+    </div>
+   </div>
+  </div>
  </tab>
- <tab>
+ <tab select="loadAnnotations()">
   <tab-heading>
    Annotations
   </tab-heading>
-  XXX Fill me
+  <div class="panel panel-primary" ng-repeat="annotation in annotations | orderBy:['organism.name', 'name']">
+   <div class="panel-heading">
+    <h3 class="panel-title">{{annotation.name}} </h3>
+   </div>
+   <div class="panel-body">
+    <p>{{annotation.description}}</p>
+
+    <p><button class="btn btn-sm" ng-disabled="annotation.imported">Import <i class="fa" ng-class="{ 'fa-check text-success': annotation.imported, 'fa-cloud-upload text-warning': !annotation.imported }"></i></button></p>
+    <dl>
+     <dt>Organism</dt> <dd>{{annotation.organism.scientific_name}}</dd> 
+     <dt>Path</dt> 
+      <dd>
+       {{annotation.path}}
+       <button class="btn btn-xs" disabled>Confirm Checksum</button>
+      </dd>
+    </dl>
+   </div>
+   
+  </div>
+ </tab>
+ <tab select="loadAlignments()">
+  <tab-heading>
+   Genome Alignments
+  </tab-heading>
+  <div class="panel panel-primary" ng-repeat="alignment in alignments | filter:{ type: 'genome' } | orderBy:['genome_alignment.organism_name.name', 'sample.condition.name', 'sample.replicate_number']">
+   <div class="panel-heading">
+    <h3 class="panel-title">{{alignment.program}} - {{alignment.genome_alignment.organism_name.scientific_name}} - {{alignment.sample.name}}</h3>
+   </div>
+   <div class="panel-body">
+    <p>{{alignment.description}}</p>
+    <p>{{alignment.alignment_date}}</p>
+    <p>
+     <progress max="alignment.total_reads">
+      <bar value="alignment.unique_reads" type="success">{{bar.value}}</bar>
+      <bar value="alignment.multiple_reads" type="warning">{{bar.value}}</bar>
+     </progress>
+    </p>
+    <dl>
+     <dt>Organism</dt> <dd>{{alignment.genome_alignment.organism_name.scientific_name}}</dd> 
+     <dt>Parameters</dt> <dd><samp style="font-size: .8em">{{alignment.parameters || '???'}}</samp></dd>
+     <dt>BAM Path</dt> <dd> {{alignment.bam_path}} </dd>
+    </dl>
+   </div>
+   
+  </div>
  </tab>
  <tab>
   <tab-heading>
-   Alignments
+   Transcriptome Alignments
   </tab-heading>
   XXX Fill me
  </tab>

@@ -503,6 +503,11 @@ get '/deruns/:id/contrasts/:contrast_id/results' => sub {
   }
 };
 
+get '/gene_models' => sub {
+  my @gm = schema(var 'project')->resultset('GeneModel')->all;
+  \@gm;
+};
+
 get '/genome_mappings/:id/annotations' => sub {
   my $context=param('context')||200;
   unless(param('tid') && param('tstart') && param('tend')) {
@@ -541,6 +546,20 @@ get '/genome_mappings/:id/pileup' => sub {
   )->run;
 };
 
+get '/alignments' => sub {
+  my @gm = schema(var 'project')->resultset('Alignment')->search(undef, { prefetch => [ 'sample', 'genome_alignment', 'transcriptome_alignment' ]})->all;
+  my @ret;
+  for my $gm (@gm) {
+    my $ser = $gm->TO_JSON;;
+    $ser->{sample} = $gm->sample;
+    $ser->{genome_alignment} = $gm->genome_alignment->TO_JSON if $gm->genome_alignment;
+    $ser->{transcriptome_alignment} = $gm->transcriptome_alignment->TO_JSON if $gm->transcriptome_alignment;
+    $ser->{type} = $ser->{genome_alignment} ? 'genome' : 'transcriptome';
+    push @ret, $ser;
+  }
+  \@ret;
+};
+
 get '/assemblies' => sub {
   my @ret = map {
     my $a = $_;
@@ -554,6 +573,49 @@ get '/assemblies' => sub {
   \@ret;
 };
 
+get '/samples' => sub {
+  my @ret = map {
+    my $s = $_;
+    my $ser = $s->TO_JSON;
+    $ser->{alignments} = [ $s->alignments ];
+    $ser;
+  } schema(var 'project')->resultset('Sample')->search(undef, { prefetch => [ { 'alignments' => [ 'genome_alignment', 'transcriptome_alignment'] }, 'condition']})->all;
+  \@ret;
+};
+
+get '/samples/:id' => sub {
+  my $rs = schema(var 'project')->resultset('Sample')->find(param 'id', { prefetch => ['alignments', 'condition']}) || send_error 'not found', 404;
+  my $ser = $rs->TO_JSON;
+  $ser->{alignments} = [ $rs->alignments ];
+  $ser;
+};
+
+post '/samples' => sub {
+  my $upd = params('body');
+  my $h = { map {
+    $_ => $upd->{$_}
+  } qw/name description replicate_number forskalle_id/ };
+  $h->{condition}=$upd->{condition}{name};
+  my $rs = schema(var 'project')->resultset('Sample')->create($h);
+  forward config->{base_uri}.'/api/samples/'.$rs->id, {}, { method => 'GET' };
+};
+
+post '/samples/:id' => sub {
+  my $rs = schema(var 'project')->resultset('Sample')->find(param 'id') || send_error 'not found', 404;
+
+  my $upd = params('body');
+  $upd->{flagged}=$upd->{flagged} ? 1 : 0;
+  $rs->$_($upd->{$_}) for qw/name description replicate_number flagged forskalle_id/;
+  $rs->condition($upd->{condition}{name});
+  $rs->update;
+  forward config->{base_uri}.'/api/samples/'.$rs->id, {}, { method => 'GET' };
+};
+
+del '/samples/:id' => sub {
+  my $rs = schema(var 'project')->resultset('Sample')->find(param 'id') || send_error 'not found', 404;
+  $rs->delete;
+};
+
 get '/db_sources' => sub {
   [ schema(var 'project')->resultset('DbSource')->all ];
 };
@@ -564,6 +626,10 @@ get '/tags' => sub {
 
 get '/organisms' => sub {
   [ schema(var 'project')->resultset('Organism')->all ];
+};
+
+get '/conditions' => sub {
+  [ schema(var 'project')->resultset('Condition')->all ];
 };
 
 get '/worker/status' => sub {
