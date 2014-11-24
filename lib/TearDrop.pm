@@ -11,8 +11,7 @@ sub startup {
   my $self = shift;
 
   push @{$self->plugins->namespaces}, 'TearDrop::Plugin';
-  # Documentation browser under "/perldoc"
-  $self->plugin('PODRenderer');
+
   $self->plugin('YamlConfig' => {
     file => 'config.yml',
     class => 'YAML',

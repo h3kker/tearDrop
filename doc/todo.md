@@ -1,5 +1,39 @@
 # Development Roadmap 
 
+## Mojolicious migration
+
+- Implemenet minion backend and migrate worker
+- set access control cookie!
+- better json error rendering
+- command line tools
+- XXX figure out a way to log from model!
+- routes
+  * get /transcripts/fasta 
+  * get /transcripts/:id
+  * post /transcripts/:id
+  * get /transcripts/:id/mappings
+  * get /transcripts/:id/blast_results
+  * get /transcripts/:id/run_blast
+  * get /transcripts/:id/blast_runs
+  * get /transcripts/:id/pileup
+  * get /genes
+  * get /genes/fasta
+  * get /genes/:id
+  * post /genes/:id
+  * get /genes/:id/mappings
+  * get /genes/:id/fasta
+  * get /genes/:id/run_blast
+  * get /genes/:id/transcripts/msa
+  * get /genes/:id/blast_runs
+  * get /genes/:id/blast_results
+  * get /deruns
+  * get /deruns/:id/contrasts/:contrast_id/results/fasta
+  * get /deruns/:id/contrasts/:contrast_id/results
+  * get /genome_mappings/:id/annotations
+  * get /genome_mappings/:id/pileup
+  * get /worker/status
+  * get /worker/status/:job
+
 ## bugs/urgent
 
 - deal with multiple alignments => selection, define "favorite"
