@@ -1,6 +1,8 @@
 use utf8;
 package TearDrop::Model::Result::Transcript;
 
+use TearDrop::Logger;
+
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 

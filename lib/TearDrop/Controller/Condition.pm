@@ -8,7 +8,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'Condition';
 
-sub list_project_condition {
+sub list {
   my $self = shift;
   $self->render(json => [ $self->stash('project_schema')->resultset($self->resultset)->all ]);
 }

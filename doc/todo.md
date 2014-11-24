@@ -8,14 +8,7 @@
 - command line tools
 - XXX figure out a way to log from model!
 - routes
-  * get /transcripts/fasta 
-  * get /transcripts/:id
-  * post /transcripts/:id
-  * get /transcripts/:id/mappings
-  * get /transcripts/:id/blast_results
   * get /transcripts/:id/run_blast
-  * get /transcripts/:id/blast_runs
-  * get /transcripts/:id/pileup
   * get /genes
   * get /genes/fasta
   * get /genes/:id

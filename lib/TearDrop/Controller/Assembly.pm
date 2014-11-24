@@ -8,7 +8,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'TranscriptAssembly';
 
-sub list_project_assembly {
+sub list {
   my $self = shift;
   my @ret = map {
     my $a = $_;

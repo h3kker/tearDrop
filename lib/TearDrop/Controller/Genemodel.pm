@@ -1,4 +1,4 @@
-package TearDrop::Controller::Genemodel;
+package TearDrop::Controller::GeneModel;
 use Mojo::Base 'Mojolicious::Controller';
 
 use warnings;
@@ -8,7 +8,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'GeneModel';
 
-sub list_project_genemodel {
+sub list {
   my $self = shift;
   $self->render(json => [ $self->stash('project_schema')->resultset($self->resultset)->all ]);
 }

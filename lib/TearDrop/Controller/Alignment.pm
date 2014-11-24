@@ -8,7 +8,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'Alignment';
 
-sub list_project_alignment {
+sub list {
   my $self = shift;
   my @ret = map {
     my $gm = $_;

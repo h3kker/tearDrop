@@ -9,7 +9,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'Sample';
 
-sub list_project_sample {
+sub list {
   my $self = shift;
   my @ret = map {
     my $s = $_;
@@ -20,14 +20,14 @@ sub list_project_sample {
   $self->render(json => \@ret);
 }
 
-sub create_project_sample {
+sub create {
   my $self = shift;
   my $o = $self->_set_from_update->insert;
   $self->param('sampleId' => $o->id);
-  $self->read_project_sample;
+  $self->read;
 }
 
-sub delete_project_sample {
+sub remove {
   my $self = shift;
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'));
   unless($rs) {
@@ -38,7 +38,7 @@ sub delete_project_sample {
   $self->render(json => $rs->TO_JSON);
 }
 
-sub read_project_sample {
+sub read {
   my $self = shift;
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']});
   unless($rs) {
@@ -49,7 +49,7 @@ sub read_project_sample {
   $self->render(json => $ser);
 }
 
-sub update_project_sample {
+sub update {
   my $self = shift;
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']});
   unless($rs) {
@@ -57,7 +57,7 @@ sub update_project_sample {
     return $self->reply->not_found;
   }
   $self->_set_from_update($rs)->update;
-  $self->read_project_sample;
+  $self->read;
 
 }
 

@@ -8,7 +8,7 @@ our $VERSION='0.01';
 
 has 'resultset' => 'Tag';
 
-sub list_project_tag {
+sub list {
   my $self = shift;
   $self->render(json => [ $self->stash('project_schema')->resultset($self->resultset)->all ]);
 }

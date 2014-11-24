@@ -20,7 +20,7 @@ has config => sub { {} };
 has schemas => sub { {} };
 
 sub register {
-my ($self, $app, $config) = @_;
+  my ($self, $app, $config) = @_;
   
   $self->config($config || {});
 
@@ -89,6 +89,7 @@ my ($self, $app, $config) = @_;
       $dbic_loader->naming($options->{schema_loader_naming} || 'v7');
       $schema = DBIx::Class::Schema::Loader->connect(@conn_info);
     }
+    $schema->storage->debugfh($app->log->handle);
 
     return $self->schemas->{$name} = $schema;
   };

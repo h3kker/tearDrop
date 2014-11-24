@@ -6,13 +6,13 @@ use strict;
 
 our $VERSION='0.01';
 
-sub list_project {
+sub list {
   my $self = shift;
   $self->render(json => [ $self->app->schema->resultset('Project')->all ]);
 
 }
 
-sub read_project {
+sub read {
   my $self = shift;
 
   my $p = $self->app->schema->resultset('Project')->find($self->param('projectId'));
