@@ -4,12 +4,12 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
 
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/deresults/:run/:contrast', {
-    templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
+    templateUrl: '<%= config->{base_uri} =%>/deresults/deresults.html',
     controller: 'DeResultsCtrl',
     reloadOnSearch: false,
   });
   $routeProvider.when('/deresults', {
-    templateUrl: '[% config.base_uri %]/app/deresults/deresults.html',
+    templateUrl: '<%= config->{base_uri} =%>/deresults/deresults.html',
     controller: 'DeResultsCtrl',
     reloadOnSearch: false,
   });
@@ -21,7 +21,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
       'getFasta': function() {
         if (this.selectedDeRun!==null && this.selectedContrast!==null) {
           var search = $location.url().replace(/.+\?/, '');
-          window.location.href='[% config.base_uri %]/api/deruns/'+this.selectedDeRun.id+'/contrasts/'+this.selectedContrast.id+'/results/fasta?'+search;
+          window.location.href='<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/deruns/'+this.selectedDeRun.id+'/contrasts/'+this.selectedContrast.id+'/results/fasta?'+search;
         }
       },
       'selectedDeRun': null,
@@ -40,7 +40,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
   }
 
   $scope.deRuns=[];
-  $http.get('[% config.base_uri %]/api/deruns', { cache: true }).success(function(data) {
+  $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/deruns', { cache: true }).success(function(data) {
     $scope.deRuns=data;
     if ($routeParams.run==null || $routeParams.contrast==null) {
       if ($rootScope.deresults.selectedDeRun != null) {
@@ -97,7 +97,7 @@ angular.module('TearDrop.deresults', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'ui.
 
   $scope.refresh = function(p) {
     if ($rootScope.deresults.selectedDeRun!==null && $rootScope.deresults.selectedContrast!==null) {
-      $rootScope.busyPromise = $http.get('[% config.base_uri %]/api/deruns/'+$rootScope.deresults.selectedDeRun.id+'/contrasts/'+$rootScope.deresults.selectedContrast.id+'/results', { 'params': p }).success(
+      $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/deruns/'+$rootScope.deresults.selectedDeRun.id+'/contrasts/'+$rootScope.deresults.selectedContrast.id+'/results', { 'params': p }).success(
         function(res) {
           $rootScope.deresults.pagingOptions.total_items = res.total_items;
           $scope.gridOptions.data = res.data;

@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CSF.NGS TearDrop</title>
-  <link rel="stylesheet" href="[% config.base_uri %]/css/app.css"/>
-  <link rel="stylesheet" href="[% config.base_uri %]/css/bootstrap.css" media="all">
-  <link rel="stylesheet" href="[% config.base_uri %]/css/font-awesome.min.css">
+  <link rel="stylesheet" href="<%= config->{base_uri} %>/css/app.css"/>
+  <link rel="stylesheet" href="<%= config->{base_uri} %>/css/bootstrap.css" media="all">
+  <link rel="stylesheet" href="<%= config->{base_uri} %>/css/font-awesome.min.css">
 </head>
 <body>
 <nav class="navbar navbar-default" role="navigation">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand" href="[% config.base_uri %]/#/">
+      <a class="navbar-brand" href="<%= config->{base_uri} =%>/#/">
         CSF.NGS teardrop
       </a>
     </div>
   </div>
 </nav>
 <div class="container-fluid">
-[% roadmap %]
+<%== $roadmap %>
 </div>
 <footer>
  <div class="row">
@@ -31,7 +31,7 @@
  </div>
 </footer>
 
-  <script src="[% config.base_uri %]/js/jquery.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/jquery.min.js"></script>
 
 </body>
 </html>

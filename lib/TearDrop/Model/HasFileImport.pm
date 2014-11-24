@@ -3,9 +3,6 @@ package TearDrop::Model::HasFileImport;
 use warnings;
 use strict;
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
-
 use Moo::Role;
 use namespace::clean;
 
@@ -28,11 +25,11 @@ sub sha1_sum {
 around 'import_file' => sub {
   my ($orig, $self, @args) = @_;
 
-  debug 'calculating checksum...';
+  #debug 'calculating checksum...';
   my $checksum = $self->sha1_sum;
-  debug 'file checksum '.$checksum.', current: '.($self->sha1 || '[undef]');
+  #debug 'file checksum '.$checksum.', current: '.($self->sha1 || '[undef]');
   if ($self->imported && $self->sha1 && $self->sha1 eq $checksum) {
-    info 'no import: checksum unchanged';
+    #info 'no import: checksum unchanged';
     return;
   }
 

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" ng-app="TearDrop">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CSF.NGS TearDrop</title>
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/app.css"/>
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/bootstrap.css" media="all">
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/ui-grid.min.css">
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/font-awesome.min.css">
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/angular-growl.min.css">
+  <link rel="stylesheet" href="<%= config->{base_uri} =%>/css/angular-busy.min.css">
+</head>
+<body>
+<nav class="navbar navbar-default" role="navigation">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#/">
+        CSF.NGS teardrop
+      </a>
+      <ul class="nav navbar-nav" ng-if="currentProject">
+       <li>
+        <a href="#/project">Project: {{currentProject.name}}</a>
+       </li>
+      </ul>
+      <p class="nav navbar-text" ng-hide="currentProject">
+       Please set Project!
+      </p>
+      <ul class="nav navbar-nav" ng-if="currentProject">
+       <li class="dropdown">
+        <a href="#/genes" class="dropdown-toggle" data-toggle="dropdown">Transcripts <span class="caret"></span></a>
+        <ul class="dropdown-menu" role="menu">
+         <li><a href="#/transcripts">Transcripts</a></li> 
+         <li><a href="#/genes">Genes</a></li> 
+        </ul>
+       <li>
+        <a href="#/deresults">DE Results</a>
+       </li>
+      </ul>
+      <p class="navbar-text navbar-right">
+       Pending Jobs: <span class="label label-default">{{workerStatus.queued.length}}</span>/<span class="label label-success">{{workerStatus.running.length}}</span>/<span class="label label-danger">{{workerStatus.failed.length}}</span>
+      </p>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid" cg-busy="busyPromise">
+ <div growl></div>
+ <div ng-view></div>
+</div>
+<br>
+<footer>
+ <div class="row">
+  <div class="col-md-12">
+    <div class="well well-sm">
+     Very Alpha! - 
+     Contact <a href="mailto:heinz.ekker@csf.ac.at">heinz.ekker@csf.ac.at</a> -
+     <a href="<%= config->{base_uri} =%>/roadmap">Development Roadmap</a>
+    </div>
+  </div>
+ </div>
+</footer>
+
+  <script src="<%= config->{base_uri} =%>/js/jquery.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular-route.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular-resource.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular-cookies.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular-growl.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/angular-busy.min.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/ui-bootstrap-tpls.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/ui-grid.min.js"></script>
+  <!--script src="<%= config->{base_uri} =%>/js/d3.min.js"></script-->
+  <script src="<%= config->{base_uri} =%>/js/highcharts.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/highcharts-more.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/highcharts-exporting.js"></script>
+  <script src="<%= config->{base_uri} =%>/js/highcharts-ng.js"></script>
+  <script src="<%= config->{base_uri} =%>/app.js"></script>
+  <script src="<%= config->{base_uri} =%>/services.js"></script>
+  <script src="<%= config->{base_uri} =%>/directives.js"></script>
+  <script src="<%= config->{base_uri} =%>/transcripts/transcripts.js"></script>
+  <script src="<%= config->{base_uri} =%>/deresults/deresults.js"></script>
+
+</body>
+</html>

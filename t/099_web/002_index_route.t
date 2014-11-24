@@ -1,10 +1,9 @@
-use Dancer::Test;
-use Test::More tests => 2;
-use strict;
-use warnings;
+use Mojo::Base -strict;
+use Test::More;
 
-use TearDrop;
+use Test::Mojo;
 
 ### XXX read base_uri from config!
-route_exists [GET => '/teardrop'], 'a route handler is defined for /';
-response_status_is ['GET' => '/teardrop'], 200, 'response status is 200 for /';
+my $t = Test::Mojo->new('TearDrop');
+$t->get_ok('/teardrop')->status_is(200)->content_like(qr/TearDrop/i);
+done_testing();

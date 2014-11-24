@@ -159,8 +159,6 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x7goJMvFcVcmUmMcR2b5jg
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
 use Try::Tiny;
 use Carp;
 
@@ -201,17 +199,18 @@ sub import_file {
     $s{de_run_id} = $self->de_run->id;
     $s{contrast_id} = $self->contrast->id;
     push @rows, \%s;
-    if (@rows >= config->{import_flush_rows}) {
-      debug 'flushing '.@rows.' to database (line '. $. .')';
+    if (@rows >= 1000) {
+    #if (@rows >= config->{import_flush_rows}) {
+      #debug 'flushing '.@rows.' to database (line '. $. .')';
       $self->result_source->schema->resultset('DeResult')->populate(\@rows);
       @rows=();
-      debug 'done.';
+      #debug 'done.';
     }
   }
   if (@rows) {
-    debug 'flushing remaining '.@rows.' to database';
+    #debug 'flushing remaining '.@rows.' to database';
     $self->result_source->schema->resultset('DeResult')->populate(\@rows);
-    debug 'done.';
+    #debug 'done.';
   }
   close $IF;
 }

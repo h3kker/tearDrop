@@ -217,7 +217,6 @@ __PACKAGE__->has_many(
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CQ35CwTEJv0B3C2YItUjUw
 
 
-use Dancer qw/:moose !status/;
 use Carp;
 use Try::Tiny;
 
@@ -238,7 +237,7 @@ sub import_file {
   my %genes;
   my $flush_rows = sub {
     my @rows = @_;
-    debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
+    #debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
     my %create_genes;
     for my $r (@rows) {
       if ($r->{id} =~ m#(.*c\d+_g\d+)_i.+#) {
@@ -255,7 +254,7 @@ sub import_file {
       $genes{$_->{id}}=1 for values %create_genes;
     }
     $self->result_source->schema->resultset('Transcript')->populate(\@rows);
-    debug '   done';
+    #debug '   done';
   };
   while(<$FA>) {
     chomp;
@@ -265,7 +264,8 @@ sub import_file {
         $count++;
         push @rows, $cur_trans;
       }
-      if (@rows>=config->{import_flush_rows}) {
+      if (@rows >= 1000) {
+      #if (@rows>=config->{import_flush_rows}) {
         $flush_rows->(@rows);
         @rows=();
       }
@@ -287,9 +287,9 @@ sub import_file {
 
   push @rows, $cur_trans;
 
-  debug '  flushing remaining '.@rows.' to db (line '. $. .')';
+  #debug '  flushing remaining '.@rows.' to db (line '. $. .')';
   $flush_rows->(@rows);
-  debug '  done';
+  #debug '  done';
 }
 
 

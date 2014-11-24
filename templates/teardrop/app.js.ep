@@ -16,16 +16,16 @@ var tearDrop = angular.module('TearDrop', [
 ])
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/', {
-    templateUrl: '[% config.base_uri %]/app/home.html',
+    templateUrl: '<%= config->{base_uri} =%>/home.html',
     controller: 'RootCtrl'
   })
   .when('/project', {
-    templateUrl: '[% config.base_uri %]/app/project.html',
+    templateUrl: '<%= config->{base_uri} =%>/project.html',
     controller: 'ProjectCtrl'
   })
   .otherwise({redirectTo: '/'});
 }])
-.controller('RootCtrl', ['$rootScope', '$scope', '$http', '$cookies', function($rootScope, $scope, $http, $cookies) {
+.controller('RootCtrl', ['$rootScope', '$scope', '$http', function($rootScope, $scope, $http) {
   $scope.isCurrentProject = function(proj) {
     return $rootScope.currentProject != null && proj.name==$rootScope.currentProject.name;
   }
@@ -82,7 +82,12 @@ var tearDrop = angular.module('TearDrop', [
   $scope.sampleGridOptions.onRegisterApi = function(gridApi) {
     $scope.sampleGridApi=gridApi;
     gridApi.edit.on.afterCellEdit($scope,function(rowEntity, colDef, newValue, oldValue){
-      if (!angular.equals(newValue, oldValue)) rowEntity.save();
+      if (!angular.equals(newValue, oldValue)) {
+        if (!rowEntity.id && (!rowEntity.description || !rowEntity.name || !rowEntity.condition)) {
+          return;
+        }
+        rowEntity.save();
+      }
     });
   }
   $scope.deleteSamples=function() {
@@ -91,7 +96,7 @@ var tearDrop = angular.module('TearDrop', [
     });
   }
   $scope.addSample=function() {
-    var newSample = new Sample({ name: 'give me a name...', condition: $scope.conditions[0] });
+    var newSample = new Sample({ name: 'give me a name...', });
     $scope.sampleGridOptions.data.push(newSample);
     //XXX make me work
     //$scope.sampleGridApi.cellNav.scrollTo( $scope.sampleGridApi.grid, $scope, $scope.sampleGridOptions.data[$scope.sampleGridOptions.data.length-1], $scope.sampleGridOptions.columnDefs[1]); 
@@ -108,25 +113,28 @@ tearDrop.value('cgBusyDefaults', {
 });
 
 
-tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, growl) {
+tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
   $rootScope.growl=growl;
   $rootScope.currentProject=null;
   $rootScope.projects=[];
   $rootScope.reloadProjects = function() {
-    $http.get('[% config.base_uri %]/api/projects').success(function(data) {
+    $http.get('<%= config->{base_uri} =%>/api/projects').success(function(data) {
       $rootScope.projects=data;
       angular.forEach($rootScope.projects, function(p) {
-        if (p.name==$cookies.project) $rootScope.setProject(p);
+        if (window.sessionStorage.getItem('project')==p.name) $rootScope.setProject(p);
       });
     }).error($rootScope.errHandler);
   }
   $rootScope.reloadProjects();
   $rootScope.setProject = function(project) {
-    $cookies.project=project.name;
+    window.sessionStorage.setItem('project', project.name);
     $rootScope.currentProject=project;
-    angular.forEach(['Tag', 'Organism', 'Sample', 'Assembly', 'DbSource'], function(cache) {
-      $rootScope.$broadcast('clear'+cache+'Cache');
-    });
+  }
+  $rootScope.currentProjectName = function() {
+    console.log('here');
+    console.log($rootScope.currentProject);
+    if (!$rootScope.currentProject) return null;
+    return $rootScope.currentProject.name;
   }
   var workQueueStatus;
   $rootScope.workerStatus={};
@@ -146,7 +154,7 @@ tearDrop.run(function($rootScope, $timeout, $http, $cookies, $cacheFactory, grow
     failed: { category: 'error', msg: function(j) { return "Onoz, job "+j.class+" failed!" } },
   }
   $rootScope.updateQueueStatus = function(success) {
-    $http.get('[% config.base_uri %]/api/worker/status').success(function(d) {
+    $http.get('<%= config->{base_uri} =%>/api/worker/status').success(function(d) {
       if (!angular.equals($rootScope.workerStatus, d)) {
         var oldJobs = jobList($rootScope.workerStatus);
         var newJobs = jobList(d);

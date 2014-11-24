@@ -169,8 +169,6 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWhGk9jMWAtFPMVl2R3XCA
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
 use Carp;
 use Try::Tiny;
 
@@ -278,17 +276,18 @@ sub import_file {
       additional => $sf{note},
       gene_model_id => $self->id,
     };
-    if (@rows >= config->{import_flush_rows}) {
-      debug 'flush '.@rows.' rows to database (line '. $. .')';
+    if (@rows >= 1000) {
+    #if (@rows >= config->{import_flush_rows}) {
+      #debug 'flush '.@rows.' rows to database (line '. $. .')';
       $self->result_source->schema->resultset('GeneModelMapping')->populate(\@rows);
       @rows=();
-      debug 'done.';
+      #debug 'done.';
     }
   }
   if (@rows) {
-    debug 'flush remaining '.@rows.' rows to database';
+    #debug 'flush remaining '.@rows.' rows to database';
     $self->result_source->schema->resultset('GeneModelMapping')->populate(\@rows);
-    debug 'done.';
+    #debug 'done.';
   }
   close $IF;
 }

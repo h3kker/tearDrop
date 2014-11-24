@@ -2,7 +2,8 @@ var tearDropServices = angular.module('tearDropServices', ['ngResource']);
 
 var setupCache = function($rootScope, $cacheFactory, name, key) {
   $rootScope.$on('clear'+name , function() {
-    $cacheFactory.get('$http').remove(key);
+    var tkey = '<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/'+key;
+    $cacheFactory.get('$http').remove(tkey);
     $rootScope.$broadcast('reload'+name);
   });
   return { cacheName: name, clearCache: function() { $rootScope.$broadcast('clear'+cache); }, };
@@ -82,69 +83,67 @@ var transcriptPrototype = function($rootScope) {
   });
 };
 
+var getRoutes = function($rootScope) {
+  var params = { project: $rootScope.currentProjectName };
+  return {
+    'get':    {method:'GET', params: params},
+    'save':   {method:'POST', params: params},
+    'query':  {method:'GET', isArray:true, cache: true, params: params},
+    'remove': {method:'DELETE', params: params},
+    'delete': {method:'DELETE', params: params} 
+  };
+}
 
-tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory',
-  function($resource, $rootScope, $cacheFactory) {
-    var Assembly = $resource('[% config.base_uri %]/api/assemblies/:id', {id:'@id'}, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory', 
+  function($resource, $rootScope, $cacheFactory, uriGenerator) {
+    var Assembly = $resource('<%= config->{base_uri} =%>/api/projects/:project/assemblies/:id', {id:'@id'}, getRoutes($rootScope));
     angular.extend(Assembly.prototype, 
-      setupCache($rootScope, $cacheFactory, 'AssemblyCache', '[% config.base_uri %]/api/assemblies'),
+      setupCache($rootScope, $cacheFactory, 'AssemblyCache', 'assemblies'),
       objPrototype($rootScope)
     );
     return Assembly;
   }
 ]).factory('DbSource', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var DbSource = $resource('[% config.base_uri %]/api/db_sources/:id', {id:'@id'}, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var DbSource = $resource('<%= config->{base_uri} =%>/api/projects/:project/dbsources/:id', {id:'@id'}, getRoutes($rootScope));
     angular.extend(DbSource.prototype, 
-      setupCache($rootScope, $cacheFactory, 'DbSourceCache', '[% config.base_uri %]/api/db_sources'),
+      setupCache($rootScope, $cacheFactory, 'DbSourceCache', 'dbsources'),
       objPrototype($rootScope)
     );
     return DbSource;
   }
 ]).factory('Organism', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var Organism = $resource('[% config.base_uri %]/api/organisms/:id', {id:'@id'}, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var Organism = $resource('<%= config->{base_uri} =%>/api/projects/:project/organisms/:id', {id:'@id'}, getRoutes($rootScope));
     angular.extend(Organism.prototype, 
-      setupCache($rootScope, $cacheFactory, 'OrganismCache', '[% config.base_uri %]/api/organisms'),
+      setupCache($rootScope, $cacheFactory, 'OrganismCache', 'organisms'),
       objPrototype($rootScope)
     );
     return Organism;
   }
 ]).factory('Tag', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var Tag = $resource('[% config.base_uri %]/api/tags/:tag', {tag:'@tag'}, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var Tag = $resource('<%= config->{base_uri} =%>/api/projects/:project/tags/:tag', {tag:'@tag'}, getRoutes($rootScope));
     angular.extend(Tag.prototype, 
-      setupCache($rootScope, $cacheFactory, 'TagCache', '[% config.base_uri %]/api/tags'),
+      setupCache($rootScope, $cacheFactory, 'TagCache', 'tags'),
       objPrototype($rootScope)
     );
     return Tag;
   }
 ]).factory('Condition', ['$resource', '$rootScope', '$cacheFactory', 
   function($resource, $rootScope, $cacheFactory) {
-    var Condition = $resource('[% config.base_uri %]/api/conditions/:name', {name:'@name'}, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var Condition = $resource('<%= config->{base_uri} =%>/api/projects/:project/conditions/:name', {name:'@name'}, getRoutes($rootScope));
     angular.extend(Condition.prototype, 
-      setupCache($rootScope, $cacheFactory, 'ConditionCache', '[% config.base_uri %]/api/conditions'),
+      setupCache($rootScope, $cacheFactory, 'ConditionCache', 'conditions'),
       objPrototype($rootScope)
     );
     return Condition;
   }
 ]).factory('Sample', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var Sample = $resource('[% config.base_uri %]/api/samples/:id', { id: '@id' }, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var Sample = $resource('<%= config->{base_uri} =%>/api/projects/:project/samples/:id', { id: '@id' }, getRoutes($rootScope));
     angular.extend(Sample.prototype, 
-      setupCache($rootScope, $cacheFactory, 'SampleCache', '[% config.base_uri %]/api/samples'),
+      setupCache($rootScope, $cacheFactory, 'SampleCache', 'samples'),
       objPrototype($rootScope), {
         prepare: function() {
           this.flagged=!!this.flagged;
@@ -154,11 +153,9 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
   }
 ]).factory('GeneModel', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var GeneModel = $resource('[% config.base_uri %]/api/gene_models/:id', { id: '@id' }, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var GeneModel = $resource('<%= config->{base_uri} =%>/api/projects/:project/genemodels/:id', { id: '@id' }, getRoutes($rootScope));
     angular.extend(GeneModel.prototype, 
-      setupCache($rootScope, $cacheFactory, 'GeneModelCache', '[% config.base_uri %]/api/gene_models'),
+      setupCache($rootScope, $cacheFactory, 'GeneModelCache', 'genemodels'),
       objPrototype($rootScope), {
         prepare: function() {
           this.flagged=!!this.flagged;
@@ -168,11 +165,9 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
   }
 ]).factory('Alignment', ['$resource', '$rootScope', '$cacheFactory',
   function($resource, $rootScope, $cacheFactory) {
-    var Alignment = $resource('[% config.base_uri %]/api/alignments/:id', { id: '@id' }, {
-      query: {method:'GET', isArray:true, cache:true },
-    });
+    var Alignment = $resource('<%= config->{base_uri} =%>/api/projects/:project/alignments/:id', { id: '@id' }, getRoutes($rootScope));
     angular.extend(Alignment.prototype, 
-      setupCache($rootScope, $cacheFactory, 'AlignmentCache', '[% config.base_uri %]/api/alignments'),
+      setupCache($rootScope, $cacheFactory, 'AlignmentCache', 'alignments'),
       objPrototype($rootScope), {
         prepare: function() {
           this.flagged=!!this.flagged;
@@ -182,9 +177,9 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
   }
 ]).factory('Gene', ['$resource', '$rootScope', '$http', 'Transcript',
   function($resource, $rootScope, $http, Transcript){
-    var Gene = $resource('[% config.base_uri %]/api/genes/:id', {id:'@id'}, {
-      query: {method:'GET'},
-    });
+    var Gene = $resource('<%= config->{base_uri} =%>/api/projects/:project/genes/:id', {id:'@id'}, angular.extend(getRoutes($rootScope), {
+      query: {method:'GET', params: { project: $rootScope.currentProjectName }},
+    }));
     angular.extend(Gene.prototype, transcriptPrototype($rootScope), {
       type: 'gene',
       prepare: function() {
@@ -202,20 +197,20 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
       },
       loadMappings: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/mappings').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/genes/'+this.id+'/mappings').success(function(data) {
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
       },
       loadBlastResults: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/blast_results').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/genes/'+this.id+'/blast_results').success(function(data) {
           that.setBlastResults(data);
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
       },
       loadBlastRuns: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/genes/'+this.id+'/blast_runs').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/genes/'+this.id+'/blast_runs').success(function(data) {
           that.blast_runs=data;
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
@@ -225,9 +220,9 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
   }
 ]).factory('Transcript', ['$resource', '$rootScope', '$http',
   function($resource, $rootScope, $http) {
-    var Transcript = $resource('[% config.base_uri %]/api/transcripts/:id', {id:'@id'}, {
-      query: {method:'GET'},
-    });
+    var Transcript = $resource('<%= config->{base_uri} =%>/api/projects/:project/transcripts/:id', {id:'@id'}, angular.extend(getRoutes($rootScope), {
+      query: {method:'GET', params: { project: $rootScope.currentProjectName }},
+    }));
     angular.extend(Transcript.prototype, transcriptPrototype($rootScope), {
       type: 'transcript',
       prepare: function() {
@@ -239,20 +234,20 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
       },
       loadMappings: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/mappings').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/transcripts/'+this.id+'/mappings').success(function(data) {
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
       },
       loadBlastResults: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/blast_results').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/transcripts/'+this.id+'/blast_results').success(function(data) {
           that.setBlastResults(data);
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
       },
       loadBlastRuns: function(callback) {
         var that=this;
-        $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/blast_runs').success(function(data) {
+        $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/transcripts/'+this.id+'/blast_runs').success(function(data) {
           that.blast_runs=data;
           if (callback!=null) callback(data);
         }).error($rootScope.errHandler);
@@ -261,7 +256,7 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
         if (reload || alignData.alignment==null) {
           alignData.alignment={loading: true, data: {}};
           var that=this;
-          $http.get('[% config.base_uri %]/api/transcripts/'+this.id+'/pileup').success(function(data) {
+          $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject+'/transcripts/'+this.id+'/pileup').success(function(data) {
             alignData.alignment.loading=false;
             alignData.alignment.data=data;
           }).error($rootScope.errHandler);

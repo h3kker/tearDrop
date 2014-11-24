@@ -198,7 +198,6 @@ __PACKAGE__->might_have(
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0pDhsqt0l/AjJIvpSgM+aA
 
 use Carp;
-use Dancer qw/:moose !status !dirname/;
 use File::Basename;
 
 sub _is_column_serializable { 1 };

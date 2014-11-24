@@ -4,21 +4,21 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
 
 .config(['$routeProvider', function($routeProvider) {
   $routeProvider.when('/transcripts', {
-    templateUrl: '[% config.base_uri %]/app/transcripts/transcripts.html',
+    templateUrl: '<%= config->{base_uri} =%>/transcripts/transcripts.html',
     controller: 'TranscriptsCtrl',
     reloadOnSearch: false,
   });
   $routeProvider.when('/genes', {
-    templateUrl: '[% config.base_uri %]/app/transcripts/genes.html',
+    templateUrl: '<%= config->{base_uri} =%>/transcripts/genes.html',
     controller: 'GenesCtrl',
     reloadOnSearch: false,
   });
   $routeProvider.when('/genes/:id', {
-    templateUrl: '[% config.base_uri %]/app/transcripts/gene_details.html',
+    templateUrl: '<%= config->{base_uri} =%>/transcripts/gene_details.html',
     controller: 'GenesDetailCtrl'
   });
   $routeProvider.when('/transcripts/:id', {
-    templateUrl: '[% config.base_uri %]/app/transcripts/transcript_details.html',
+    templateUrl: '<%= config->{base_uri} =%>/transcripts/transcript_details.html',
     controller: 'TranscriptsDetailCtrl'
   });
 }])
@@ -31,7 +31,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       },
       'getFasta': function() {
         var search = $location.url().replace(/.+\?/, '');
-        window.location.href='[% config.base_uri %]/api/transcripts/fasta?'+search;
+        window.location.href='<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/transcripts/fasta?'+search;
       },
       'sort': [
         { 'field': 'id', 'direction': 'asc' },
@@ -52,7 +52,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   };
 
   $scope.refresh = function(p, callback) {
-    $rootScope.busyPromise=$http.get('[% config.base_uri %]/api/transcripts', { 'params': p }).success(
+    $rootScope.busyPromise=$http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/transcripts', { 'params': p }).success(
       function(res) {
         $rootScope.transcripts.pagingOptions.total_items = res.total_items;
         $scope.gridOptions.data = res.data;
@@ -104,7 +104,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       },
       'getFasta': function() {
         var search = $location.url().replace(/.+\?/, '');
-        window.location.href='[% config.base_uri %]/api/genes/fasta?'+search;
+        window.location.href='<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/fasta?'+search;
       },
       /*
       'sort': [
@@ -128,7 +128,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ],
   };
   $scope.refresh = function(p, callback) {
-    $rootScope.busyPromise = $http.get('[% config.base_uri %]/api/genes', { 'params': p }).success(
+    $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes', { 'params': p }).success(
       function(res) {
         $rootScope.genes.pagingOptions.total_items = res.total_items;
         $scope.gridOptions.data = res.data;
@@ -176,7 +176,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     ],
   };
   $scope.loadTranscriptMsa = function() {
-    $rootScope.busyPromise = $http.get('[% config.base_uri %]/api/genes/'+$scope.gene.id+'/transcripts/msa').success(function(d) {
+    $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/'+$scope.gene.id+'/transcripts/msa').success(function(d) {
       $scope.transcriptMSA=d;
     }).error($rootScope.errHandler);
   }

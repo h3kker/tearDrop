@@ -187,7 +187,6 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oo+Yen9VgMl9yahAY5KvAQ
 
-use Dancer qw/:moose !status/;
 use Carp;
 use Try::Tiny;
 
@@ -316,18 +315,19 @@ sub import_file {
         tstarts => $tstarts
       };
 
-      if (@rows >= config->{import_flush_rows}) {
-        debug 'flushing '.@rows.' to database (line '. $. .')';
+      if (@rows >= 1000) {
+      #if (@rows >= config->{import_flush_rows}) {
+        #debug 'flushing '.@rows.' to database (line '. $. .')';
         $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
         @rows=();
-        debug 'done.';
+        #debug 'done.';
       }
     }
     close $IF;
     if (@rows) {
-      debug 'flushing remaining '.@rows.' to database';
+      #debug 'flushing remaining '.@rows.' to database';
       $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
-      debug 'done.';
+      #debug 'done.';
     }
   }
   else {

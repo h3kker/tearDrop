@@ -276,9 +276,6 @@ __PACKAGE__->many_to_many("tags", "transcript_tags", "tag");
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LD1cL5MN/ZHhpiox6g+3bw
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
-
 use Moo;
 use namespace::clean;
 
@@ -306,7 +303,7 @@ sub filtered_mappings {
   MAP: for my $map (@all) {
     #debug $map->TO_JSON;
     unless($map->is_good($params)) {
-      debug '   skip map '; debug $map->TO_JSON;
+      #debug '   skip map '; debug $map->TO_JSON;
       next;
     }
     push @ret, $map;

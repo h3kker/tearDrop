@@ -145,9 +145,6 @@ __PACKAGE__->many_to_many("tags", "gene_tags", "tag");
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KEGDjz+ZonkOORlt/Had2A
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
-
 use Moo;
 use namespace::clean;
 

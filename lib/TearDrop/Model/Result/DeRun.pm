@@ -191,8 +191,6 @@ __PACKAGE__->has_many(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-12 20:33:26
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BtYK8YD3NrXkv4wSmC2d+A
 
-use Dancer qw/:moose !status/;
-
 sub _is_column_serializable { 1 };
 
 sub get_results {
