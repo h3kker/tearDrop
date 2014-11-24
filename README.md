@@ -56,9 +56,9 @@ Create skeleton config
 Edit `config.yml` in the base directory. At the very least it needs to have the configuration for the master database
 
     plugins:
-      DBIC:
+      DBIxClass:
        default:
-         dsn: dbi:Pg:dbname=teardrop_master;host=gecko
+         dsn: dbi:Pg:dbname=teardrop_master;host=wherever
          schema_class: TearDrop::Master::Model
          user: teardrop
          options:
