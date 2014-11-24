@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::REST;
+package TearDrop::Plugin::REST;
 
 # ABSTRACT: Mojolicious Plugin for RESTful operations
 our $VERSION = '0.006'; # VERSION
