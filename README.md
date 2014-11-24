@@ -12,8 +12,8 @@ way I did it.
 
 ## Installation
 
-Requires a sheepload of Perl modules, most prominently Dancer and DBIx::Class.
-These will install half of CPAN on your computer to satisfy their needs. That is
+Requires a sheepload of Perl modules, most prominently Mojolicious and DBIx::Class.
+The latter will install half of CPAN on your computer to satisfy their needs. That is
 not enough, however, so dependencies like Mouse, Moose and Moo (don't ask)
 account for the other half. I should remember to replace this with a real
 dependency list and possibly also fill some of the nice files that help to
@@ -28,7 +28,7 @@ After that, you can install the necessary modules like this:
 
     > perlbrew use stable
     > perlbrew install-cpanm # in case you haven't done so already
-    > cpanm -i Dancer DBIx::Class
+    > cpanm -i Mojolicious DBIx::Class
 
 If you don't like PerlBrew, skip steps 1 and 2 (I would still recommend using [cpanm](http://search.cpan.org/~miyagawa/App-cpanminus-1.7016/lib/App/cpanminus.pm))
 
@@ -87,11 +87,14 @@ Ignore the `group` value for now, it must be set, but is not used.
 
 Start development instance:
 
-    > perl bin/app.pl 
+    > morbo -v scripts/tear_drop
 
 Point your browser to [http://localhost:3000/teardrop](http://localhost:3000/teardrop)
 
-You might want to create a wrapper shell script to set up paths and start TearDrop using any kind of PSGI server (e.g. Starman).
+You might want to create a wrapper shell script to set up paths and start
+TearDrop using Hypnotoad or any PSGI server (e.g. Starman). Refer to the
+[Mojolicious Cookbook](http://mojolicio.us/perldoc/Mojolicious/Guides/Cookbook#DEPLOYMENT)
+for details.
 
 ## Importing Data
 

@@ -81,3 +81,17 @@ Related object: [TearDrop::Model::Result::DeRun](https://github.com/h3kker/tearD
 Type: belongs\_to
 
 Related object: [TearDrop::Model::Result::DeRunContrast](https://github.com/h3kker/tearDrop/blob/master/doc/pod/TearDrop/Model/Result/DeRunContrast.md)
+
+## transcript
+
+Type: belongs\_to
+
+Related object: [TearDrop::Model::Result::Transcript](https://github.com/h3kker/tearDrop/blob/master/doc/pod/TearDrop/Model/Result/Transcript.md)
+Related object: [TearDrop::Model::Result::Gene](https://github.com/h3kker/tearDrop/blob/master/doc/pod/TearDrop/Model/Result/Gene.md)
+
+Note: This is not a foreign key in the database! The `transcript_id` field
+refers to a [TearDrop::Model::Result::Gene](https://github.com/h3kker/tearDrop/blob/master/doc/pod/TearDrop/Model/Result/Gene.md) if the count table is aggregated,
+to a [TearDrop::Model::Result::Transcript](https://github.com/h3kker/tearDrop/blob/master/doc/pod/TearDrop/Model/Result/Transcript.md) if not. XXX could be replaced with a virtual view.
+
+`add_fk_index =` 0> and `is_foreign_key_constraint` 0> are set to avoid
+deployment when creating new projects.
