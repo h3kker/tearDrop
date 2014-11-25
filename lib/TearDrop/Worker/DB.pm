@@ -21,47 +21,47 @@ has 'pm' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
 
 sub run_dispatcher {
   my $self = shift;
-  if (config->{worker}{fifo}) {
+  if ($self->app->config->{worker}{fifo}) {
     for my $j ($self->queued_jobs->all) {
       $self->run_job($j);
     }
-    unless(-e config->{worker}{fifo}) {
-      mkfifo(config->{worker}{fifo}, 0700) or confess 'mkfifo '.config->{worker}{fifo}." failed: $!";
+    unless(-e $self->app->config->{worker}{fifo}) {
+      mkfifo($self->app->config->{worker}{fifo}, 0700) or confess 'mkfifo '.$self->app->config->{worker}{fifo}." failed: $!";
     }
-    open(FIFO, "<".config->{worker}{fifo}) or confess "open ".config->{worker}{fifo}." failed: $!";
+    open(FIFO, "<".$self->app->config->{worker}{fifo}) or confess "open ".$self->app->config->{worker}{fifo}." failed: $!";
     while(1) {
       while(<FIFO>) {
-        debug 'wakey!';
+        $self->app->log->debug('wakey!');
         for my $j ($self->queued_jobs->all) {
           $self->run_job($j);
         }
-        debug 'yawn.';
+        $self->app->log->debug('yawn.');
       }
     }
     close FIFO;
   }
   else {
     while(1) {
-      debug 'wakey!';
+      $self->app->log->debug('wakey!');
       for my $j ($self->queued_jobs->all) {
         $self->run_job($j);
       }
-      debug 'yawn.';
-      sleep(config->{worker}{poll_interval}||30);
+      $self->app->log->debug('yawn.');
+      sleep($self->app->config->{worker}{poll_interval}||30);
     }
   }
 
-  info 'closing worker?';
+  $self->app->log->info('closing worker?');
 }
 
 sub job_started {
   my ($self, $pid, $id) = @_;
-  debug 'process '.$pid.' started';
+  $self->app->log->debug('process '.$pid.' started');
 }
 
 sub job_finished {
   my ($self, $pid, $code) = @_;
-  debug 'process '.$pid.' finished';
+  $self->app->log->debug('process '.$pid.' finished');
 }
 
 sub queued_jobs {
@@ -73,7 +73,7 @@ sub run_job {
   my ($self, $item) = @_;
   my $pid = $self->pm->start;
   if ($pid) {
-    debug 'pid '.$pid.' started for job '.$item->id.' '.$item->class;
+    $self->app->log->debug('pid '.$pid.' started for job '.$item->id.' '.$item->class);
     $item->pid($pid);
     $item->status('running');
     $item->update;
@@ -81,19 +81,19 @@ sub run_job {
   }
   $0 = 'teardrop worker ('.$item->id.')';
   try {
-    debug 'starting '.$item->id.' class '.$item->class;
+    $self->app->log->debug('starting '.$item->id.' class '.$item->class);
     my $task = $self->deserialize_item($item);
     $task->run;
     $item->status('done');
-    debug $item->id.' done';
+    $self->app->log->debug($item->id.' done');
   } catch {
-    debug $item->id.' failed: '.$_;
+    $self->app->log->debug($item->id.' failed: '.$_);
     $item->status('failed');
     error $_;
   };
   $item->pid(undef);
   $item->update;
-  debug $item->id.' process finished';
+  $self->app->log->debug($item->id.' process finished');
   $self->pm->finish;
 }
 
@@ -107,13 +107,13 @@ sub enqueue {
     task_object => $self->serialize_task($task)
   });
   $task->id($queue_item->id);
-  debug 'task '.ref($task).' queued with id '.$task->id;
+  $self->app->log->debug('task '.ref($task).' queued with id '.$task->id);
   unless ($self->daemon_status) {
-    debug 'restarting daemon';
+    $self->app->log->debug('restarting daemon');
     $self->start_working;
   }
-  if (config->{worker}{fifo}) {
-    open(OUT, ">".config->{worker_fifo}) or confess("open ".config->{worker_fifo}.": $!");
+  if ($self->app->config->{worker}{fifo}) {
+    open(OUT, ">".$self->app->config->{worker_fifo}) or confess("open ".$self->app->config->{worker_fifo}.": $!");
     print OUT "job queued\n";
     close OUT;
   }

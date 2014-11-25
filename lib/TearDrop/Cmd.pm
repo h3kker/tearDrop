@@ -9,8 +9,6 @@ BEGIN {
   Getopt::Long::Configure('pass_through');
 }
 
-use Dancer ':script';
-
 use TearDrop; # initialize
 
 1;

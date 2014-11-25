@@ -1,4 +1,3 @@
-use Dancer::Test;
 use Test::More;
 use Test::Compile;
 use strict;
