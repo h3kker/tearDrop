@@ -6,16 +6,11 @@ use strict;
 use TearDrop;
 use Mouse;
 
-my $app;
-
-sub app {
-  unless($app) {
-    $app = TearDrop->new;
-    warn $app->can('worker');
-    $app->init unless $app->can('worker');
-  }
+has 'app' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
+  my $app = TearDrop->new;
+  $app->init unless $app->can('worker');
   $app;
-}
+});
 
 has 'post_processing' => ( is => 'rw', isa => 'CodeRef | Undef', predicate => 'has_post_processing' );
 

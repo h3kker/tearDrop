@@ -12,10 +12,6 @@ use Redis::JobQueue::Job qw/STATUS_WORKING STATUS_COMPLETED STATUS_FAILED STATUS
 
 extends 'TearDrop::Worker';
 
-has 'app' => ( is => 'rw', isa => 'Ref', default => sub {
-  Mojo::Server->new->build_app('Mojo::HelloWorld');
-});
-
 has 'redis_server' => ( is => 'rw', isa => 'Str', lazy => 1, default => sub {
     my $self = shift;
     $self->app->config->{redis_server} || sprintf "%s:%s" => DEFAULT_SERVER, DEFAULT_PORT;
@@ -33,6 +29,7 @@ sub run_dispatcher {
   $self->app->log->debug('waiting...');
   while(my $job = $self->jq->get_next_job(queue => $self->redis_queue, blocking => 1)) {
     next unless defined $job;
+    $self->app->log->debug('dispatching job '.$job->id);
     $self->run_job($job);
     $self->app->log->debug('waiting...');
   }

@@ -8,14 +8,16 @@ use Mouse;
 use Try::Tiny;
 use Proc::Daemon;
 use Parallel::ForkManager;
-use Mojo::Server;
+use TearDrop;
 
 use TearDrop::Task::BLAST;
 use TearDrop::Task::MAFFT;
 use TearDrop::Task::Mpileup;
 
-has 'app' => ( is => 'rw', isa => 'Ref', default => sub {
-  Mojo::Server->new->build_app('Mojo::HelloWorld');
+has 'app' => ( is => 'rw', isa => 'Ref', lazy => 1, clearer => 'clear_app', default => sub {
+  my $app = TearDrop->new();
+  $app->init unless $app->can('worker');
+  $app;
 });
 
 has 'threads' => ( is => 'rw', isa => 'Int', default => 4);
@@ -51,6 +53,7 @@ sub start_working {
     return $self;
   }
   $0 = 'teardrop work dispatcher';
+  $self->clear_app;
   $self->run_dispatcher;
 }
 

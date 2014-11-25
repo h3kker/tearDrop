@@ -2,8 +2,10 @@ package TearDrop::Controller::Gene;
 
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON qw/decode_json/;
-use TearDrop::Task::Mpileup;
 use TearDrop::Task::BLAST;
+use TearDrop::Task::MAFFT;
+
+use Carp;
 
 use warnings;
 use strict;
@@ -44,6 +46,20 @@ sub list {
   }
 }
 
+sub list_fasta {
+  my $self = shift;
+  $self->parse_query;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->search($self->stash('filters'), {
+    order_by => $self->stash('sort'),
+    prefetch => [ { 'transcripts' => [ 'organism' ] }, { 'gene_tags' => [ 'tag', ] } ],
+  });
+  my @ret;
+  for my $t ($rs->all) {
+    push @ret, $t->to_fasta;
+  }
+  $self->render(text => join "\n", @ret);
+}
+
 sub read {
   my $self = shift;
 
@@ -52,10 +68,7 @@ sub read {
       { 'transcripts' => [ 'organism', { 'transcript_tags' => 'tag' } ]},
       { 'gene_tags' => [ 'tag', ] },
     ]
-  });
-  unless($rs) {
-    return $self->reply->not_found;
-  }
+  }) || croak 'not found';
   my $ser = $rs->TO_JSON;
   $ser->{organism} = $rs->organism;
   $ser->{transcripts} = [ map {
@@ -80,5 +93,80 @@ sub read {
   $ser->{blast_runs} = $rs->aggregate_blast_runs;
   $self->render(json => $ser);
 }
+
+sub read_fasta {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId'), {
+    prefetch => [ { 'transcripts' => [ 'organism', ] } ],
+  }) || croak 'not found';
+  $self->render(text => $rs->to_fasta);
+}
+
+sub update {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId'), {
+    prefetch => [ { 'gene_tags' => [ 'tag', ] }, ]
+  }) || croak 'not found';
+  my $upd = decode_json($self->req->body);
+  $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
+  $rs->update_tags(@{$upd->{tags}});
+  $rs->update;
+  $self->read;
+}
+
+sub mappings {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId')) || croak 'not found';
+
+  my @ret = map {
+    my $m_ser = $_->TO_JSON;
+    $m_ser->{annotations} = [ $_->annotations ];
+    $m_ser;
+  } @{$rs->filtered_mappings};
+  $self->render(json => \@ret); 
+}
+
+sub blast_results {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId')) || croak 'not found';
+
+  my @ret;
+  for my $trans ($rs->transcripts) {
+    push @ret, map {
+      my $bl_ser = $_->TO_JSON;
+      $bl_ser->{db_source}=$_->db_source->description;
+      $bl_ser;
+    } $trans->search_related('blast_results', undef, { prefetch => 'db_source' });
+  }
+  $self->render(json => \@ret);
+}
+
+sub run_blast {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId')) || croak 'not found';
+
+  my $db = $self->stash('project_schema')->resultset('DbSource')->search({
+    name => $self->param('database') || 'refseq_plant',
+  })->first || croak 'db not found';
+
+  my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
+  my $item = $self->app->worker->enqueue($task);
+  $self->render(json => { id => $item->id, status => $item->status });
+}
+
+sub blast_runs {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId')) || croak 'not found';
+
+  $self->render(json => $rs->aggregate_blast_runs);
+}
+
+sub transcript_msa {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('geneId'), { prefetch => [ 'transcripts' ]}) || croak 'not found';
+  my $msa = TearDrop::Task::MAFFT->new(transcripts => [ $rs->transcripts ], algorithm => 'FFT-NS-i')->run;
+  $self->render(json => $msa);
+}
+
 
 1;

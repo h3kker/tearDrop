@@ -31,6 +31,7 @@
 - select favorite assembly. maybe it's time to make users?
 - notifications about jobs don't work so well
 - XXX reciprocal best hit
+- XXX show error when de run result not imported
 - DONE search by transcript/gene fields in de result table
 - DONE unroll mappings to annotations, don't load them separately for each map
 - DONE set url path on de run selection
@@ -46,6 +47,7 @@
   - pick ref seq from installed blast db 
   - input text field for any fasta
   - blastx/tblastx/blastn etc
+- sample can belong to many conditions
 - relationships between transcripts and annotations (graph structure)
   - edge evidence types: sequence clustering/alignment; genome mapping; 
   - edge categories: match (redundant_to), partial overlap (prefix, postfix, infix_longer, infix_shorter), qualitative (intron, cds, splice_variant, split, same_gene)

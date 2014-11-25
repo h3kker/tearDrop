@@ -22,6 +22,9 @@ sub init {
     file => 'config.yml',
     class => 'YAML',
   });
+  unless($self->config->{log} && $self->config->{log}{path} && $self->config->{log}{path}=~m#^/#) {
+    $self->config->{log}{path}=$self->home->rel_file($self->config->{log}{path});
+  }
   $self->log(Mojo::Log->new(%{$self->config->{log}}));
 
   $self->plugin('DBIxClass' => $self->config->{plugins}{DBIxClass});
@@ -119,7 +122,6 @@ sub startup {
 
   $api->route('/worker/status')->via('get')->to(cb => sub {
     my $c = shift;
-    $self->log->debug('here');
     $c->render(json => $c->app->worker->status);
   })->name('Worker::status');
   $api->route('/worker/status/:job')->via('get')->to(cb => sub {

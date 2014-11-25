@@ -4,6 +4,8 @@ use Mojo::JSON qw/decode_json/;
 use TearDrop::Task::Mpileup;
 use TearDrop::Task::BLAST;
 
+use Carp;
+
 use warnings;
 use strict;
 
@@ -58,11 +60,7 @@ sub read {
   my $self = shift;
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'), {
     prefetch => 'organism', 'gene', { 'transcript_tags' => 'tag' },
-  });
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  }) || croak 'not found';
   my $tser = $rs->TO_JSON;
   $tser->{organism} = $rs->organism;
   $tser->{tags} = [ $rs->tags ];
@@ -83,11 +81,7 @@ sub read {
 sub update {
   my $self = shift;
 
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('roject_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my $upd = decode_json( $self->req->body );
   $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
   $rs->organism_name($upd->{organism}{name}) if $upd->{organism};
@@ -99,51 +93,34 @@ sub update {
 sub mappings {
   my $self = shift;
 
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
 
-  my $maps = $rs->filtered_mappings;
-  my @ret;
-  for my $m (@$maps) {
-    my $m_ser = $m->TO_JSON;
-    $m_ser->{annotations} = [ $m->annotations ];
-    push @ret, $m_ser;
-  }
+  my @ret = map {
+    my $m_ser = $_->TO_JSON;
+    $m_ser->{annotations} = [ $_->annotations ];
+    $m_ser;
+  } $rs->filtered_mappings;
   $self->render(json => \@ret);
 }
 
 sub blast_results {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
-  my @ret;
-  for my $bl ($rs->search_related('blast_results', undef, { prefetch => 'db_source' })) {
-    my $bl_ser = $bl->TO_JSON;
-    $bl_ser->{db_source}=$bl->db_source->description;
-    push @ret, $bl_ser;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
+  my @ret = map {
+    my $bl_ser = $_->TO_JSON;
+    $bl_ser->{db_source}=$_->db_source->description;
+    $bl_ser;
+  } $rs->search_related('blast_results', undef, { prefetch => 'db_source' });
   $self->render(json => \@ret);
 }
 
 sub run_blast {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my $db = $self->stash('project_schema')->resultset('DbSource')->search({
     name => $self->param('database') || 'refseq_plant'
   })->first;
-  unless($db) {
-    return $self->reply->not_found;
-  }
+  croak 'db not found' unless $db;
   my $task = new TearDrop::Task::BLAST(transcript_id => $rs->id, database => $db->name, project => $self->stash('project')->name);
   my $item = $self->app->worker->enqueue($task);
   $self->render(json => { id => $item->id, status => $item->status });
@@ -151,11 +128,7 @@ sub run_blast {
 
 sub blast_runs {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my %blast_runs;
   for my $br ($rs->blast_runs) {
     next unless $br->finished;
@@ -172,11 +145,7 @@ sub blast_runs {
 
 sub pileup {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
-  unless($rs) {
-    $self->app->log->debug('not found:'.$self->param('transcriptId'));
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my $assembly = $rs->assembly || die 'assembly '.$rs->assembly_id.' not found';
 
   my @alns = $assembly->transcriptome_alignments;
