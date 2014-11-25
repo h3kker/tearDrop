@@ -2,13 +2,11 @@
 
 ## Mojolicious migration
 
-- Implemenet minion backend and migrate worker
 - set access control cookie!
 - better json error rendering
 - command line tools
 - XXX figure out a way to log from model!
 - routes
-  * get /transcripts/:id/run_blast
   * get /genes
   * get /genes/fasta
   * get /genes/:id
@@ -173,11 +171,13 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - transcript sequence viewer (highlight start/stop codons, splice junctions (from genome mapping, annotations), low complexity/repeats, etc)
 - DONE refactor transcript and gene model mappings to generic genomic mapping; use maybe BioPerl for gff/psl import for common interface (at least in annotation JSON)
 - use bioperl to run/parse blast?
-- look at bioperl interfaces to go annotations and online databases
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 - schema versioning, automated migration to new schema
 - fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
 - integrate genome mappings and external annotations, they have many things in common
 - users (+external auth)
+- history logging
 - better engineering of "loading" message
 - central error handling for API calls
+- look at bioperl interfaces to go annotations and online databases
+- minion backend + worker?

@@ -3,8 +3,6 @@ package TearDrop::Task::Mpileup;
 use warnings;
 use strict;
 
-use Dancer ':moose';
-use Dancer::Plugin::DBIC;
 use Mouse;
 
 extends 'TearDrop::Task';
@@ -102,11 +100,11 @@ sub run {
 
   if (@run_alignments) {
     my @cmd = ('ext/samtools/mpileup.sh', $self->reference_path, $self->region_spec, map { $_->bam_path } @run_alignments);
-    debug 'running '.join(' ', @cmd);
+    $self->app->log->debug('running '.join(' ', @cmd));
     my ($out, $err);
     my $mp = harness \@cmd, \undef, \$out, \$err;
     $mp->run or confess "unable to run mpileup: $? $err";
-    debug 'done, parsing output';
+    $self->app->log->debug('done, parsing output');
 
     $cache->{$_->bam_path} = [] for @run_alignments;
     for my $l (split "\n", $out) {

@@ -2,31 +2,22 @@ package TearDrop::Logger;
 
 use parent 'Exporter';
 
-@EXPORT = qw/log/;
+@EXPORT = qw/logger/;
 
+use TearDrop;
 use Mojo::Log;
 
-my $logger;
+my $logger_obj;
 
 sub init {
-  if ($TearDrop::config) {
-    $logger = Mojo::Log->new(%{$TearDrop::config->{log}});
-  }
-  else {
-    #$logger = bless {}, 'TearDrop::Logger';
-    $logger = Mojo::Log->new();
-  }
+  my $td = TearDrop->new;
+  $td->init unless $td->can('worker');
+  $logger_obj=$td->log;
 }
 
-sub log {
+sub logger {
   init() unless($logger);
   return $logger;
 }
-
-sub debug {}
-sub info {}
-sub warn {}
-sub error {}
-sub fatal {}
 
 1;

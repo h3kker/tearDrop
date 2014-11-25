@@ -121,13 +121,13 @@ tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
     $http.get('<%= config->{base_uri} =%>/api/projects').success(function(data) {
       $rootScope.projects=data;
       angular.forEach($rootScope.projects, function(p) {
-        if (window.sessionStorage.getItem('project')==p.name) $rootScope.setProject(p);
+        if (window.localStorage.getItem('project')==p.name) $rootScope.setProject(p);
       });
     }).error($rootScope.errHandler);
   }
   $rootScope.reloadProjects();
   $rootScope.setProject = function(project) {
-    window.sessionStorage.setItem('project', project.name);
+    window.localStorage.setItem('project', project.name);
     $rootScope.currentProject=project;
   }
   $rootScope.currentProjectName = function() {

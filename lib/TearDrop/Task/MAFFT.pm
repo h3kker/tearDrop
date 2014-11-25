@@ -3,8 +3,6 @@ package TearDrop::Task::MAFFT;
 use warnings;
 use strict;
 
-use Dancer ':moose';
-use Dancer::Plugin::DBIC;
 use Mouse;
 
 extends 'TearDrop::Task';

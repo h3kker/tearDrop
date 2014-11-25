@@ -2,6 +2,7 @@ package TearDrop::Controller::Transcript;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON qw/decode_json/;
 use TearDrop::Task::Mpileup;
+use TearDrop::Task::BLAST;
 
 use warnings;
 use strict;
@@ -128,6 +129,24 @@ sub blast_results {
     push @ret, $bl_ser;
   }
   $self->render(json => \@ret);
+}
+
+sub run_blast {
+  my $self = shift;
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId'));
+  unless($rs) {
+    $self->app->log->debug('not found:'.$self->param('transcriptId'));
+    return $self->reply->not_found;
+  }
+  my $db = $self->stash('project_schema')->resultset('DbSource')->search({
+    name => $self->param('database') || 'refseq_plant'
+  })->first;
+  unless($db) {
+    return $self->reply->not_found;
+  }
+  my $task = new TearDrop::Task::BLAST(transcript_id => $rs->id, database => $db->name, project => $self->stash('project')->name);
+  my $item = $self->app->worker->enqueue($task);
+  $self->render(json => { id => $item->id, status => $item->status });
 }
 
 sub blast_runs {

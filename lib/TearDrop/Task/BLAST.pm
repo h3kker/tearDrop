@@ -3,9 +3,6 @@ package TearDrop::Task::BLAST;
 use warnings;
 use strict;
 
-
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
 use Mouse;
 
 extends 'TearDrop::Task';
@@ -42,7 +39,7 @@ has 'dbtype_query_scripts' => ( is => 'rw', isa => 'HashRef', default => sub {
 sub run {
   my $self = shift;
 
-  my $db_source = schema($self->project)->resultset('DbSource')->search({ name => $self->database })->first;
+  my $db_source = $self->app->schema($self->project)->resultset('DbSource')->search({ name => $self->database })->first;
   unless($db_source) {
     confess 'Unknown database source '.$self->database;
   }
@@ -50,19 +47,19 @@ sub run {
 
   my @transcripts;
   if ($self->gene_id) {
-    my $gene = schema($self->project)->resultset('Gene')->find($self->gene_id);
+    my $gene = $self->app->schema($self->project)->resultset('Gene')->find($self->gene_id);
     confess 'Unknown gene '.$self->gene_id unless defined $gene;
     for my $trans ($gene->transcripts) {
       push @transcripts, $trans;
     }
   }
   elsif ($self->transcript_id) {
-    my $trans = schema($self->project)->resultset('Transcript')->find($self->transcript_id);
+    my $trans = $self->app->schema($self->project)->resultset('Transcript')->find($self->transcript_id);
     confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
     push @transcripts, $trans;
   }
   elsif ($self->has_gene_ids) {
-    my $genes = schema($self->project)->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
+    my $genes = $self->app->schema($self->project)->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
     for my $g ($genes->all) {
       for my $trans ($g->transcripts) {
         push @transcripts, $trans;
@@ -78,28 +75,28 @@ sub run {
   my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
   #my @cmd = ('sleep', 10);
   for my $trans (@transcripts) {
-    if (!$self->replace && schema($self->project)->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
-      debug 'Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping';
+    if (!$self->replace && $self->app->schema($self->project)->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
+      $self->app->log->debug('Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping');
       next;
     }
-    push @blast_runs, schema($self->project)->resultset('BlastRun')->update_or_create({
+    push @blast_runs, $self->app->schema($self->project)->resultset('BlastRun')->update_or_create({
       transcript_id => $trans->id, db_source_id => $db_source->id, parameters => join(" ", @cmd), finished => 0
     });
-    schema($self->project)->resultset('BlastResult')->search({
+    $self->app->schema($self->project)->resultset('BlastResult')->search({
       transcript_id => $trans->id, db_source_id => $db_source->id
     })->delete;
     print $seq_f $trans->to_fasta."\n";
     $kept++;
   }
   unless ($kept) {
-    debug 'no transcripts to blast, finished';
+    $self->app->log->debug('no transcripts to blast, finished');
     if ($self->has_post_processing) {
       $self->post_processing->($self);
     }
     return;
   }
 
-  debug 'running BLAST on '.$kept.' transcripts.';
+  $self->app->log->debug('running BLAST on '.$kept.' transcripts.');
 
   my $out;
   my $err;
@@ -110,7 +107,7 @@ sub run {
   }
   for my $l (split "\n", $out) {
     my @f = split "\t", $l;
-    schema($self->project)->resultset('BlastResult')->update_or_create({
+    $self->app->schema($self->project)->resultset('BlastResult')->update_or_create({
       transcript_id => $f[0],
       db_source_id => $db_source->id,
       source_sequence_id => $f[1],

@@ -3,18 +3,20 @@ package TearDrop::Worker;
 use warnings;
 use strict;
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC 'schema';
-
 use Mouse;
 
 use Try::Tiny;
 use Proc::Daemon;
 use Parallel::ForkManager;
+use Mojo::Server;
 
 use TearDrop::Task::BLAST;
 use TearDrop::Task::MAFFT;
 use TearDrop::Task::Mpileup;
+
+has 'app' => ( is => 'rw', isa => 'Ref', default => sub {
+  Mojo::Server->new->build_app('Mojo::HelloWorld');
+});
 
 has 'threads' => ( is => 'rw', isa => 'Int', default => 4);
 
@@ -26,10 +28,11 @@ has 'pm' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
 });
 
 has 'daemon' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
+    my $self = shift;
     Proc::Daemon->new(
       work_dir => '.',
       dont_close_fh => [ 'STDOUT', 'STDERR' ],
-      pid_file => config->{worker}{pid_file}
+      pid_file => $self->app->config->{worker}{pid_file}
     );
   }
 );
@@ -37,13 +40,15 @@ has 'daemon' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
 sub start_working {
   my $self = shift;
 
-  $self->threads(config->{worker}{threads}) if defined config->{worker}{threads};
+  $self->threads($self->app->config->{worker}{threads}) if defined $self->app->config->{worker}{threads};
+  if ($self->daemon->Status()) {
+  }
   return if $self->daemon->Status();
 
   my $pid = $self->daemon->Init();
   if ($pid) {
-    info 'worker started with pid '.$pid;
-    return;
+    $self->app->log->info('worker started with pid '.$pid);
+    return $self;
   }
   $0 = 'teardrop work dispatcher';
   $self->run_dispatcher;
@@ -52,7 +57,7 @@ sub start_working {
 sub restart_working {
   my $self = shift;
   if (my $pid = $self->daemon_status) {
-    info 'killing old worker '.$pid.' (no retirement here)';
+    $self->app->log->info('killing old worker '.$pid.' (no retirement here)');
     $self->daemon->Kill_Daemon();
   }
   $self->start_working;

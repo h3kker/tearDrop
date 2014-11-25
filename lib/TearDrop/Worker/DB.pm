@@ -3,9 +3,6 @@ package TearDrop::Worker::DB;
 use warnings;
 use strict;
 
-use Dancer qw/:moose !status/;
-use Dancer::Plugin::DBIC;
-
 use Mouse;
 
 use Try::Tiny;

@@ -3,8 +3,19 @@ package TearDrop::Task;
 use warnings;
 use strict;
 
-use Dancer qw/:moose !status/;
+use TearDrop;
 use Mouse;
+
+my $app;
+
+sub app {
+  unless($app) {
+    $app = TearDrop->new;
+    warn $app->can('worker');
+    $app->init unless $app->can('worker');
+  }
+  $app;
+}
 
 has 'post_processing' => ( is => 'rw', isa => 'CodeRef | Undef', predicate => 'has_post_processing' );
 

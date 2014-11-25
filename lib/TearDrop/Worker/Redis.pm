@@ -3,8 +3,6 @@ package TearDrop::Worker::Redis;
 use warnings;
 use strict;
 
-use Dancer qw/:moose !status/;
-
 use Mouse;
 
 use Try::Tiny;
@@ -14,9 +12,13 @@ use Redis::JobQueue::Job qw/STATUS_WORKING STATUS_COMPLETED STATUS_FAILED STATUS
 
 extends 'TearDrop::Worker';
 
+has 'app' => ( is => 'rw', isa => 'Ref', default => sub {
+  Mojo::Server->new->build_app('Mojo::HelloWorld');
+});
 
 has 'redis_server' => ( is => 'rw', isa => 'Str', lazy => 1, default => sub {
-    config->{redis_server} || sprintf "%s:%s" => DEFAULT_SERVER, DEFAULT_PORT;
+    my $self = shift;
+    $self->app->config->{redis_server} || sprintf "%s:%s" => DEFAULT_SERVER, DEFAULT_PORT;
   }
 );
 
@@ -28,13 +30,14 @@ has 'jq' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
 
 sub run_dispatcher {
   my $self = shift;
-  debug 'waiting...';
+  $self->app->log->debug('waiting...');
   while(my $job = $self->jq->get_next_job(queue => $self->redis_queue, blocking => 1)) {
+    next unless defined $job;
     $self->run_job($job);
-    debug 'waiting...';
+    $self->app->log->debug('waiting...');
   }
   $self->jq->quit;
-  info 'worker closing...';
+  $self->app->log->info('worker closing...');
 }
 
 sub run_job {
@@ -42,40 +45,40 @@ sub run_job {
   my $pid = $self->pm->start;
   if ($pid) {
     $item->meta_data('pid' => $pid);
-    debug 'return';
     $self->jq->update_job($item);
     return;
   }
   else {
     $0 = 'teardrop worker ('.$item->id.')';
     try {
-      debug 'starting '.$item->id.' class '.$item->meta_data('task_class');
+      $self->app->log->info('starting '.$item->id.' class '.$item->meta_data('task_class'));
       $item->status(STATUS_WORKING);
       $self->jq->update_job($item);
       my $task = $item->workload;
       $task->project($item->meta_data('project'));
       $item->result($task->run);
       $item->status(STATUS_COMPLETED);
-      debug $item->id.' done';
+      $self->app->log->debug($item->id.' done');
+      $self->jq->update_job($item);
     } catch {
-      debug $item->id.' failed';
-      confess $_;
+      $self->app->log->debug($item->id.' failed');
       $item->status(STATUS_FAILED);
+      $self->jq->update_job($item);
+      $self->app->log->error($_);
     };
     $item->meta_data('pid' => undef);
-    $self->jq->update_job($item);
-    debug 'worker exiting...';
+    $self->app->log->debug('worker exiting...');
     $self->pm->finish;
   };
 }
 
 sub enqueue {
   my ($self, $task) = @_;
-  debug 'queuing job '.ref($task);
+  $self->app->log->debug('queuing job '.ref($task));
   my $job = Redis::JobQueue::Job->new({
     queue => $self->redis_queue,
     workload => $task,
-    meta_data => { task_class => ref($task), project => var('project') },
+    meta_data => { task_class => ref($task), project => $task->project },
     expire => 0,
   });
   my $item = $self->jq->add_job($job);

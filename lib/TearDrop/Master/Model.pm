@@ -7,6 +7,8 @@ package TearDrop::Master::Model;
 use strict;
 use warnings;
 
+our $VERSION=1;
+
 use base 'DBIx::Class::Schema';
 
 __PACKAGE__->load_namespaces;

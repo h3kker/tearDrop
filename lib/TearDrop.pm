@@ -3,38 +3,58 @@ use Mojo::Base 'Mojolicious';
 
 use Mojo::Cache;
 use Mojo::Asset::File;
+
 use File::Spec;
 use Text::Markdown 'markdown';
+use Module::Load;
 
-$TearDrop::config=undef;
+# global worldwide universal access to config
+# don't know how else to pass config to models?
 
-# This method will run once at server start
-sub startup {
+sub new {
+  my $self = shift->SUPER::new(@_);
+}
+
+sub init {
   my $self = shift;
-
   push @{$self->plugins->namespaces}, 'TearDrop::Plugin';
-
   $self->plugin('YamlConfig' => {
     file => 'config.yml',
     class => 'YAML',
   });
-  $self->secrets([$self->config->{session_name}]);
-  $TearDrop::config=$self->config;
-  #$self->helper(config => sub { state $config = $self->stash('config') });
   $self->log(Mojo::Log->new(%{$self->config->{log}}));
-  $self->helper(cache => sub { state $cache = Mojo::Cache->new(max_keys => 50) });
 
   $self->plugin('DBIxClass' => $self->config->{plugins}{DBIxClass});
   $self->setup_projects;
+  $self->helper(cache => sub { state $cache = Mojo::Cache->new(max_keys => 50) });
+  $self;
+}
 
+# This method will run once at server start
+sub startup {
+  my $self = shift;
+  $self->secrets([$self->config->{session_name}]);
+  $self->init;
+
+  #$self->helper(config => sub { state $config = $self->stash('config') });
+
+  $self->attr(worker => sub {
+    load $self->config->{working_class};
+    my $worker = $self->config->{working_class}->new(app => $self);
+    $worker->restart_working;
+    $worker;
+  });
+
+  # XXX proper error handling!
   $self->hook('before_render' => sub {
     my ($c, $args)=@_;
     return unless my $template = $args->{template};
     return unless $template eq 'exception' || $template eq 'not_found';
     #$self->log->error($self->dumper($c->stash('exception')));
-    $args->{json} = {error => 'muh', exception => $c->stash('exception')};
+    $args->{json} = {error => 'muh', } # exception => $c->stash('exception')};
       #if $c->accepts('json');
   });
+
   $self->helper('parse_query' => sub {
     my $c = shift;
     return unless $c->can('resultset');
@@ -96,6 +116,16 @@ sub startup {
 
   $api->route('/projects')->via('get')->to('Project#list')->name('Project::list');
   $api->route('/projects/:projectId')->via('get')->to('Project#read')->name('Project::read');
+
+  $api->route('/worker/status')->via('get')->to(cb => sub {
+    my $c = shift;
+    $self->log->debug('here');
+    $c->render(json => $c->app->worker->status);
+  })->name('Worker::status');
+  $api->route('/worker/status/:job')->via('get')->to(cb => sub {
+    my $c = shift;
+    $c->render(json => $c->app->worker->job_status($c->param('job')));
+  })->name('Worker::status(job)');
 
   $api->root->add_shortcut('project_bridge' => sub {
     my ($routes, %param) = @_;
