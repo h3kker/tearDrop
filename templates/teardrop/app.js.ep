@@ -115,19 +115,20 @@ tearDrop.value('cgBusyDefaults', {
 
 tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
   $rootScope.growl=growl;
-  $rootScope.currentProject=null;
+  $rootScope.currentProject=window.localStorage.getItem('project');
   $rootScope.projects=[];
   $rootScope.reloadProjects = function() {
     $http.get('<%= config->{base_uri} =%>/api/projects').success(function(data) {
       $rootScope.projects=data;
       angular.forEach($rootScope.projects, function(p) {
-        if (window.localStorage.getItem('project')==p.name) $rootScope.setProject(p);
+        if (window.localStorage.getItem('projectName')==p.name) $rootScope.setProject(p);
       });
     }).error($rootScope.errHandler);
   }
   $rootScope.reloadProjects();
   $rootScope.setProject = function(project) {
-    window.localStorage.setItem('project', project.name);
+    window.localStorage.setItem('project', project);
+    window.localStorage.setItem('projectName', project.name);
     $rootScope.currentProject=project;
   }
   $rootScope.currentProjectName = function() {
