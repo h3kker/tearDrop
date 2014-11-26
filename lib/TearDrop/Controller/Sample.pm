@@ -1,9 +1,14 @@
 package TearDrop::Controller::Sample;
+
+use 5.12.0;
+
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::JSON qw/decode_json/;
 
 use warnings;
 use strict;
+
+use Carp;
 
 our $VERSION='0.01';
 
@@ -29,21 +34,14 @@ sub create {
 
 sub remove {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'));
-  unless($rs) {
-    $self->app->log->info('sample '.$self->param('sampleId').' not found');
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId')) || croak 'not found!';
   $rs->delete;
   $self->render(json => $rs->TO_JSON);
 }
 
 sub read {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']});
-  unless($rs) {
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']}) || croak 'not found!';
   my $ser = $rs->TO_JSON;
   $ser->{alignments} = [ $rs->alignments ];
   $self->render(json => $ser);
@@ -51,11 +49,7 @@ sub read {
 
 sub update {
   my $self = shift;
-  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']});
-  unless($rs) {
-    $self->app->log->info('sample '.$self->param('sampleId').' not found');
-    return $self->reply->not_found;
-  }
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('sampleId'), {  prefetch => ['alignments', 'condition']}) || croak 'not found!';
   $self->_set_from_update($rs)->update;
   $self->read;
 

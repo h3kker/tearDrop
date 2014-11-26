@@ -1,5 +1,7 @@
 package TearDrop::Worker;
 
+use 5.12.0;
+
 use warnings;
 use strict;
 

@@ -18,14 +18,17 @@ sub new {
 sub init {
   my $self = shift;
   push @{$self->plugins->namespaces}, 'TearDrop::Plugin';
+  push @{$self->commands->namespaces}, 'TearDrop::Command';
   $self->plugin('YamlConfig' => {
     file => 'config.yml',
     class => 'YAML',
   });
-  unless($self->config->{log} && $self->config->{log}{path} && $self->config->{log}{path}=~m#^/#) {
+  $self->config->{alignments}{max_width}||=50000;
+  $self->config->{alignments}{default_context}||=200;
+  if($self->config->{log} && $self->config->{log}{path} && $self->config->{log}{path}=~m#^/#) {
     $self->config->{log}{path}=$self->home->rel_file($self->config->{log}{path});
   }
-  $self->log(Mojo::Log->new(%{$self->config->{log}}));
+  $self->log(Mojo::Log->new(%{$self->config->{log}})) if $self->config->{log};
 
   $self->plugin('DBIxClass' => $self->config->{plugins}{DBIxClass});
   $self->setup_projects;
@@ -52,17 +55,21 @@ sub startup {
   $self->hook('before_render' => sub {
     my ($c, $args)=@_;
     return unless my $template = $args->{template};
-    return unless $template eq 'exception' || $template eq 'not_found';
-    #$self->log->error($self->dumper($c->stash('exception')));
-    $args->{json} = {error => 'muh', } # exception => $c->stash('exception')};
-      #if $c->accepts('json');
+    return unless $template eq 'exception';
+    if ($c->stash('exception')) {
+      my $msg = $c->stash('exception')->message;
+      $msg =~ s/ at \/.*//;
+      $args->{json} = {error => $msg || 'muh?', } # exception => $c->stash('exception')};
+        #if $c->accepts('json');
+    }
   });
 
   $self->helper('parse_query' => sub {
-    my $c = shift;
+    my ($c, $class) = @_;
     return unless $c->can('resultset');
     $c->stash(filters => {}, sort => []);
-    my $o = $c->stash('project_schema')->resultset($c->resultset)->result_class->new;
+    my $o = $c->stash('project_schema')->resultset($class || $c->resultset)->result_class->new;
+    return unless $o->can('comparisons');
     my $comparisons = $o->comparisons;
     for my $field (keys %$comparisons) {
       my $fname = 'filter.'.$field;
@@ -149,42 +156,42 @@ sub startup {
     my %resource_actions = (get => 'read', post => 'update', delete => 'remove');
     my $return_route;
     for my $method (keys %collection_actions) {
-      $routes->project_bridge(parent => $param{parent}, url => $param{url}, method => $method, controller => $param{controller}, action => $collection_actions{$method});
+      $routes->project_bridge(parent => $param{parent}, url => $param{url}, method => $method, controller => $param{controller}, action => ($param{action_prefix}||'').$collection_actions{$method});
     }
     for my $method (keys %resource_actions) {
       my $url = $param{url}.'/#'.lc($param{controller}).'Id';
-      my $r = $routes->project_bridge(parent => $param{parent}, url => $url, method => $method, controller => $param{controller}, action => $resource_actions{$method});
+      my $r = $routes->project_bridge(parent => $param{parent}, url => $url, method => $method, controller => $param{controller}, action => ($param{action_prefix}||'').$resource_actions{$method});
       $return_route = $r if $method eq 'get';
     }
     $return_route;
   });
 
   my $de_run = $api->project_resource(url => '/deruns', controller => 'DeRun');
-  my $de_contrast = $api->project_resource(parent => $de_run, url => '/contrasts', controller => 'DeContrast');
-  my $de_result = $api->project_bridge(parent => $de_contrast, url => '/results', method => 'get', controller => 'DeContrast', action => 'results');
-  $api->project_bridge(parent => $de_result, url => '/fasta', method => 'get', controller => 'DeContrast', action => 'result_fasta');
+    my $de_contrast = $api->project_resource(parent => $de_run, url => '/contrasts', controller => 'DeContrast');
+    my $de_result = $api->project_bridge(parent => $de_contrast, url => '/results', method => 'get', controller => 'DeRun', action => 'results');
+      $api->project_bridge(parent => $de_result, url => '/fasta', method => 'get', controller => 'DeRun', action => 'results_fasta');
 
   $api->project_bridge(url => '/transcripts/fasta', method => 'get', controller => 'Transcript', action => 'list_fasta');
   my $t = $api->project_resource(url => '/transcripts', controller => 'Transcript');
-  $api->project_bridge(parent => $t, url => '/mappings', method => 'get', controller => 'Transcript' , action => 'mappings');
-  $api->project_bridge(parent => $t, url => '/blast_results', method => 'get', controller => 'Transcript' , action => 'blast_results');
-  $api->project_bridge(parent => $t, url => '/run_blast', method => 'get', controller => 'Transcript' , action => 'run_blast');
-  $api->project_bridge(parent => $t, url => '/blast_runs', method => 'get', controller => 'Transcript' , action => 'blast_runs');
-  $api->project_bridge(parent => $t, url => '/pileup', method => 'get', controller => 'Transcript' , action => 'pileup');
+    $api->project_bridge(parent => $t, url => '/mappings', method => 'get', controller => 'Transcript' , action => 'mappings');
+    $api->project_bridge(parent => $t, url => '/blast_results', method => 'get', controller => 'Transcript' , action => 'blast_results');
+    $api->project_bridge(parent => $t, url => '/run_blast', method => 'get', controller => 'Transcript' , action => 'run_blast');
+    $api->project_bridge(parent => $t, url => '/blast_runs', method => 'get', controller => 'Transcript' , action => 'blast_runs');
+    $api->project_bridge(parent => $t, url => '/pileup', method => 'get', controller => 'Transcript' , action => 'pileup');
 
   $api->project_bridge(url => '/genes/fasta', method => 'get', controller => 'Gene', action => 'list_fasta');
   my $g = $api->project_resource(url => '/genes', controller => 'Gene');
-  $api->project_bridge(parent => $g, url => '/fasta', method => 'get', controller => 'Gene', action => 'read_fasta');
-  $api->project_bridge(parent => $g, url => '/mappings', method => 'get', controller => 'Gene', action => 'mappings');
-  $api->project_bridge(parent => $g, url => '/blast_results', method => 'get', controller => 'Gene', action => 'blast_results');
-  $api->project_bridge(parent => $g, url => '/run_blast', method => 'get', controller => 'Gene', action => 'run_blast');
-  $api->project_bridge(parent => $g, url => '/blast_runs', method => 'get', controller => 'Gene', action => 'blast_runs');
-  $api->project_bridge(parent => $g, url => '/msa', method => 'get', controller => 'Gene', action => 'transcript_msa');
-
-  $api->project_bridge(url => '/genomemappings/:genomemappingId/annotations', method => 'get', controller => 'GenomeMappings', action => 'annotations');
-  $api->project_bridge(url => '/genomemappings/:genomemappingId/pileup', method => 'get', controller => 'GenomeMappings', action => 'pileup');
+    $api->project_bridge(parent => $g, url => '/fasta', method => 'get', controller => 'Gene', action => 'read_fasta');
+    $api->project_bridge(parent => $g, url => '/mappings', method => 'get', controller => 'Gene', action => 'mappings');
+    $api->project_bridge(parent => $g, url => '/blast_results', method => 'get', controller => 'Gene', action => 'blast_results');
+    $api->project_bridge(parent => $g, url => '/run_blast', method => 'get', controller => 'Gene', action => 'run_blast');
+    $api->project_bridge(parent => $g, url => '/blast_runs', method => 'get', controller => 'Gene', action => 'blast_runs');
+    $api->project_bridge(parent => $g, url => '/msa', method => 'get', controller => 'Gene', action => 'transcript_msa');
 
 
+  my $gm = $api->project_resource(url => '/genomemappings', controller => 'GenomeMapping');
+    $api->project_bridge(parent => $gm, url => '/annotations', method => 'get', controller => 'GenomeMapping', action => 'annotations');
+    $api->project_bridge(parent => $gm, url => '/pileup', method => 'get', controller => 'GenomeMapping', action => 'pileup');
   $api->project_resource(url => '/alignments', controller => 'Alignment');
   $api->project_resource(url => '/assemblies', controller => 'Assembly');
   $api->project_resource(url => '/conditions', controller => 'Condition');
@@ -198,7 +205,7 @@ sub startup {
   $r->get('/*tpl', sub {
     my $c = shift;
 
-    $self->log->debug($c->req->url);
+    $self->log->debug('catchall: '.$c->req->url);
     my ($path, $file, $type) = @_;
     if ($c->req->url =~ m#/?(.*/)?(.+)\.(html|js)#) {
       ($path, $file, $type) = ($1, $2, $3);

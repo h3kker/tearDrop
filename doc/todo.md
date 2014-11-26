@@ -3,27 +3,12 @@
 ## Mojolicious migration
 
 - set access control cookie!
-- better json error rendering
 - command line tools
-- XXX figure out a way to log from model!
-- routes
-  * get /genes
-  * get /genes/fasta
-  * get /genes/:id
-  * post /genes/:id
-  * get /genes/:id/mappings
-  * get /genes/:id/fasta
-  * get /genes/:id/run_blast
-  * get /genes/:id/transcripts/msa
-  * get /genes/:id/blast_runs
-  * get /genes/:id/blast_results
-  * get /deruns
-  * get /deruns/:id/contrasts/:contrast_id/results/fasta
-  * get /deruns/:id/contrasts/:contrast_id/results
-  * get /genome_mappings/:id/annotations
-  * get /genome_mappings/:id/pileup
-  * get /worker/status
-  * get /worker/status/:job
+  - DONE run_blast
+  - import_metadata
+  - deploy_project
+  - import_transcript_meta.pl??
+  - transfer_annotations??
 
 ## bugs/urgent
 

@@ -19,7 +19,7 @@ sub list {
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->search($self->stash('filters'), {
     order_by => $self->stash('sort'),
     page => $self->param('page'),
-    rows => $self->param('rows')||50,
+    rows => $self->param('pagesize')||50,
     prefetch => [ 'organism', 'gene', { 'transcript_tags' => [ 'tag' ] } ],
   });
   my $ser = [ map {

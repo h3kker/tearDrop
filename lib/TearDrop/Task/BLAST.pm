@@ -36,6 +36,19 @@ has 'dbtype_query_scripts' => ( is => 'rw', isa => 'HashRef', default => sub {
   },
 );
 
+sub do_post_processing {
+  my $self = shift;
+  my @genes = $self->has_gene_ids ? $self->all_gene_ids : ( $self->gene_id || $self->transcript_id );
+  for my $g (@genes) {
+    my $sg = $self->app->schema($self->project)->resultset('Gene')->find($g->id);
+    return if $sg->reviewed;
+    for my $t ($sg->transcripts) {
+      $t->auto_annotate;
+    }
+    $sg->auto_annotate;
+  }
+}
+
 sub run {
   my $self = shift;
 
@@ -46,7 +59,15 @@ sub run {
   my $exe = $self->dbtype_query_scripts->{$db_source->dbtype} || confess "don't know how to handle ".$db_source->dbtype." databases!";
 
   my @transcripts;
-  if ($self->gene_id) {
+  if ($self->has_gene_ids) {
+    my $genes = $self->app->schema($self->project)->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
+    for my $g ($genes->all) {
+      for my $trans ($g->transcripts) {
+        push @transcripts, $trans;
+      }
+    }
+  }
+  elsif ($self->gene_id) {
     my $gene = $self->app->schema($self->project)->resultset('Gene')->find($self->gene_id);
     confess 'Unknown gene '.$self->gene_id unless defined $gene;
     for my $trans ($gene->transcripts) {
@@ -58,16 +79,8 @@ sub run {
     confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
     push @transcripts, $trans;
   }
-  elsif ($self->has_gene_ids) {
-    my $genes = $self->app->schema($self->project)->resultset('Gene')->search({ 'me.id' => $self->gene_ids }, { prefetch => 'transcripts' });
-    for my $g ($genes->all) {
-      for my $trans ($g->transcripts) {
-        push @transcripts, $trans;
-      }
-    }
-  }
   else {
-    confess 'Need gene_id or transcript_id';
+    confess 'Need gene_id(s) or transcript_id';
   }
   my $seq_f = File::Temp->new;
   my $kept=0;
@@ -132,9 +145,7 @@ sub run {
     $r->finished(1);
     $r->update;
   }
-  if ($self->has_post_processing) {
-    $self->post_processing->($self);
-  }
+  $self->do_post_processing if ($self->post_processing);
 }
 
 1;

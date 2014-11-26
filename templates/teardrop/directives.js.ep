@@ -644,7 +644,7 @@ angular.module('tearDropDirectives', []).
         $scope.loadAnnotations = function(map, reload) {
           if (reload || map.annotations==null) {
             map.annotations=[];
-            $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genome_mappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
+            $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genomemappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.tstart, tend: map.tend}}).success(function(data) {
                 map.annotations=data;
             }).error($rootScope.errHandler);
           }
@@ -660,7 +660,7 @@ angular.module('tearDropDirectives', []).
               end=region.cend;
             }
             map.alignment={loading: true, data: {}};
-            $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genome_mappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: start, tend: end}}).success(function(data) {
+            $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genomemappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: start, tend: end}}).success(function(data) {
               map.alignment.data=data;
               map.alignment.loading=false;
               map.region={cstart: start, cend: end};

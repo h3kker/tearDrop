@@ -12,13 +12,18 @@ has 'app' => ( is => 'rw', isa => 'Ref', lazy => 1, default => sub {
   $app;
 });
 
-has 'post_processing' => ( is => 'rw', isa => 'CodeRef | Undef', predicate => 'has_post_processing' );
+has 'post_processing' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'project' => ( is => 'rw', isa => 'Str' );
 has 'result' => ( is => 'rw', isa => 'ArrayRef | Undef' );
 has 'id' => ( is => 'rw', isa => 'Str' );
 has 'pid' => ( is => 'rw', isa => 'Int | Undef' );
 has 'status' => ( is => 'rw', isa => 'Str | Undef' );
+
+#after run => sub {
+#  my $self = shift;
+#  $self->do_post_processing if ($self->post_processing);
+#};
 
 sub TO_JSON {
   my $self = shift;
