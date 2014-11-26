@@ -58,7 +58,6 @@ sub run {
       $self->app->worker->enqueue($task);
     }
     $batch_no++;
-    last;
   }
 }
 
