@@ -5,28 +5,61 @@ use strict;
 
 use Moo::Role;
 use namespace::clean;
+use Try::Tiny;
+use TearDrop::Logger;
 
 sub auto_annotate {
   my $self = shift;
   return if $self->reviewed;
+
   my $best_homolog = $self->best_blast_hit;
-  unless($best_homolog) {
-    #debug 'auto_annotate '.$self->id.': no homologs...';
-    $self->set_tag({ tag => 'no homologs', category => 'homology' });
-    return;
+  if($best_homolog) {
+    if (!defined $self->best_homolog || $self->best_homolog ne $best_homolog->source_sequence_id) {
+      $self->best_homolog($best_homolog->source_sequence_id);
+      $self->name($best_homolog->stitle);
+      try {
+        $self->delete_tags('no homologs', 'bad homologs', 'lots of mappings');
+      } catch {
+        logger->debug('remove tag error '.$_);
+        # maybe we should tell somebody about this, but otherwise it's ok
+      };
+      if ($best_homolog->evalue < 1e-5) {
+        $self->set_tag({ tag => 'good homologs', category => 'homology', level => 'success' });
+      }
+      else {
+        $self->set_tag({ tag => 'bad homologs', category => 'homology', level => 'warning' });
+      }
+      $self->update;
+    }
   }
-  if (!defined $self->best_homolog || $self->best_homolog ne $best_homolog->source_sequence_id) {
-    #debug 'auto_annotate '.$self->id.' setting best homolog to '.$best_homolog->stitle;
-    $self->best_homolog($best_homolog->source_sequence_id);
-    $self->name($best_homolog->stitle);
-    $self->description($best_homolog->stitle);
-    if ($best_homolog->evalue < 1e-10) {
-      $self->set_tag({ tag => 'good homologs', category => 'homology' });
-    }
-    else {
-      $self->set_tag({ tag => 'bad homologs', category => 'homology' });
-    }
-    $self->update;
+  elsif ($self->blast_runs({finished => 1})->count) {
+    # at least one blast, but no results
+    $self->set_tag({ tag => 'no homologs', category => 'homology', level => 'danger' });
+  }
+  
+  my @mappings = $self->filtered_mappings;
+  try {
+    $self->delete_tags('unmapped', 'good mapping', 'lots of mappings');
+  } catch {
+    logger->debug('remove tag error '.$_);
+    # maybe we should tell somebody about this, but otherwise it's ok
+  };
+  if (@mappings == 0) {
+    $self->set_tag({ tag => 'unmapped', category => 'mapping', level => 'danger' });
+  }
+  elsif (@mappings < 6) {
+    $self->set_tag({ tag => 'good mapping', category => 'mapping', level => 'success' });
+  }
+  else {
+    $self->set_tag({ tag => 'lots of mappings', category => 'mapping', level => 'warning' });
+  }
+}
+
+sub delete_tags {
+  my ($self, @clear) = @_;
+  for (@clear) {
+    my $t = $self->result_source->schema->resultset('Tag')->find($_);
+    $self->remove_from_tags($t) if $t;
   }
 }
 

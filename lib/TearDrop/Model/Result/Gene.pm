@@ -140,6 +140,7 @@ Composing rels: L</gene_tags> -> tag
 =cut
 
 __PACKAGE__->many_to_many("tags", "gene_tags", "tag");
+__PACKAGE__->many_to_many("blast_runs", "transcripts", "blast_runs");
 
 
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-06 22:03:08
@@ -246,7 +247,8 @@ sub filtered_mappings {
       push @mappings, $loc unless $ovl;
     }
   }
-  [ sort { $a->tid eq $b->tid ? $a->tstart <=> $b->tstart : $a->tid cmp $b->tid } @mappings ];
+  my @ret = sort { $a->tid eq $b->tid ? $a->tstart <=> $b->tstart : $a->tid cmp $b->tid } @mappings;
+  wantarray ? @ret : \@ret;
 }
 
 sub best_blast_hit {

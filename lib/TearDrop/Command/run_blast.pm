@@ -17,11 +17,10 @@ sub run {
 
   my %opt = (db_source => [ qw/refseq_plant ncbi_cdd/ ], evalue_cutoff => .01, max_target_seqs => 20, batch_size => 50);
   GetOptionsFromArray(\@args, \%opt, 'project|p=s', 'db_source|db=s@', 'assembly|a=s',
-      'name|n=s', 'no-annotate', 'evalue_cutoff=f', 'max_target_seqs=i', 'batch_size=i') 
+      'id|i=s', 'no-annotate', 'evalue_cutoff=f', 'max_target_seqs=i', 'batch_size=i') 
     or croak $self->help;
 
-  warn $self->app->dumper(\%opt);
-
+  croak "Please provide project context!\n\n".$self->help unless $opt{project};
   my @dbs = $self->app->schema($opt{project})->resultset('DbSource')->search({
     name => $opt{db_source}
   })->all;
@@ -33,8 +32,8 @@ sub run {
   if ($opt{assembly}) {
     $search{'transcript_assemblies.name'}=$opt{assembly};
   }
-  if ($opt{name}) {
-    $search{'LOWER(me.name)'}={ like => '%'.lc($opt{name}).'%' };
+  if ($opt{id}) {
+    $search{'LOWER(me.id)'}={ like => '%'.lc($opt{id}).'%' };
   }
   my $batch_no=1;
   while(1) {
@@ -61,7 +60,7 @@ sub run {
   }
 }
 
-=head1
+=pod
 
 =head1 NAME
 
@@ -79,9 +78,9 @@ TearDrop::Command::run_blast - Run automatic BLAST for transcripts/genes
 
   Optional Options for transcript selection:
     -a, --assembly    
-        Name of the assembly
-    -n, --name        
-        Pattern for name
+        Name of the assembly (XXX test me)
+    -i, --id        
+        Pattern for id (XXX test me)
 
   Processing:
     --no-annotate     
@@ -97,8 +96,7 @@ TearDrop::Command::run_blast - Run automatic BLAST for transcripts/genes
 
 =head1 METHODS
 
-L<TearDrop::Command::run_blast> inherits all methods from
-L<Mojolicious::Command> and implements the following new ones.
+Inherits all methods from L<Mojolicious::Command> and implements the following new ones.
 
 =head2 run
 
