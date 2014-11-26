@@ -16,7 +16,7 @@
 - select favorite assembly. maybe it's time to make users?
 - notifications about jobs don't work so well
 - XXX reciprocal best hit
-- XXX show error when de run result not imported
+- XXX show error on de page when de run result not yet imported
 - DONE search by transcript/gene fields in de result table
 - DONE unroll mappings to annotations, don't load them separately for each map
 - DONE set url path on de run selection
@@ -46,14 +46,13 @@
 
 ## job dispatcher
 
-- cannot start job with post_processing command (does not survive de/serialisation)??
+- DONE cannot start job with post_processing command - replace with method do_post_processing, have option to enable calling. less flexible, but so what.
 - "in memory" dispatcher for bulk jobs? submit to redis/db queue and have dedicated dispatcher?
 - DONE start only one work dispatcher, controlled with PID file
-  - XXX (re)start with web server, but not with script jobs, move to before hook again?
+  - DONE (re)start with web server, but not with script jobs, move to before hook again?
   - XXX stop with web server?
   - DONE respawn worker process on fail
 - DONE Redis Queue 
-  - XXX figure out Storable f*ckup in upstream module? replace with YAML?
 - DONE Database Queue
   - DONE via db table
   - DONE FIFO signalling on new jobs
@@ -82,7 +81,10 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## automated annotation workflow
 
-- XXX bulk blast out of order due to workqueue rebuild, and this is currently the only automated annotation :-(
+- bulk blast
+  - DONE get to work with new queue
+  - DONE configure annotate, evalue, max_target_seq, etc.
+  - reset tags (remove no/bad homologs with subsequent blast finds something)
 - transfer/sync annotations between transcripts and genes
 - use/transfer/compare with external annotations
   * bulk overlapping

@@ -40,7 +40,7 @@ sub do_post_processing {
   my $self = shift;
   my @genes = $self->has_gene_ids ? $self->all_gene_ids : ( $self->gene_id || $self->transcript_id );
   for my $g (@genes) {
-    my $sg = $self->app->schema($self->project)->resultset('Gene')->find($g->id);
+    my $sg = $self->app->schema($self->project)->resultset('Gene')->find($g);
     return if $sg->reviewed;
     for my $t ($sg->transcripts) {
       $t->auto_annotate;
@@ -103,9 +103,7 @@ sub run {
   }
   unless ($kept) {
     $self->app->log->debug('no transcripts to blast, finished');
-    if ($self->has_post_processing) {
-      $self->post_processing->($self);
-    }
+    $self->do_post_processing if $self->post_processing;
     return;
   }
 

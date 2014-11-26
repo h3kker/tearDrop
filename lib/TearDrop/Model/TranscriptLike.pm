@@ -49,10 +49,12 @@ sub update_tags {
 
 sub set_tag {
   my ($self, $tag) = @_;
-  for my $o ($self->tags) {
-    return if ($o->tag eq $tag->{tag});
-  }
-  $self->add_to_tags($self->result_source->schema->resultset('Tag')->find_or_create($tag));
+  $self->result_source->schema->txn_do(sub {
+    for my $o ($self->tags) {
+      return if ($o->tag eq $tag->{tag});
+    }
+    $self->add_to_tags($self->result_source->schema->resultset('Tag')->find_or_create($tag));
+  });
 }
 
 sub gene_model_annotations {
