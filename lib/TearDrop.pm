@@ -47,7 +47,7 @@ sub startup {
   $self->attr(worker => sub {
     load $self->config->{working_class};
     my $worker = $self->config->{working_class}->new(app => $self);
-    $worker->restart_working;
+    $worker->start_working;
     $worker;
   });
 

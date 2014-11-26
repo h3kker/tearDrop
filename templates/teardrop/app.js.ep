@@ -162,11 +162,11 @@ tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
           angular.forEach(jobMessages, function(st, status) {
             if (nj.status==status && (!oldJobs[nj.id] || oldJobs[nj.id].status != status)) {
               delete oldJobs[nj.id];
-              growl[st.category](st.msg(nj));
+              //growl[st.category](st.msg(nj));
             }
           });
           angular.forEach(oldJobs, function(oj) {
-            growl[jobMessages.done.category](jobMessages.done.msg(oj));
+            //growl[jobMessages.done.category](jobMessages.done.msg(oj));
           });
         });
       }
