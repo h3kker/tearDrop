@@ -92,7 +92,7 @@ sub status {
   for my $id ($self->jq->get_job_ids(status => [ STATUS_CREATED, STATUS_WORKING, STATUS_FAILED ])) {
     my $j = $self->serialize_job($self->jq->load_job($id));
     # status might have changed between get_job_ids and load_job!
-    if ($j->{status} eq 'done')) { $ret->{done}++ }
+    if ($j->{status} eq 'done') { $ret->{done}++ }
     else { push @{$ret->{$j->{status}}}, $j }
   }
   $ret;
