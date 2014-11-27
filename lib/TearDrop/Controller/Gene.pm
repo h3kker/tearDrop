@@ -78,7 +78,7 @@ sub read {
     $tser->{mappings} = [ $_->filtered_mappings ];
     $tser;
   } $rs->transcripts ];
-  $ser->{annotations} = $rs->gene_model_annotations;
+  $ser->{annotations} = $rs->gene_model_annotations($self->app->config->{alignments}{default_context});
   $ser->{tags} = [ $rs->tags ];
 
   $ser->{deresults} = [];
@@ -120,7 +120,7 @@ sub mappings {
 
   my @ret = map {
     my $m_ser = $_->TO_JSON;
-    $m_ser->{annotations} = [ $_->annotations ];
+    $m_ser->{annotations} = [ $_->annotations($self->app->config->{alignments}{default_context}) ];
     $m_ser;
   } @{$rs->filtered_mappings};
   $self->render(json => \@ret); 
@@ -149,7 +149,7 @@ sub run_blast {
     name => $self->param('database') || 'refseq_plant',
   })->first || croak 'db not found';
 
-  my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name);
+  my $task = new TearDrop::Task::BLAST(gene_id => $rs->id, database => $db->name, project => $self->stash('project')->name );
   my $item = $self->app->worker->enqueue($task);
   $self->render(json => { id => $item->id, status => $item->status });
 }

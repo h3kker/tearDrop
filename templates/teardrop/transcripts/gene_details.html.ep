@@ -74,7 +74,7 @@
 <div class="row">
  <div class="col-md-12">
   <p>
-  <span ng-if="transcript.tags.length==0" class="label label-default">No tags...</span>
+  <span ng-if="gene.tags.length==0" class="label label-default">No tags...</span>
   <span ng-repeat="tag in gene.tags | orderBy:'tag'" class="label" ng-class="'label-'+tag.level">{{tag.tag}} <i class="fa fa-remove" ng-click="gene.removeTag(tag)"></i></span>
   </p>
  </div>
@@ -165,17 +165,6 @@
          </div>
          <div class="row">
           <div class="col-md-12">
-           <h4>Genome Mappings</h4>
-           <p>{{transcript.transcript_mapping_count}} total mappings, {{transcript.mappings.length}} accepted</p>
-           <ol>
-            <li ng-repeat="map in transcript.mappings | orderBy:'match_ratio'">
-             {{map.tid}} {{map.tstart | number}}-{{map.tend | number}} ({{map.match_ratio*100}}%)
-            </li>
-           </ol>
-          </div>
-         </div>
-         <div class="row">
-          <div class="col-md-12">
            <accordion close-others="0">
             <accordion-group>
              <accordion-heading>Sequence</accordion-heading>
@@ -185,10 +174,21 @@
              </pre>
             </accordion-group>
             <accordion-group open="transcript.loadAlignment(alignData)">
-             <accordion-heading>View Alignment</accordion-heading>
+             <accordion-heading>View Alignments to Transcript</accordion-heading>
              <transcript-alignment align-data="alignData" transcript="transcript"></transcript-alignment>
             </accordion-group>
            </accordion>
+          </div>
+         </div>
+         <div class="row">
+          <div class="col-md-12">
+           <h4>Genome Mappings</h4>
+           <p>{{transcript.transcript_mapping_count}} total mappings, {{transcript.mappings.length}} accepted</p>
+           <ol>
+            <li ng-repeat="map in transcript.mappings | orderBy:'match_ratio'">
+             {{map.tid}} {{map.tstart | number}}-{{map.tend | number}} ({{map.match_ratio*100}}%)
+            </li>
+           </ol>
           </div>
          </div>
         </div>

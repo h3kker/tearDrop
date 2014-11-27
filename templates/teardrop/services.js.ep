@@ -253,6 +253,7 @@ tearDropServices.factory('Assembly', ['$resource', '$rootScope', '$cacheFactory'
         }).error($rootScope.errHandler);
       },
       loadAlignment: function(alignData, reload) {
+        alignData.region={cstart:0, cend: this.nsequence.length};
         if (reload || alignData.alignment==null) {
           alignData.alignment={loading: true, data: {}};
           var that=this;
