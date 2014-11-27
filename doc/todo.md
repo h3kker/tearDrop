@@ -15,6 +15,7 @@
 - deal with multiple alignments => selection, define "favorite"
 - select favorite assembly. maybe it's time to make users?
 - notifications about jobs don't work so well
+- XXX genome alignment zoom
 - XXX reciprocal best hit
 - XXX show error on de page when de run result not yet imported
 - DONE search by transcript/gene fields in de result table
@@ -84,7 +85,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - bulk blast
   - DONE get to work with new queue
   - DONE configure annotate, evalue, max_target_seq, etc.
-  - reset tags (remove no/bad homologs with subsequent blast finds something)
+  - DONE reset tags (remove no/bad homologs with subsequent blast finds something)
 - transfer/sync annotations between transcripts and genes
 - use/transfer/compare with external annotations
   * bulk overlapping
@@ -132,6 +133,9 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 ## Differential Expression
 
 - overview over de runs, parameters, contrasts
+- filtering based on raw/normalized counts
+  - (at least one, all) (sample count, mean count for cond) > threshold
+  
 
 ## data import
 
@@ -142,9 +146,12 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - create/import stats for 
   - DONE alignments (tophat, star, bowtie)
   - count tables
+    interesting: raw counts, fpkm/tpm, normalized counts, per sample
+    needed for filtering, put into db after all? 
   - samples (raw files)
   - genome mappings
 - use Text::CSV or similar for table import
+- YAML/JSON import for tables (also export?) 
 
 ## nice to have
 
