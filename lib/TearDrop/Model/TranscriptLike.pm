@@ -92,7 +92,7 @@ sub set_tag {
 
 sub gene_model_annotations {
   my ($self, $context, $param) = @_;
-  $context = 200 unless defined $context;
+  $context //= 0;
   my $annotations=[];
   for my $loc (@{$self->filtered_mappings($param)}) { 
     for my $gm ($loc->genome_mapping->organism_name->gene_models) {

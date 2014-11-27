@@ -229,7 +229,7 @@ sub is_good {
 
 sub annotations {
   my ($self, $context) = @_;
-  $context||=100;
+  $context//=0;
 
   my @ret;
   push @ret, @{$self->genome_mapping->as_tree({ contig => $self->tid, 

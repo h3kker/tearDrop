@@ -65,7 +65,7 @@ sub read {
   $tser->{organism} = $rs->organism;
   $tser->{tags} = [ $rs->tags ];
   $tser->{transcript_mapping_count} = $rs->transcript_mappings->count;
-  $tser->{annotations} = $rs->gene_model_annotations;
+  $tser->{annotations} = $rs->gene_model_annotations($self->app->config->{alignments}{default_context});
   $tser->{de_results} = [];
   for my $der ($self->stash('project_schema')->resultset('DeResult')->search({ transcript_id => $rs->id },
     { prefetch => ['de_run', { 'contrast' => [ 'base_condition', 'contrast_condition' ] }]})) {
@@ -156,7 +156,6 @@ sub pileup {
     reference_path => $assembly->path,
     region => $alns[0]->use_original_id ? $rs->original_id : $rs->id,
     effective_length => length($rs->nsequence),
-    context => 0,
     type => 'transcript',
     alignments => [ map { $_->alignment } @alns ],
   )->run;

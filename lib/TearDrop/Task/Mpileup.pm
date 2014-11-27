@@ -9,20 +9,20 @@ extends 'TearDrop::Task';
 
 use Carp;
 use IPC::Run 'harness';
-use POSIX 'ceil';
+use POSIX qw/ceil floor/;
+use List::Util qw/sum max/;
 
 has 'reference_path' => ( is => 'rw', isa => 'Str' );
 has 'region' => ( is => 'rw', isa => 'Str' );
 has 'start' => ( is => 'rw', isa => 'Int | Undef' );
 sub effective_start {
-  $_[0]->start ? $_[0]->start - $_[0]->context : 0;
+  $_[0]->start ? $_[0]->start : 0;
 }
 has 'end' => ( is => 'rw', isa => 'Int | Undef' );
 sub effective_end {
-  $_[0]->end ? $_[0]->end + $_[0]->context : $_[0]->effective_length;
+  $_[0]->end ? $_[0]->end : $_[0]->effective_length;
 }
-has 'context' => ( is => 'rw', isa => 'Int', default => 0 );
-has 'aggregate_to' => ( is => 'rw', isa => 'Int', default => 750 );
+has 'aggregate_to' => ( is => 'rw', isa => 'Int', default => 1500 );
 has 'effective_length' => ( is => 'rw', isa => 'Int | Undef' );
 
 sub region_spec {
@@ -138,12 +138,13 @@ sub run {
   }
   $cache{$aln_key}=$cache;
 
+
   my $aggregate_factor = ceil($self->effective_length/$self->aggregate_to);
   my @a;
   for my $aln (@{$self->alignments}) {
     my $r = { name => $aln->sample->name, bins => {} };
     for my $p (@{$cache->{$aln->bam_path}}) {
-      my $bin = int($p->{pos}/$aggregate_factor);
+      my $bin = floor(($p->{pos}-$self->effective_start)/$aggregate_factor);
       $r->{bins}{$bin}||=[];
       push @{$r->{bins}{$bin}}, $p;
     }
@@ -151,9 +152,11 @@ sub run {
   }
   my %ret = (binwidth => $aggregate_factor, offset => $self->effective_start, length => $self->effective_length, mismatch => [], coverage_plus => [], coverage_minus => []);
   for my $r (sort { $a->{name} cmp $b->{name} } @a) {
+    my $coords = { name => $r->{name}, data => [] };
     my $mismatch = { name => $r->{name}, data => [] };
     my $coverage_plus = { name => $r->{name}, data => [] };
     my $coverage_minus = { name => $r->{name}, data => [] };
+    push @{$ret{coords}}, $coords;
     push @{$ret{mismatch}}, $mismatch;
     push @{$ret{coverage_plus}}, $coverage_plus;
     push @{$ret{coverage_minus}}, $coverage_minus;
@@ -169,6 +172,7 @@ sub run {
         $max_mismatch=$b->{mismatch} if $b->{mismatch}>$max_mismatch;
         $max_mismatch_rate=$b->{mismatch_rate} if $b->{mismatch}>$max_mismatch_rate;
       }
+      push @{$coords->{data}}, $pos;
       push @{$coverage_plus->{data}}, $sum_plus/scalar @$bins;
       push @{$coverage_minus->{data}}, $sum_minus/scalar @$bins;
       push @{$mismatch->{data}}, $max_mismatch;
