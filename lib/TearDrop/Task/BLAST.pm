@@ -8,6 +8,7 @@ use Mouse;
 extends 'TearDrop::Task';
 
 use Carp;
+use Try::Tiny;
 use IPC::Run 'harness';
 use File::Temp ();
 
@@ -109,40 +110,26 @@ sub run {
 
   $self->app->log->debug('running BLAST on '.$kept.' transcripts.');
 
-  my $out;
-  my $err;
-  my $blast = harness \@cmd, \undef, \$out, \$err;
-  $blast->run or confess "unable to run blast command: $err $?";
-  if ($err) {
-    confess $err;
-  }
-  for my $l (split "\n", $out) {
-    my @f = split "\t", $l;
-    $self->app->schema($self->project)->resultset('BlastResult')->update_or_create({
-      transcript_id => $f[0],
-      db_source_id => $db_source->id,
-      source_sequence_id => $f[1],
-      bitscore => $f[2],
-      qlen => $f[3],
-      length => $f[4],
-      nident => $f[5],
-      pident => $f[6],
-      ppos => $f[7],
-      evalue => $f[8],
-      slen => $f[9],
-      qseq => $f[10],
-      sseq => $f[11],
-      qstart => $f[12],
-      qend => $f[13],
-      sstart => $f[14],
-      send => $f[15],
-      stitle => $f[16]
-    });
-  }
-  for my $r (@blast_runs) {
-    $r->finished(1);
-    $r->update;
-  }
+  try {
+    my $out;
+    my $err;
+    my $blast = harness \@cmd, \undef, \$out, \$err;
+    $blast->run or confess "unable to run blast command: $err $?";
+    if ($err) {
+      confess $err;
+    }
+    for my $l (split "\n", $out) {
+      $db_source->add_result($l);
+    }
+    for my $r (@blast_runs) {
+      $r->finished(1);
+      $r->update;
+    }
+  } catch {
+    for my $r (@blast_runs) {
+      $r->delete unless $r->finished;
+    }
+  };
   $self->do_post_processing if ($self->post_processing);
 }
 

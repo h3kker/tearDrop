@@ -44,7 +44,7 @@ __PACKAGE__->table("transcripts");
   data_type: 'text'
   is_nullable: 0
 
-=head2 assembly_id
+=head2 transcript_assembly_id
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -100,7 +100,7 @@ __PACKAGE__->add_columns(
   { data_type => "text", is_nullable => 0 },
   "original_id",
   { data_type => "text", is_nullable => 1 },
-  "assembly_id",
+  "transcript_assembly_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "gene_id",
   { data_type => "text", is_foreign_key => 1, is_nullable => 1 },
@@ -145,7 +145,7 @@ Related object: L<TearDrop::Model::Result::TranscriptAssembly>
 __PACKAGE__->belongs_to(
   "assembly",
   "TearDrop::Model::Result::TranscriptAssembly",
-  { id => "assembly_id" },
+  { id => "transcript_assembly_id" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
@@ -160,6 +160,21 @@ Related object: L<TearDrop::Model::Result::BlastResult>
 __PACKAGE__->has_many(
   "blast_results",
   "TearDrop::Model::Result::BlastResult",
+  { "foreign.transcript_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 reverse_blast_results
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::ReverseBlastResult>
+
+=cut
+
+__PACKAGE__->has_many(
+  "reverse_blast_results",
+  "TearDrop::Model::Result::ReverseBlastResult",
   { "foreign.transcript_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -318,7 +333,7 @@ sub comparisons {
   {
     rating => { cmp => '>', column => 'me.rating' }, 
     assembly => { cmp => '=', column => 'transcript_assemblies.name' },
-    assembly_id => { cmp => '=', column => 'me.assembly_id' },
+    transcript_assembly_id => { cmp => '=', column => 'me.transcript_assembly_id' },
     id => { cmp => 'like', column => 'me.id' },
     'gene.id' => { cmp => 'like', column => 'gene.id' },
     name => { cmp => 'like', column => 'me.name' }, 

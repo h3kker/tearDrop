@@ -564,6 +564,10 @@ angular.module('tearDropDirectives', []).
             $scope.$watch('alignmentData.alignment.loading', function(newVal) {
               $scope.coverageChartConfig.loading=newVal;
             });
+            $scope.$watchCollection('alignmentData.annotations', function(newVal, oldVal) {
+              if (newVal==null) return;
+              $scope.drawAnnotations();
+            });
             $scope.$watch('alignmentData.alignment.data', function(newVal, oldVal) {
               if (angular.equals(newVal, oldVal)) return;
               $scope.coverageChartConfig.series=[];
@@ -665,6 +669,7 @@ angular.module('tearDropDirectives', []).
             $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genomemappings/'+map.genome_mapping_id+'/pileup', {params: {tid: map.tid, tstart: start, tend: end}}).success(function(data) {
               map.alignment.data=data;
               map.alignment.loading=false;
+              $scope.loadAnnotations(map, true);
             }).error($rootScope.errHandler);
           }
         }

@@ -2,22 +2,24 @@
 
 ## Mojolicious migration
 
-- set access control cookie!
+- set access control/no-cache cookie!
 - command line tools
   - DONE run_blast
   - import_metadata
-  - deploy_project
+  - deploy_project (---> use dbix migration??)
   - import_transcript_meta.pl??
   - transfer_annotations??
 
 ## bugs/urgent
 
+- XXX reciprocal best hit
+- notifications about jobs don't work so well
+- import aligner/parameters from bam header
+- tag admin (merge, change, ...)
+- XXX show error on de page when de run result not yet imported
 - deal with multiple alignments => selection, define "favorite"
 - select favorite assembly. maybe it's time to make users?
-- notifications about jobs don't work so well
-- XXX genome alignment zoom
-- XXX reciprocal best hit
-- XXX show error on de page when de run result not yet imported
+- DONE genome alignment zoom
 - DONE search by transcript/gene fields in de result table
 - DONE unroll mappings to annotations, don't load them separately for each map
 - DONE set url path on de run selection
@@ -35,7 +37,7 @@
   - blastx/tblastx/blastn etc
 - sample can belong to many conditions
 - relationships between transcripts and annotations (graph structure)
-  - edge evidence types: sequence clustering/alignment; genome mapping; 
+  - edge evidence types: sequence clustering/alignment; genome mapping; homology(blast)
   - edge categories: match (redundant_to), partial overlap (prefix, postfix, infix_longer, infix_shorter), qualitative (intron, cds, splice_variant, split, same_gene)
   - transcript-transcript relationships for assembly comparisons
   - transcript-annotation relationships (enough to do it via genome mappings?)
@@ -54,6 +56,7 @@
   - XXX stop with web server?
   - DONE respawn worker process on fail
 - DONE Redis Queue 
+  - XXX job status updates do not always work?!
 - DONE Database Queue
   - DONE via db table
   - DONE FIFO signalling on new jobs
@@ -83,6 +86,8 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 ## automated annotation workflow
 
 - bulk blast
+  * DONE annotate genes and transcripts with best hits
+  * DONE set no/good/bad homology tags
   - DONE get to work with new queue
   - DONE configure annotate, evalue, max_target_seq, etc.
   - DONE reset tags (remove no/bad homologs with subsequent blast finds something)
@@ -92,18 +97,21 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   * make table with relationship between genes/transcripts and genes/mRNA from ann
   * transfer annotations
 - analyze genome mapping
+  * DONE set no/good/many mapping tags
   * intron sizes
   * coverage
   * identity
+  * create fields for various metrics with overloaded accessors!
+  * filtering in database (faster!)
+  * fix mess with mappings: set default to "only useful", find good space (pbly
+    $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx
+    accessor); can we overload accessor and reverse behavior?
 - create features for transcripts (UTR, reading frames, CDS, ...)
 - analyze coverage
   * categorize high/low
   * look for dips
   * possible introns (via genomic coverage, use annotation where available)
 - generate rating from tags
-- DONE run blast in background
-  * DONE annotate genes and transcripts with best hits
-  * DONE set no/good/bad homology tags
 
 ## manual curation
 
@@ -115,7 +123,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
     - DONE display only useful genome mappings 
     - userdefined criteria!
     - DONE show something when there''s no valid mapping
-    - show bad mappings
+    - show bad mappings on demand
     - point out weird things like transcripts mapped over several 100 kb
 - transfer annotations from transcript to gene and back
 - DONE split tags into categories, 
@@ -125,7 +133,6 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - show current tag counts in overview page
 - DONE refactor 1000 tag forms to tag edit directive
 - refactor 1000 tag lists to tag display directive
-- tag admin (merge, change, ...)
 - DONE liftover annotations from transcripts, between projects
 - DONE transcript view: integrate into gene view, move transcript alignment view there
 - DONE external annotations (GFF)
@@ -169,7 +176,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - use bioperl to run/parse blast?
 - faster alignment parsing: replace samtools with bioperl samtools? (-> slower, but maybe some trickery with mmap()ing, might use too much RAM); or merge sam alignments and use read groups to keep track of original file.
 - schema versioning, automated migration to new schema
-- fix mess with mappings: set default to "only useful", find good space (pbly $obj->mappings); all mappings only on demand ($obj->transcript_mappings DBIx accessor); can we overload accessor and reverse behavior?
+  dbix::class::migration or DBIx::Class::DeploymentHandler, figure it out
 - integrate genome mappings and external annotations, they have many things in common
 - users (+external auth)
 - history logging
@@ -177,3 +184,4 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - central error handling for API calls
 - look at bioperl interfaces to go annotations and online databases
 - minion backend + worker?
+  stick to mine for now, minion cannot do Task classes?? also needs Mojolicious::Plugin::Pg

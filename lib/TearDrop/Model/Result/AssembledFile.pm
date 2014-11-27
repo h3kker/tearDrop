@@ -37,7 +37,7 @@ __PACKAGE__->table("assembled_files");
 
 =head1 ACCESSORS
 
-=head2 assembly_id
+=head2 transcript_assembly_id
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -52,7 +52,7 @@ __PACKAGE__->table("assembled_files");
 =cut
 
 __PACKAGE__->add_columns(
-  "assembly_id",
+  "transcript_assembly_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "raw_file_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
@@ -71,7 +71,7 @@ Related object: L<TearDrop::Model::Result::TranscriptAssembly>
 __PACKAGE__->belongs_to(
   "assembly",
   "TearDrop::Model::Result::TranscriptAssembly",
-  { id => "assembly_id" },
+  { id => "transcript_assembly_id" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 

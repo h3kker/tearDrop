@@ -243,7 +243,21 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07042 @ 2014-11-07 18:01:02
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QQQGIf7OCeb2IHfJx9/LDw
 
+use Moo;
+
+with 'TearDrop::Model::BlastResultParser';
+
 sub _is_column_serializable { 1 };
+
+sub set_query_sequence_id {
+  my $self = shift;
+  $self->transcript_id(@_);
+}
+
+sub set_source_sequence_id {
+  my $self = shift;
+  $self->source_sequence_id(@_);
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

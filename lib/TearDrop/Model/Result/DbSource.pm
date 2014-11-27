@@ -181,5 +181,15 @@ __PACKAGE__->has_many(
 
 sub _is_column_serializable { 1 };
 
+sub add_result {
+  my ($self, $line) = @_;
+
+  my $result = $self->result_source->schema->result_set('BlastResult')->new_result({});
+  $result->parse_line($line);
+  $result->db_source_id($self->id);
+  $result->in_storage(1) if($result->get_from_storage);
+  $result->update_or_insert;
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

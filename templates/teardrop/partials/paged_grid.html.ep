@@ -8,7 +8,7 @@
     <button class="btn btn-sm" ng-disabled="!selectedTag" ng-click="param.addTag(selectedTag)">Add</button>
    </span>
    <span ng-if="showAssemblySelector"> 
-    Assembly: <select class="form-control input-sm" name="assembly" ng-model="param.filters.assembly_id" ng-change="setAssembly()" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'">
+    Assembly: <select class="form-control input-sm" name="assembly" ng-model="param.filters.transcript_assembly_id" ng-change="setAssembly()" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'">
      <option value="">ALL</option>
     </select>
    </span>

@@ -17,7 +17,7 @@ sub run {
 
   my %opt = (db_source => [ qw/refseq_plant ncbi_cdd/ ], evalue_cutoff => .01, max_target_seqs => 20, batch_size => 50);
   GetOptionsFromArray(\@args, \%opt, 'project|p=s', 'db_source|db=s@', 'assembly|a=s',
-      'id|i=s', 'no-annotate', 'evalue_cutoff=f', 'max_target_seqs=i', 'batch_size=i') 
+      'id|i=s', 'no-annotate', 'evalue_cutoff=f', 'max_target_seqs=i', 'batch_size=i', 'limit=i') 
     or croak $self->help;
 
   croak "Please provide project context!\n\n".$self->help unless $opt{project};
@@ -57,6 +57,7 @@ sub run {
       $self->app->worker->enqueue($task);
     }
     $batch_no++;
+    last if $batch_no>$opt{limit};
   }
 }
 
@@ -64,7 +65,7 @@ sub run {
 
 =head1 NAME
 
-TearDrop::Command::run_blast - Run automatic BLAST for transcripts/genes
+TearDrop::Command::run_blast - Run automatic BLAST for transcripts/genes. 
 
 =head1 SYNOPSIS
 
@@ -80,17 +81,23 @@ TearDrop::Command::run_blast - Run automatic BLAST for transcripts/genes
     -a, --assembly    
         Name of the assembly (XXX test me)
     -i, --id        
-        Pattern for id (XXX test me)
+        Pattern for id
 
   Processing:
     --no-annotate     
         Do not run automatic annotation postprocessing
     --batch_size
         Start individual BLAST jobs every n genes. Defaults to 50
+    --limit
+        Run n batches, then exit. Useful for testing and not overloading the job queue.
     --evalue_cutoff
         Defaults to .01
     --max_target_seqs
         Defaults to 20
+
+
+B<Note> that this does not actually run the jobs. It submits them to the
+configured workqueue from where the blast batches are then dispatched.
 
 =head1 DESCRIPTION
 

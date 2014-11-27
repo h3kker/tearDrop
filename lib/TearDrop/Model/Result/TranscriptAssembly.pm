@@ -163,7 +163,23 @@ Related object: L<TearDrop::Model::Result::AssembledFile>
 __PACKAGE__->has_many(
   "assembled_files",
   "TearDrop::Model::Result::AssembledFile",
-  { "foreign.assembly_id" => "self.id" },
+  { "foreign.transcript_assembly_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+=head2 reverse_blast_results
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::ReverseBlastResult>
+
+=cut
+
+__PACKAGE__->has_many(
+  "reverse_blast_results",
+  "TearDrop::Model::Result::ReverseBlastResult",
+  { "foreign.transcript_assembly_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -208,7 +224,7 @@ Related object: L<TearDrop::Model::Result::Transcript>
 __PACKAGE__->has_many(
   "transcripts",
   "TearDrop::Model::Result::Transcript",
-  { "foreign.assembly_id" => "self.id" },
+  { "foreign.transcript_assembly_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
