@@ -644,12 +644,13 @@ angular.module('tearDropDirectives', []).
         mappings: '=',
       },
       link: function($scope, element, attr) {
-        $scope.loadAnnotations = function(map, reload) {
+        $scope.loadAnnotations = function(map, reload, callback) {
           if (map.region==null) map.region={cstart: map.tstart, cend: map.tend}; 
           if (reload || map.annotations==null) {
             map.annotations=[];
             $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genomemappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.region.cstart, tend: map.region.cend}}).success(function(data) {
                 map.annotations=data;
+                if (callback!=null) callback(data);
             }).error($rootScope.errHandler);
           }
         }
