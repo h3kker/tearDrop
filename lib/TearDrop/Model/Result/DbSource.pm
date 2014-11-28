@@ -160,6 +160,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 reverse_blast_results
+
+Type: has_many
+
+Related object: L<TearDrop::Model::Result::ReverseBlastResult>
+
+=cut
+
+__PACKAGE__->has_many(
+  "reverse_blast_results",
+  "TearDrop::Model::Result::ReverseBlastResult",
+  { "foreign.db_source_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 blast_runs
 
 Type: has_many
@@ -189,6 +204,7 @@ sub add_result {
   $result->db_source_id($self->id);
   $result->in_storage(1) if($result->get_from_storage);
   $result->update_or_insert;
+  $result;
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

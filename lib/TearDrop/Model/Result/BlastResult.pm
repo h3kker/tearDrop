@@ -259,5 +259,15 @@ sub set_source_sequence_id {
   $self->source_sequence_id(@_);
 }
 
+sub pslen {
+  my $self = shift;
+  $self->length/$self->slen;
+}
+
+sub qplen {
+  my $self = shift;
+  $self->length/$self->qlen;
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

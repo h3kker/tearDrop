@@ -15,6 +15,7 @@ shift
 
 if [ -z "$db_path" -o -z "$query" ]; then
   echo "Usage $0 [db_path] [query]"
+  exit 1
 fi
 if [ -z "$evalue" ]; then
   evalue=.01

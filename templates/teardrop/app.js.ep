@@ -30,7 +30,7 @@ var tearDrop = angular.module('TearDrop', [
     return $rootScope.currentProject != null && proj.name==$rootScope.currentProject.name;
   }
 }])
-.controller('ProjectCtrl', ['$rootScope', '$scope', 'Assembly', 'Sample', 'Organism', 'Condition', 'GeneModel', 'Alignment', 'uiGridConstants', function($rootScope, $scope, Assembly, Sample, Organism, Condition, GeneModel, Alignment, uiGridConstants) {
+.controller('ProjectCtrl', ['$rootScope', '$scope', 'Assembly', 'Sample', 'Organism', 'Condition', 'GeneModel', 'Alignment', 'DbSource', 'uiGridConstants', function($rootScope, $scope, Assembly, Sample, Organism, Condition, GeneModel, Alignment, DbSource, uiGridConstants) {
   $scope.conditions=Condition.prototype.getAll();
   $scope.loadAssemblies=function() {
     $scope.assemblies=Assembly.prototype.getAll();
@@ -60,6 +60,12 @@ var tearDrop = angular.module('TearDrop', [
     $scope.annotations=GeneModel.prototype.getAll();
     $scope.$on('reload'+GeneModel.prototype.cacheName, function() {
       $scope.loadAnnotations();
+    });
+  }
+  $scope.loadDbSources=function() {
+    $scope.dbsources=DbSource.prototype.getAll();
+    $scope.$on('reload'+DbSource.prototype.cacheName, function() {
+      $scope.loadDbSources();
     });
   }
 

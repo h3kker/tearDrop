@@ -308,7 +308,19 @@ sub import_file {
   #debug '  done';
 }
 
-
+sub add_blast_result {
+  my ($self, $line, $db) = @_;
+  my $result = $self->result_source->schema->resultset('ReverseBlastResult')->new_result({});
+  $result->parse_line($line);
+  $result->transcript_id($self->prefix.".".$result->transcript_id) if ($self->add_prefix);
+  $result->transcript_assembly_id($self->id);
+  if ($db) {
+    $result->db_source_id($db->id);
+    $result->in_storage(1) if ($result->get_from_storage);
+    $result->update_or_insert;
+  }
+  $result;
+}
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -5,7 +5,7 @@ use strict;
 
 use Mouse;
 
-extends 'TearDrop::Task';
+extends 'TearDrop::Task::BlastBase';
 
 use Carp;
 use Try::Tiny;
@@ -20,12 +20,6 @@ has 'gene_ids' => ( is => 'rw', isa => 'ArrayRef[Str]', traits => ['Array'], han
   },
   default => sub { [] },
 );
-has 'sequences' => ( is => 'rw', isa => 'HashRef[Str]' );
-
-has 'evalue_cutoff' => ( is => 'rw', isa => 'Num', default => .01 );
-has 'max_target_seqs' => ( is => 'rw', isa => 'Int', default => 20 );
-
-has 'database' => ( is => 'rw', isa => 'Str' );
 
 has 'replace' => ( is => 'rw', isa => 'Bool', default => 0 );
 
@@ -80,6 +74,9 @@ sub run {
     confess 'Unknown transcript '.$self->transcript_id unless defined $trans;
     push @transcripts, $trans;
   }
+  elsif ($self->has_sequences) {
+    confess 'Not supported yet';
+  }
   else {
     confess 'Need gene_id(s) or transcript_id';
   }
@@ -110,6 +107,7 @@ sub run {
 
   $self->app->log->debug('running BLAST on '.$kept.' transcripts.');
 
+  my @ret;
   try {
     my $out;
     my $err;
@@ -119,7 +117,7 @@ sub run {
       confess $err;
     }
     for my $l (split "\n", $out) {
-      $db_source->add_result($l);
+      push @ret, $db_source->add_result($l);
     }
     for my $r (@blast_runs) {
       $r->finished(1);
@@ -131,6 +129,7 @@ sub run {
     }
   };
   $self->do_post_processing if ($self->post_processing);
+  \@ret;
 }
 
 1;

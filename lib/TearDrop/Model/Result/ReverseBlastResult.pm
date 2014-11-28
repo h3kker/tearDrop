@@ -43,7 +43,7 @@ __PACKAGE__->table("reverse_blast_results");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 db_source_id
+=head2 transcript_assembly_id
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -52,6 +52,12 @@ __PACKAGE__->table("reverse_blast_results");
 =head2 source_sequence_id
 
   data_type: 'text'
+  is_nullable: 0
+
+=head2 db_source_id
+
+  data_type: 'integer'
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 bitscore
@@ -149,6 +155,8 @@ __PACKAGE__->table("reverse_blast_results");
 __PACKAGE__->add_columns(
   "source_sequence_id",
   { data_type => "text", is_foreign_key => 0, is_nullable => 0 },
+  "db_source_id",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "transcript_assembly_id",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "transcript_id",
@@ -213,12 +221,27 @@ __PACKAGE__->set_primary_key("transcript_id", "transcript_assembly_id", "source_
 
 Type: belongs_to
 
-Related object: L<TearDrop::Model::Result::TranscriptAssembly>
+Related object: L<TearDrop::Model::Result::DbSource>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "db_source",
+  "TearDrop::Model::Result::DbSource",
+  { id => "db_source_id" },
+  { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
+
+=head2 transcript_assembly
+
+Type: belongs_to
+
+Related object: L<TearDrop::Model::Result::TranscriptAssembly>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "assembly",
   "TearDrop::Model::Result::TranscriptAssembly",
   { id => "transcript_assembly_id" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
@@ -251,6 +274,8 @@ sub _is_column_serializable { 1 };
 
 sub set_query_sequence_id {
   my $self = shift;
+#XXX this is prepended to tair10_prot entries?
+  $_[0]=~s/^lcl\|//;
   $self->source_sequence_id(@_);
 }
 

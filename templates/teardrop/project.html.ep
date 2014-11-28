@@ -111,10 +111,31 @@
   </tab-heading>
   XXX Fill me
  </tab>
- <tab>
+ <tab select="loadDbSources()">
   <tab-heading>
    Meta Stuff
   </tab-heading>
-  XXX Fill me with Blast DBs, Organisms etc.
+  <div class="panel panel-primary">
+   <div class="panel-heading">
+    Configured BLAST Databases
+   </div>
+   <div class="panel-body">
+    <ul>
+     <li ng-repeat="db in dbsources">
+      <h4>{{db.name}} - {{db.description}}</h4>
+      <dl>
+       <dt>Type</dt>
+         <dd>{{db.dbtype}}</dd>
+       <dt>Path</dt>
+         <dd>{{db.path}}</dd>
+       <dt>Version</dt>
+         <dd>{{db.version}}</dd>
+       <dt>Source</dt>
+         <dd><a href="{{db.url}}">{{db.url}}</a> (downloaded at {{db.downloaded}})</dd>
+
+     </li>
+    </ul>
+   </div>
+  </div>
  </tab>
 </tabset>

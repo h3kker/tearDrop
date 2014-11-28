@@ -31,10 +31,13 @@
 
 ## big stuff
 
-- blast search in transcript assemblies (see also reciprocal best hit)
+- XXX blast search in transcript assemblies (see also reciprocal best hit)
   - pick ref seq from installed blast db 
   - input text field for any fasta
-  - blastx/tblastx/blastn etc
+  - (blastx)/tblastn/blastn etc
+  - where to display/interface?
+  - currently two tables?
+  - promote blast runs table (include parameters etc), also track reverse blast runs
 - sample can belong to many conditions
 - relationships between transcripts and annotations (graph structure)
   - edge evidence types: sequence clustering/alignment; genome mapping; homology(blast)
@@ -159,6 +162,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - genome mappings
 - use Text::CSV or similar for table import
 - YAML/JSON import for tables (also export?) 
+- blast db location for transcript assembly/automatically create blast db
 
 ## nice to have
 

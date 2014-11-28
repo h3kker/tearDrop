@@ -19,16 +19,17 @@ angular.module('tearDropDirectives', []).
         angular.extend($scope.gridOptions, {
           showFooter: true,
           enableFiltering: true,
-          minRowsToShow: 50,
+          minRowsToShow: 30,
           multiSelect: false,
           columnDefs: [
             { name: 'Transcript', field: 'transcript_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS } },
             { name: 'DB', field: 'db_source', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }},
             { name: 'Hit', field: 'stitle', width: '40%', filter: { condition: uiGridConstants.filter.CONTAINS }},
-            { name: 'e-value', field: 'evalue', width: '10%', sort: { priority: 0, direction: uiGridConstants.ASC }, filter: { condition: uiGridConstants.filter.LESS_THAN } },
-            { name: 'Match Length', field: 'length', width: '10%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-            { name: 'positive %', field: 'ppos', width: '10%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-            { name: 'identical %', field: 'pident', width: '10%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+            { name: 'e-value', field: 'evalue', width: '8%', sort: { priority: 0, direction: uiGridConstants.ASC }, filter: { condition: uiGridConstants.filter.LESS_THAN } },
+            { name: 'Match Length', field: 'length', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{row.entity.length/row.entity.qlen*100 |number:1}}%)</div>' },
+            { name: 'Hit Length', field: 'slen', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+            { name: 'positive %', field: 'ppos', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
+            { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN } },
           ],
         });
         $scope.gridOptions.onRegisterApi = function(gridApi) {

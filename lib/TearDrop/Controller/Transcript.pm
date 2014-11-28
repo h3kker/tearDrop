@@ -81,7 +81,7 @@ sub read {
 sub update {
   my $self = shift;
 
-  my $rs = $self->stash('roject_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
+  my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my $upd = decode_json( $self->req->body );
   $rs->$_($upd->{$_}) for qw/name description best_homolog rating reviewed/;
   $rs->organism_name($upd->{organism}{name}) if $upd->{organism};

@@ -44,12 +44,14 @@ sub startup {
 
   #$self->helper(config => sub { state $config = $self->stash('config') });
 
-  $self->attr(worker => sub {
-    load $self->config->{working_class};
-    my $worker = $self->config->{working_class}->new(app => $self);
-    $worker->start_working;
-    $worker;
-  });
+  unless ($self->can('worker')) {
+    $self->attr(worker => sub {
+      load $self->config->{working_class};
+      my $worker = $self->config->{working_class}->new(app => $self);
+      $worker->start_working;
+      $worker;
+    });
+  }
 
   # XXX proper error handling!
   $self->hook('before_render' => sub {
