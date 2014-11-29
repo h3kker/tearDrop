@@ -75,7 +75,8 @@ sub read {
     my $tser = $_->TO_JSON;
     $tser->{tags} = [ $_->tags ];
     $tser->{transcript_mapping_count} = $_->transcript_mappings->count;
-    $tser->{mappings} = [ $_->filtered_mappings ];
+    $tser->{annotations} = $_->gene_model_annotations($self->app->config->{alignments}{default_context});
+    $tser->{mappings} = $_->filtered_mappings;
     $tser;
   } $rs->transcripts ];
   $ser->{annotations} = $rs->gene_model_annotations($self->app->config->{alignments}{default_context});
@@ -134,7 +135,7 @@ sub blast_results {
   for my $trans ($rs->transcripts) {
     push @ret, map {
       my $bl_ser = $_->TO_JSON;
-      $bl_ser->{db_source}=$_->db_source->description;
+      $bl_ser->{db_source}=$_->db_source->TO_JSON;
       $bl_ser;
     } $trans->search_related('blast_results', undef, { prefetch => 'db_source' });
   }

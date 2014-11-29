@@ -9,6 +9,8 @@ angular.module('tearDropDirectives', []).
         ngModel: '=',
       },
       link: function($scope, element, attr) {
+        $scope.mode='forward';
+        $scope.$scope=$scope;
         $scope.tags=$rootScope.tags;
         $scope.selectedDbs=[];
         $scope.dbSources=[];
@@ -16,29 +18,52 @@ angular.module('tearDropDirectives', []).
         $scope.$on('reload'+DbSource.prototype.cacheName, function() {
           $scope.dbSources=DbSource.prototype.getAll();
         });
+        var commonCols=[
+            { name: 'e-value', field: 'evalue', width: '8%', sort: { priority: 0, direction: uiGridConstants.ASC }, aggregationType: uiGridConstants.aggregationTypes.min, filter: { condition: uiGridConstants.filter.LESS_THAN } },
+            { name: 'Match Length', field: 'length', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{row.entity.length/row.entity.qlen*100 |number:1}}%)</div>' },
+            { name: 'Hit Length', field: 'slen', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
+            { name: 'positive %', field: 'ppos', aggregationType: uiGridConstants.aggregationTypes.max, width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
+            { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 2, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
+        ];
         angular.extend($scope.gridOptions, {
           showFooter: true,
           enableFiltering: true,
-          minRowsToShow: 30,
+          minRowsToShow: 20,
           multiSelect: false,
           columnDefs: [
-            { name: 'Transcript', field: 'transcript_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS } },
-            { name: 'DB', field: 'db_source', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }},
-            { name: 'Hit', field: 'stitle', width: '40%', filter: { condition: uiGridConstants.filter.CONTAINS }},
-            { name: 'e-value', field: 'evalue', width: '8%', sort: { priority: 0, direction: uiGridConstants.ASC }, filter: { condition: uiGridConstants.filter.LESS_THAN } },
-            { name: 'Match Length', field: 'length', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{row.entity.length/row.entity.qlen*100 |number:1}}%)</div>' },
-            { name: 'Hit Length', field: 'slen', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-            { name: 'positive %', field: 'ppos', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-            { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN } },
-          ],
+            { name: 'Transcript', field: 'transcript_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }, aggregationType: uiGridConstants.aggregationTypes.count,
+             cellTemplate: 
+              '<div class="ui-grid-cell-contents">'+
+               '<button class="btn btn-xs" ng-class="{ \'btn-success\': row.entity.is_best }" ng-click="getExternalScopes().setBestHit(row.entity)">'+
+               '<i class="fa" ng-class="{ \'fa-star\': row.entity.is_best, \'fa-star-o\': !row.entity.is_best }"></i>'+
+               '</button>'+
+              '{{COL_FIELD CUSTOM_FILTERS}}</div>' },
+            { name: 'DB', field: 'db_source.description', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }},
+            { name: 'Hit', field: 'stitle', filter: { condition: uiGridConstants.filter.CONTAINS }, cellTemplate: '<div class="ui-grid-cell-contents"><button class="btn btn-xs" ng-click="getExternalScopes().runReverseBlast(row.entity)"><i class="fa fa-undo"></i></button>{{row.entity.source_sequence_id}} - {{COL_FIELD CUSTOM_FILTERS}}</div>' },
+          ].concat(commonCols),
         });
         $scope.gridOptions.onRegisterApi = function(gridApi) {
-          gridApi.selection.on.rowSelectionChanged($scope,function(row){
-            $scope.ngModel.best_homolog=row.entity.source_sequence_id;
-            $scope.ngModel.name=row.entity.stitle;
-            $scope.ngModel.save();
-          });
+          $scope.gridApi=gridApi;
         };
+        $scope.setBestHit=function(hit) {
+          console.log('called!');
+          $scope.ngModel.best_homolog=hit.source_sequence_id;
+          $scope.ngModel.name=hit.stitle;
+          $scope.ngModel.save();
+        }
+        $scope.reverseGridOptions = {
+          showFooter: true,
+          enableFiltering: true,
+          minRowsToShow: 20,
+          multiSelect: false,
+          columnDefs: [
+            { name: 'Hit', visible: true, field: 'source_sequence_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }, aggregationType: uiGridConstants.aggregationTypes.count },
+            { name: 'Transcript', visible: false, field: 'transcript.id', filter: { condition: uiGridConstants.filter.CONTAINS }, aggregationType: uiGridConstants.aggregationTypes.count, cellTemplate: '<div class="ui-grid-cell-contents" ng-class="{ \'row-success\': row.entity.is_current }"><a href="#/transcripts/{{row.entity.transcript.id}}"><reviewed-description ng-model="row.entity.transcript"></reviewed-description></a></div>' },
+          ].concat(commonCols),
+        };
+        $scope.reverseGridOptions.onRegisterApi = function(gridApi) {
+          $scope.reverseGridApi=gridApi;
+        }
         $scope.runBlast = function(selectedDbs) {
           angular.forEach(selectedDbs, function(db) {
             $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/'+$scope.ngModel.type+'s/'+$scope.ngModel.id+'/run_blast', {
@@ -70,13 +95,63 @@ angular.module('tearDropDirectives', []).
             }).error($rootScope.errHandler);
           });
         }
+        $scope.idField = function() {
+          return $scope.ngModel.type=='gene' ? 'gene_id' : 'transcript_id';
+        }
+        $scope.runReverseBlast = function(hit) {
+          $scope.mode='reverse';
+          var par = { entry: hit.source_sequence_id, database: hit.db_source.name };
+          par[$scope.idField()]=$scope.ngModel.id;
+          $rootScope.busyPromise=$http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/assemblies/run_blast', { params: par }).success(function(d) {
+            $scope.reverseParams=par;
+            angular.forEach(d, function(res) {
+              ['evalue', 'length', 'slen', 'ppos', 'pident'].forEach(function(f) {
+                res[f]=parseFloat(res[f]);
+              });
+              res.evalue=new Number(res.evalue);
+              if ($scope.ngModel.type=='gene') {
+                var hasTrans=false;
+                angular.forEach($scope.ngModel.transcripts, function(trans) {
+                  if (trans.id==res.transcript.id) hasTrans=true;
+                });
+                res.is_current=hasTrans;
+              }
+              else {
+                res.is_current=res.transcript.id==$scope.ngModel.id
+              }
+            });
+            $scope.reverseGridOptions.columnDefs[0].visible=false;
+            $scope.reverseGridOptions.columnDefs[1].visible=true;
+            //$scope.reverseGridApi.core.notifyDataChange($scope.reverseGridApi.grid, uiGridConstants.dataChange.COLUMN);
+            $scope.reverseGridOptions.data=d;
+          }).error($rootScope.errHandler);
+        }
 
         $scope.loadHomologs = function(reload) {
           if (reload || $scope.ngModel.blast_results==null) {
             $scope.ngModel.loadBlastRuns($scope.setBlastRuns);
             $scope.ngModel.loadBlastResults(function(data) {
+              angular.forEach(data, function(d) {
+                d.is_best = d.source_sequence_id==$scope.ngModel.best_homolog;
+              });
               $scope.gridOptions.data=$scope.ngModel.blast_results;
             });
+          }
+        }
+        $scope.reverseParams={};
+        $scope.loadReverseResults = function(par, reload) {
+          if (par==null) par={};
+          if (par[$scope.idField()]==null) {
+            par[$scope.idField()]=$scope.ngModel.id;
+          }
+          if (reload || !angular.equals(par, $scope.reverseParams)) {
+            $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/assemblies/blast_results', {params: par}).success(function(d) {
+              $scope.reverseParams=par;
+              $scope.reverseGridOptions.columnDefs[0].visible=true;
+              $scope.reverseGridOptions.columnDefs[1].visible=false;
+              $scope.reverseGridOptions.data=d;
+              //$scope.reverseGridApi.core.notifyDataChange($scope.reverseGridApi.grid, uiGridConstants.dataChange.COLUMN);
+            }).error($rootScope.errHandler);
           }
         }
 
@@ -102,6 +177,18 @@ angular.module('tearDropDirectives', []).
         }
         $scope.$watch('ngModel.id', function(newVal, oldVal) {
           if (newVal != null && newVal != oldVal) $scope.loadHomologs();
+        });
+        $scope.$watch('mode', function(newVal, oldVal) {
+          if (newVal != null && newVal != oldVal && newVal=='reverse') {
+            //$scope.loadReverseResults();
+          }
+        });
+        $scope.$watch('ngModel.best_homolog', function(newVal, oldVal) {
+          if (newVal != oldVal) {
+            angular.forEach($scope.gridOptions.data, function(d) {
+              d.is_best=d.source_sequence_id==newVal;
+            });
+          }
         });
       },
          
@@ -700,6 +787,7 @@ angular.module('tearDropDirectives', []).
      replace: true,
      template: '<div>'+
        '<span ng-show="ngModel.name">{{ngModel.name}}</span>'+
+       '<span ng-hide="ngModel.name">{{ngModel.id}}</span>'+
        '<span ng-show="!ngModel.name && ngModel.reviewed"><em>Unknown</em></span>'+
        '<span ng-show="ngModel.reviewed" class="fa fa-check-circle"></span>'+
        '<span ng-hide="ngModel.reviewed" style="font-size: 1.2em" class="text-warning fa fa-question-circle"></span>'+

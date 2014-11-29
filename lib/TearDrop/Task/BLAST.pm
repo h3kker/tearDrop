@@ -86,7 +86,7 @@ sub run {
   my @cmd = ($exe, $db_source->path, $seq_f->filename, $self->evalue_cutoff, $self->max_target_seqs);
   #my @cmd = ('sleep', 10);
   for my $trans (@transcripts) {
-    if (!$self->replace && $self->app->schema($self->project)->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id, finished => 1 })->first) {
+    if (!$self->replace && $self->app->schema($self->project)->resultset('BlastRun')->search({ transcript_id => $trans->id, db_source_id => $db_source->id })->first) {
       $self->app->log->debug('Transcript '.$trans->id.' already blasted against '.$db_source->name.', skipping');
       next;
     }
@@ -112,18 +112,22 @@ sub run {
     my $out;
     my $err;
     my $blast = harness \@cmd, \undef, \$out, \$err;
+    $self->app->log->debug("Starting...");
     $blast->run or confess "unable to run blast command: $err $?";
     if ($err) {
       confess $err;
     }
+    $self->app->log->debug("Finished...");
     for my $l (split "\n", $out) {
       push @ret, $db_source->add_result($l);
     }
     for my $r (@blast_runs) {
+      $self->app->log->debug('Cleaning up.');
       $r->finished(1);
       $r->update;
     }
   } catch {
+    $self->app->log->debug("ouch! ".$_);
     for my $r (@blast_runs) {
       $r->delete unless $r->finished;
     }

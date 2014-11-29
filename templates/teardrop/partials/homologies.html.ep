@@ -12,8 +12,32 @@
    </div>
   </div>
   <div class="row">
-   <div class="col-md-12">
-    <div ui-grid="gridOptions" class="grid-fw" ui-grid-selection></div>
+   <div class="col-md-6">
+     <form class="form-inline">
+      <div class="radio">
+       <label>
+        <input type="radio" name="mode" ng-model="mode" value="forward">
+        Homology
+       </label>
+       <label>
+        <input type="radio" name="mode" ng-model="mode" value="reverse" ng-click="loadReverseResults()">
+        Reverse BLAST
+       </label>
+      </div>
+     </form>
+   </div>
+   <div class="col-md-6" ng-show="mode=='reverse'">
+    <p ng-show="reverseParams.entry">Showing results for entry {{reverseParams.entry}} - <a href="" ng-click="loadReverseResults()">show all for {{ngModel.type}}</a></p>
+    <p ng-hide="reverseParams.entry">Showing all results for {{ngModel.type}}.</p>
+   </div>
+  </div>
+  <div class="row">
+   <div ng-class="{ 'col-md-12': mode=='forward', 'col-md-6': mode=='reverse' }">
+
+    <div ui-grid="gridOptions" ui-grid-auto-resize ng-class="{ 'grid': mode!='reverse', 'grid-full': mode=='reverse' }" external-scopes="$scope"></div>
+   </div>
+   <div ng-if="mode=='reverse'" class="col-md-6">
+    <div ui-grid="reverseGridOptions" ui-grid-auto-resize class="grid-full"></div>
    </div>
   </div>
 </div>

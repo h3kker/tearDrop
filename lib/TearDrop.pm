@@ -60,7 +60,7 @@ sub startup {
     return unless $template eq 'exception';
     if ($c->stash('exception')) {
       my $msg = $c->stash('exception')->message;
-      $msg =~ s/ at \/.*//;
+      $msg =~ s/ at \/.*//s;
       $args->{json} = {error => $msg || 'muh?', } # exception => $c->stash('exception')};
         #if $c->accepts('json');
     }
@@ -195,7 +195,11 @@ sub startup {
     $api->project_bridge(parent => $gm, url => '/annotations', method => 'get', controller => 'GenomeMapping', action => 'annotations');
     $api->project_bridge(parent => $gm, url => '/pileup', method => 'get', controller => 'GenomeMapping', action => 'pileup');
   $api->project_resource(url => '/alignments', controller => 'Alignment');
-  $api->project_resource(url => '/assemblies', controller => 'Assembly');
+  $api->project_bridge(url => '/assemblies/blast_results', method => 'get', controller => 'Assembly', action => 'blast_results');
+  $api->project_bridge(url => '/assemblies/run_blast', method => 'get', controller => 'Assembly', action => 'run_blast');
+  my $a = $api->project_resource(url => '/assemblies', controller => 'Assembly');
+    $api->project_bridge(parent => $a, url => '/run_blast', method => 'get', controller => 'Assembly', action => 'run_blast');
+    $api->project_bridge(parent => $a, url => '/blast_results', method => 'get', controller => 'Assembly', action => 'blast_results');
   $api->project_resource(url => '/conditions', controller => 'Condition');
   $api->project_resource(url => '/dbsources', controller => 'DbSource');
   $api->project_resource(url => '/genemodels', controller => 'GeneModel');

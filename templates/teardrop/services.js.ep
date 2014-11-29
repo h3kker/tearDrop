@@ -75,7 +75,7 @@ var transcriptPrototype = function($rootScope) {
       setBlastResults: function(data) {
         this.blast_results=data;
         angular.forEach(this.blast_results, function(br) {
-          ['evalue', 'length', 'ppos', 'pident'].forEach(function(f) {
+          ['evalue', 'length', 'slen', 'ppos', 'pident'].forEach(function(f) {
             br[f]=parseFloat(br[f]);
           })
         });

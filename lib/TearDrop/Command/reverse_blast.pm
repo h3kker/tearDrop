@@ -5,6 +5,7 @@ use 5.12.0;
 use Mojo::Base 'Mojolicious::Command';
 
 use Carp;
+use Try::Tiny;
 use TearDrop::Task::ReverseBLAST;
 
 use Getopt::Long qw(GetOptionsFromArray :config no_auto_abbrev no_ignore_case);
@@ -44,7 +45,7 @@ sub run {
   elsif(defined $opt{fasta}) {
     my $in = IO::Handle->new;
     if ($opt{fasta}) {
-      $in = IO::File->new($opt{fasta}, "r");
+      $in = IO::File->new($opt{fasta}, "r") || croak "Unable to open ".$opt{fasta}.": $?";
     }
     else {
       say "Read sequences in fasta format...";
@@ -71,11 +72,14 @@ sub run {
     entries => \@entries,
     sequences => \%sequences,
   );
-  my $res = $task->run || croak 'task failed!';
-
-  for my $e (@$res) {
-    print $self->app->dumper($e->TO_JSON);
-  }
+  try { 
+    my $res = $task->run || croak 'task failed!';
+    for my $e (@$res) {
+      print $self->app->dumper($e->TO_JSON);
+    }
+  } catch {
+    croak "BLAST failed: ".$_;
+  };
 }
 
 1;

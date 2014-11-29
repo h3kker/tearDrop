@@ -65,8 +65,8 @@
  <div class="col-md-12">
   <h4>Annotations in Genomic Region</h4>
   <div ng-if="transcript.annotations.length==0">
-   <span class="label label-warning" ng-if="transcript.annotations.length==0">No annotations.</span>
-   {{transcript.transcript_mappings.length}} filtered mappings ({{transcript.transcript_mapping_count}} total)
+   <span class="label label-warning">No annotations.</span>
+   {{mappings.length}} filtered mappings ({{transcript.transcript_mapping_count}} total)
   </div>
   <ol>
    <li ng-repeat="ann in transcript.annotations | filter:{ 'annotation_type':'gene_model' } | orderBy:['contig', 'cstart']">
@@ -90,7 +90,7 @@
  <div class="col-md-12">
   <tabset>
    <tab>
-    <tab-heading>Sequence</tab-heading>
+    <tab-heading>Sequence ({{transcript.nsequence.length}} bp)</tab-heading>
     <div class="row">
      <div class="col-md-12">
       <h3>Sequence</h3>
@@ -102,7 +102,7 @@
     </div>
    </tab> 
    <tab disabled="transcript.de_results.length==0">
-    <tab-heading>DE Results</tab-heading>
+    <tab-heading>DE Results ({{transcript.de_results.length}})</tab-heading>
    </tab>
    <tab>
     <tab-heading>Homologs</tab-heading>
@@ -113,8 +113,8 @@
     </div>     
     <blast-grid ng-model="transcript" grid-options="blastGridOptions"></blast-grid>
    </tab>
-   <tab>
-    <tab-heading>Genome Aligment</tab-heading>
+   <tab disabled="mappings.length==0">
+    <tab-heading>Genome Aligment ({{mappings.length}})</tab-heading>
     <div class="row">
      <div class="col-md-6">
       <h3>Genome Alignments</h3>

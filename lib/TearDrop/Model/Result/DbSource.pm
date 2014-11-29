@@ -199,7 +199,7 @@ sub _is_column_serializable { 1 };
 sub add_result {
   my ($self, $line) = @_;
 
-  my $result = $self->result_source->schema->result_set('BlastResult')->new_result({});
+  my $result = $self->result_source->schema->resultset('BlastResult')->new_result({});
   $result->parse_line($line);
   $result->db_source_id($self->id);
   $result->in_storage(1) if($result->get_from_storage);

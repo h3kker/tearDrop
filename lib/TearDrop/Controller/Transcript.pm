@@ -53,6 +53,9 @@ sub list_fasta {
   for my $t ($rs->all) {
     push @ret, $t->to_fasta;
   }
+  my $headers = Mojo::Headers->new; 
+  $headers->add( 'Content-Disposition', 'attachment;filename=transcripts_export.fasta' );
+  $self->res->content->headers($headers);
   $self->render(text => join "\n", @ret);
 }
 
@@ -108,7 +111,7 @@ sub blast_results {
   my $rs = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('transcriptId')) || croak 'not found';
   my @ret = map {
     my $bl_ser = $_->TO_JSON;
-    $bl_ser->{db_source}=$_->db_source->description;
+    $bl_ser->{db_source}=$_->db_source->TO_JSON;
     $bl_ser;
   } $rs->search_related('blast_results', undef, { prefetch => 'db_source' });
   $self->render(json => \@ret);

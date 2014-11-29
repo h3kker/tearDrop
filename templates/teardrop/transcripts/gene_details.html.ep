@@ -60,9 +60,13 @@
  </div>
 </div>
 
-<div class="row" ng-if="gene.annotations.length">
+<div class="row">
  <div class="col-md-12">
   <h4>Annotations in Genomic Region</h4>
+  <div ng-if="gene.annotations.length==0">
+   <span class="label label-warning">No annotations.</span>
+   {{mappings.length}} filtered mappings
+  </div>
   <ol>
    <li ng-repeat="ann in gene.annotations | filter:{ 'annotation_type':'gene_model' } | orderBy:['contig', 'cstart']">
     {{ann.contig}} {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.id}} <span ng-show="ann.annotation_link"><a href="{{ann.annotation_link}}">{{ann.name}}</a></span>
@@ -85,7 +89,7 @@
  <div class="col-md-12">
   <tabset>
    <tab disabled="gene.de_results.length==0"> 
-    <tab-heading>DE Results</tab-heading>
+    <tab-heading>DE Results ({{gene.de_results.length}})</tab-heading>
     <div class="row">
      <div class="col-md-12">
       <h3>DE Results</h3>
@@ -114,7 +118,7 @@
    </tab>
 
    <tab>
-    <tab-heading>Transcripts</tab-heading>
+    <tab-heading>Transcripts ({{gene.transcripts.length}})</tab-heading>
     <div class="row">
      <div class="col-md-6">
       <h3>Transcripts
@@ -130,7 +134,7 @@
     <div ng-if="gene.transcripts">
      <div class="row" ng-if="gene.transcripts.length>1">
       <div class="col-md-12">
-       <accordion>
+       <!--accordion>
         <accordion-group open="loadTranscriptMsa()">
          <accordion-heading>Multiple Sequence Alignment</accordion-heading>
           <nvd3-stacked-area-chart data="transcriptMSA"
@@ -144,10 +148,10 @@
             showControls="true">
           </nvd3-stacked-area-chart>
         </accordion-group>
-       </accordion>
+       </accordion-->
       </div>
      </div>
-     <div class="row" ng-repeat="transcript in gene.transcripts" ng-init="alignData={}">
+     <div class="row" ng-repeat="transcript in gene.transcripts | orderBy:'id'" ng-init="alignData={}">
       <div class="col-md-12">
        <div class="panel panel-primary">
         <div class="panel-heading">
@@ -198,7 +202,7 @@
     </div>
    </tab>
    <tab>
-    <tab-heading>Genome Alignments</tab-heading>
+    <tab-heading>Genome Alignments ({{mappings.length}})</tab-heading>
     <div class="row">
      <div class="col-md-6">
       <h3>Genome Alignments</h3>

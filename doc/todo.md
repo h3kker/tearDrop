@@ -12,13 +12,14 @@
 
 ## bugs/urgent
 
-- XXX reciprocal best hit
 - notifications about jobs don't work so well
 - import aligner/parameters from bam header
 - tag admin (merge, change, ...)
 - XXX show error on de page when de run result not yet imported
-- deal with multiple alignments => selection, define "favorite"
-- select favorite assembly. maybe it's time to make users?
+- deal with multiple alignments => selection, define "favorites"?
+- select primary assembly as default for transcript list, reverse blast, etc...
+- truncate fasta titles on export (long cdd descriptions)
+- DONE reciprocal best hit
 - DONE genome alignment zoom
 - DONE search by transcript/gene fields in de result table
 - DONE unroll mappings to annotations, don't load them separately for each map
@@ -31,20 +32,21 @@
 
 ## big stuff
 
-- XXX blast search in transcript assemblies (see also reciprocal best hit)
-  - pick ref seq from installed blast db 
-  - input text field for any fasta
+- blast search in transcript assemblies (see also reciprocal best hit)
+  - input text field for any fasta (where?)
   - (blastx)/tblastn/blastn etc
-  - where to display/interface?
-  - currently two tables?
   - promote blast runs table (include parameters etc), also track reverse blast runs
+  - DONE pick ref seq from installed blast db 
+  - DONE where to display/interface?
+  - DONE currently two tables? (seems ok for now)
 - sample can belong to many conditions
 - relationships between transcripts and annotations (graph structure)
   - edge evidence types: sequence clustering/alignment; genome mapping; homology(blast)
   - edge categories: match (redundant_to), partial overlap (prefix, postfix, infix_longer, infix_shorter), qualitative (intron, cds, splice_variant, split, same_gene)
   - transcript-transcript relationships for assembly comparisons
   - transcript-annotation relationships (enough to do it via genome mappings?)
-  - use bwa mem instead of blat/cdhit/uclust??
+  - transcript-homolog-reciprocal best hit
+  - DONE use bwa mem instead of blat/cdhit/uclust?? does not work
 - DONE import GFF files with genome annotations
 - DONE refactor transcript/gene ids - use surrogate key (internal id) to support multiple assemblies per db (with same assembler, trinity would produce id collisions) (in the end concat id with assembly-specific id prefix)
 - DONE multiple projects: master database with separate dbs for projects
@@ -61,17 +63,20 @@
 - DONE Redis Queue 
   - XXX job status updates do not always work?!
 - DONE Database Queue
+  - select for update (make sure no other worker picks up same task)
+  - XXX test me more (w/ mojolicious)
+  - use notify/listen on postgres, fallback to pipe/polling otherwise
   - DONE via db table
   - DONE FIFO signalling on new jobs
   - DONE FIFO signalling optional (fallback on polling)
   - DONE use YAML to de/serialize tasks
-  - select for update (make sure no other worker picks up same task)
 
 ## visualisation
 
 - genomic alignments
+  - XXX annotations need refactoring 
   - interactive annotations
-  - reload annotations on zoom
+  - DONE reload annotations on zoom
   - DONE display gff annotations and blat mappings
   - DONE zoom out (a little) 
   - DONE focus on other annotations in area
@@ -94,9 +99,16 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - DONE get to work with new queue
   - DONE configure annotate, evalue, max_target_seq, etc.
   - DONE reset tags (remove no/bad homologs with subsequent blast finds something)
+  - DONE bulk blast import
+  - define favorite db for autoannotate, use others as fallback
+  - use CDD only for description?
+- reciprocal best hit annotation
+  - DONE bulk blast import
+  - calculate forward/reverse ranks for blast hits
+  - set tags: reciprocal best hit/reciprocal good hit/reciprocal bad hit/reciprocal no hit
 - transfer/sync annotations between transcripts and genes
 - use/transfer/compare with external annotations
-  * bulk overlapping
+  * bulk overlapping (only genome mapping? how to cluster?)
   * make table with relationship between genes/transcripts and genes/mRNA from ann
   * transfer annotations
 - analyze genome mapping
@@ -128,14 +140,15 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
     - DONE show something when there''s no valid mapping
     - show bad mappings on demand
     - point out weird things like transcripts mapped over several 100 kb
+- reverse blast overview page? search for external sequence identifiers?
 - transfer annotations from transcript to gene and back
 - DONE split tags into categories, 
   - DONE display categorized tags in each tab
   - DONE find good space for alignment/mapping tags
   - only general tags on top?
 - show current tag counts in overview page
-- DONE refactor 1000 tag forms to tag edit directive
 - refactor 1000 tag lists to tag display directive
+- DONE refactor 1000 tag forms to tag edit directive
 - DONE liftover annotations from transcripts, between projects
 - DONE transcript view: integrate into gene view, move transcript alignment view there
 - DONE external annotations (GFF)
@@ -160,6 +173,10 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
     needed for filtering, put into db after all? 
   - samples (raw files)
   - genome mappings
+- blast import
+  - DONE reverse blast table
+  - forward blast table (test me!)
+  - multiple formats
 - use Text::CSV or similar for table import
 - YAML/JSON import for tables (also export?) 
 - blast db location for transcript assembly/automatically create blast db
@@ -187,5 +204,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - better engineering of "loading" message
 - central error handling for API calls
 - look at bioperl interfaces to go annotations and online databases
+- async route handlers for long running stuff
+- stream fasta exports? only if they're big?
 - minion backend + worker?
   stick to mine for now, minion cannot do Task classes?? also needs Mojolicious::Plugin::Pg

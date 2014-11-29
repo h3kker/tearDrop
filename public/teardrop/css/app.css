@@ -47,9 +47,23 @@
   font-size: .9em;
 }
 
+.grid-full {
+  font-size: .9em;
+}
+
 .grid-fw {
   width: 1200px;
   font-size: .9em;
+}
+.grid-fw-half {
+  width: 600px;
+  font-size: .9em;
+}
+.row-success {
+  background-color: #93c54b !important;
+}
+.row-success a {
+  color: #fff;
 }
 
 .theader div.form-group {
