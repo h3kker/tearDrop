@@ -88,35 +88,6 @@
 <div class="row">
  <div class="col-md-12">
   <tabset>
-   <tab disabled="gene.de_results.length==0"> 
-    <tab-heading>DE Results ({{gene.de_results.length}})</tab-heading>
-    <div class="row">
-     <div class="col-md-12">
-      <h3>DE Results</h3>
-     </div>
-    </div>
-    <div class="row">
-     <div class="col-md-12">
-      <span ng-if="gene.de_results">
-       <div ui-grid="deGridOptions" class="grid"></div>
-      </span>
-      <span ng-hide="gene.de_results">
-       <i>No DE analysis</i>
-      </span>
-
-     </div>
-    </div>
-   </tab>
-   <tab>
-    <tab-heading>Homologs</tab-heading>
-    <div class="row">
-     <div class="col-md-12">
-      <h3>Homology Searches</h3>
-     </div>
-    </div>
-    <blast-grid ng-model="gene" grid-options="blastGridOptions"></blast-grid>
-   </tab>
-
    <tab>
     <tab-heading>Transcripts ({{gene.transcripts.length}})</tab-heading>
     <div class="row">
@@ -134,10 +105,21 @@
     <div ng-if="gene.transcripts">
      <div class="row" ng-if="gene.transcripts.length>1">
       <div class="col-md-12">
-       <!--accordion>
+       <accordion>
         <accordion-group open="loadTranscriptMsa()">
          <accordion-heading>Multiple Sequence Alignment</accordion-heading>
-          <nvd3-stacked-area-chart data="transcriptMSA"
+          <ul ng-show="false">
+           <li ng-repeat="aln in transcriptMSA | orderBy:'id'">
+            {{aln.id}}
+            <ol>
+             <li ng-repeat="block in aln.blocks">
+              {{block[0]}} - {{block[1]}}
+             </li>
+            </ol>
+           </li>
+          </ul>
+          <highchart id="transcript_msa" config="transcriptMsaConfig"></highchart>
+          <!--nvd3-stacked-area-chart data="transcriptMSA"
             noData="Inte Data"
             width="1000"
             height="200"
@@ -146,9 +128,9 @@
             showLegend="true"
             style="stack"
             showControls="true">
-          </nvd3-stacked-area-chart>
+          </nvd3-stacked-area-chart-->
         </accordion-group>
-       </accordion-->
+       </accordion>
       </div>
      </div>
      <div class="row" ng-repeat="transcript in gene.transcripts | orderBy:'id'" ng-init="alignData={}">
@@ -201,6 +183,35 @@
      </div>
     </div>
    </tab>
+   <tab disabled="gene.de_results.length==0"> 
+    <tab-heading>DE Results ({{gene.de_results.length}})</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>DE Results</h3>
+     </div>
+    </div>
+    <div class="row">
+     <div class="col-md-12">
+      <span ng-if="gene.de_results">
+       <div ui-grid="deGridOptions" class="grid"></div>
+      </span>
+      <span ng-hide="gene.de_results">
+       <i>No DE analysis</i>
+      </span>
+
+     </div>
+    </div>
+   </tab>
+   <tab>
+    <tab-heading>Homologs</tab-heading>
+    <div class="row">
+     <div class="col-md-12">
+      <h3>Homology Searches</h3>
+     </div>
+    </div>
+    <blast-grid ng-model="gene" grid-options="blastGridOptions"></blast-grid>
+   </tab>
+
    <tab>
     <tab-heading>Genome Alignments ({{mappings.length}})</tab-heading>
     <div class="row">

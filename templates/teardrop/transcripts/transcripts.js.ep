@@ -75,11 +75,6 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     minRowsToShow: 50,
     multiSelect: false,
     onRegisterApi: function(gridApi) {
-      gridApi.selection.on.rowSelectionChanged($scope,function(row){
-        $scope.transcript.best_homolog=row.entity.source_sequence_id;
-        $scope.transcript.name=row.entity.stitle;
-        $scope.transcript.save();
-      });
     },
   };
   $scope.save = function() { $scope.transcript.save(); }
@@ -175,8 +170,57 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       },
     ],
   };
+
+  $scope.transcriptMsaConfig = {
+    options: {
+      chart: { zoomType: 'x', },
+      plotOptions: { },
+      legend: { enabled: false, },
+    },
+    series: [],
+    title: { text: '' },
+    loading: false,
+    xAxis: { },
+    yAxis: [
+      { min: 0, title: { text: 'Transcript' }, },
+    ],
+    size: { width: 1000, height: 250 },
+    func: function(chart) {
+      $scope.chart=chart;
+    }
+  };
+  $scope.blockHeight=10;
   $scope.loadTranscriptMsa = function() {
-    $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/'+$scope.gene.id+'/transcripts/msa').success(function(d) {
+    $scope.chart.showLoading();
+    $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/'+$scope.gene.id+'/msa').success(function(d) {
+      $scope.chart.hideLoading();
+      angular.forEach(d, function(trans, cnt) {
+        var seriesItem = {
+          name: trans.id,
+          type: 'arearange',
+          data: [],
+          lineWidth: 2,
+          fillOpacity: 0.5,
+        };
+        var bottom=$scope.blockHeight*cnt;
+        var center=$scope.blockHeight*cnt+$scope.blockHeight/2;
+        angular.forEach(trans.blocks, function(b, idx) {
+          if (idx>0) {
+            seriesItem.data.push([ trans.blocks[idx-1][1]+1, center, center ]);
+            seriesItem.data.push([ b[0]-1, center, center ]);
+          }
+          seriesItem.data.push([ b[0], bottom+1, bottom+$scope.blockHeight-2 ]);
+          seriesItem.data.push([ b[1], bottom+1, bottom+$scope.blockHeight-2 ]);
+        });
+        $scope.chart.yAxis[0].addPlotBand({
+          id: 'band-'+trans.id,
+          from: center,
+          to: center,
+          label: { text: trans.id, align: 'right' },
+        });
+        $scope.transcriptMsaConfig.series.push(seriesItem);
+
+      });
       $scope.transcriptMSA=d;
     }).error($rootScope.errHandler);
   }
