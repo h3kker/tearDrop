@@ -13,6 +13,19 @@
         <div class="panel-body">
          <div class="row">
           <div class="col-md-12">
+           <accordion>
+            <accordion-group open="loadGenomeAlignments(map)">
+             <accordion-heading>View Alignment</accordion-heading>
+              <div class="row"><div class="col-md-12">
+               {{map.alignment.loading}}
+               <alignment-viewer load="loadGenomeAlignments" data="map"></alignment-viewer>
+              </div></div>
+            </accordion-group>
+           </accordion>
+          </div>
+         </div>
+         <div class="row">
+          <div class="col-md-12">
            <h5>Other Transcripts</h5>
            <accordion close-others="0">
             <accordion-group ng-repeat="ann in map.annotations | orderBy:['cstart', 'cend'] | filter:{'annotation_type': 'transcript'}">
@@ -53,19 +66,6 @@
 
               </li>
              </ol>
-            </accordion-group>
-           </accordion>
-          </div>
-         </div>
-         <div class="row">
-          <div class="col-md-12">
-           <accordion>
-            <accordion-group open="loadGenomeAlignments(map)">
-             <accordion-heading>View Alignment</accordion-heading>
-              <div class="row"><div class="col-md-12">
-               {{map.alignment.loading}}
-               <alignment-viewer load="loadGenomeAlignments" data="map"></alignment-viewer>
-              </div></div>
             </accordion-group>
            </accordion>
           </div>

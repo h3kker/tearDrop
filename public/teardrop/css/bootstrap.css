@@ -6467,10 +6467,10 @@ input:focus,
 .panel .panel-heading,
 .panel .panel-title,
 .panel .panel-footer {
-  font-size: 11px;
-  line-height: 22px;
+  font-size: 14px;
+  line-height: 23px;
   font-weight: 500;
-  text-transform: uppercase;
+  //text-transform: uppercase;
   color: #fff;
 }
 .panel-default .panel-heading,

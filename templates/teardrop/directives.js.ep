@@ -44,6 +44,10 @@ angular.module('tearDropDirectives', []).
         });
         $scope.gridOptions.onRegisterApi = function(gridApi) {
           $scope.gridApi=gridApi;
+          $scope.gridApi.core.on.filterChanged($scope, function() {
+            if ($scope.updateHomologyMsa) $timeout.cancel($scope.updateHomologyMsa);
+            $scope.updateHomologyMsa = $timeout($scope.calcHomologyMsa, 500);
+          });
         };
         $scope.setBestHit=function(hit) {
           console.log('called!');
@@ -187,7 +191,7 @@ angular.module('tearDropDirectives', []).
           loading: false,
           xAxis: { min: 0, },
           yAxis: [
-            { min: 0, title: { text: 'Hit' }, maxPadding: 0.01, endOnTick: false },
+            { min: 0, title: { text: 'Hit' }, maxPadding: 0.02, endOnTick: false },
           ],
           size: { width: 1000, height: 500 },
           func: function(chart) {
@@ -196,6 +200,7 @@ angular.module('tearDropDirectives', []).
         };
         $scope.blockHeight=10;
         $scope.calcHomologyMsa = function() {
+          console.log('scope.calcHomologyMsa');
           var colors={};
           angular.forEach($scope.dbSources, function(db, idx) {
             colors[db.name]=Highcharts.theme.colors[idx % Highcharts.theme.colors.length];
@@ -203,10 +208,11 @@ angular.module('tearDropDirectives', []).
           var hits={};
           var maxLen=0;
           if ($scope.gridApi==null) return;
+          $scope.homologyMsaConfig.series=[];
+          //angular.forEach($scope.gridOptions.data, function(row, idx) {
           angular.forEach($scope.gridApi.core.getVisibleRows($scope.gridApi.grid), function(row, idx) {
             var hit=row.entity;
             var k = hit.source_sequence_id+hit.transcript_id;
-            console.log(hit);
             if (hits[k]==null) {
               hits[k]={
                 name: hit.source_sequence_id,
@@ -215,6 +221,7 @@ angular.module('tearDropDirectives', []).
                 data: [],
                 lineWidth: 1,
                 fillOpacity: 0.5,
+                orig: hit,
               };
             }
             var bottom = $scope.blockHeight*idx;
@@ -223,8 +230,8 @@ angular.module('tearDropDirectives', []).
             var left = hit.qstart < hit.qend ? hit.qstart : hit.qend;
             if (maxLen < hit.qlen) maxLen=hit.qlen;
             var state='init';
+            var pos=0;
             for(var i=0; i<hit.sseq.length; i++) {
-              var pos = i*3;
               if (hit.sseq.charAt(i) != '-' && state != 'match') {
                 if (state == 'gap') {
                   hits[k].data.push([ pos+left-1, center, center ]);
@@ -241,9 +248,12 @@ angular.module('tearDropDirectives', []).
                 hits[k].data.push([ pos+left-1, bottom+1, bottom+$scope.blockHeight-2 ]);
                 hits[k].data.push([ pos+left, center, center ]);
               }
+              if (hit.sseq.charAt(i) == '-' || hit.qseq.charAt(i) != '-') {
+                pos+=3;
+              }
             }
             if (state=='match') {
-              hits[k].data.push([ (hit.sseq.length*3)+left, bottom+1, bottom+$scope.blockHeight-2 ]);
+              hits[k].data.push([ pos+left, bottom+1, bottom+$scope.blockHeight-2 ]);
             }
           });
           angular.forEach(hits, function(hit) {
