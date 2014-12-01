@@ -19,6 +19,7 @@
 - deal with multiple alignments => selection, define "favorites"?
 - select primary assembly as default for transcript list, reverse blast, etc...
 - truncate fasta titles on export (long cdd descriptions)
+- DONE fix annotation in genome alignment viewer: arearange + plotbands!
 - DONE reciprocal best hit
 - DONE genome alignment zoom
 - DONE search by transcript/gene fields in de result table
@@ -35,7 +36,7 @@
 - blast search in transcript assemblies (see also reciprocal best hit)
   - input text field for any fasta (where?)
   - (blastx)/tblastn/blastn etc
-  - promote blast runs table (include parameters etc), also track reverse blast runs
+  - ??? promote blast runs table (include parameters etc), also track reverse blast runs
   - DONE pick ref seq from installed blast db 
   - DONE where to display/interface?
   - DONE currently two tables? (seems ok for now)
@@ -83,8 +84,10 @@
   - DONE zooming 
   - DONE display coverage, split by strand, with mismatches
 - multiple sequence alignment viewer
-  - blast results
-  - mafft results for transcripts
+  - update dynamically on what is displayed (esp blast results)
+  - vis. similarities
+  - DONE blast results
+  - DONE mafft results for transcripts
 - de result diagnostic plots (volcano, MA)
 - alignment overviews
   * mapping percent, dis/concordant pairings; maybe idxstats
@@ -101,6 +104,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - DONE reset tags (remove no/bad homologs with subsequent blast finds something)
   - DONE bulk blast import
   - define favorite db for autoannotate, use others as fallback
+  - consider hit coverage (sometimes very bad with low e-value)
   - use CDD only for description?
 - reciprocal best hit annotation
   - DONE bulk blast import

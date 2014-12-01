@@ -119,16 +119,6 @@
            </li>
           </ul>
           <highchart id="transcript_msa" config="transcriptMsaConfig"></highchart>
-          <!--nvd3-stacked-area-chart data="transcriptMSA"
-            noData="Inte Data"
-            width="1000"
-            height="200"
-            showXAxis="true"
-            showYAxis="true"
-            showLegend="true"
-            style="stack"
-            showControls="true">
-          </nvd3-stacked-area-chart-->
         </accordion-group>
        </accordion>
       </div>

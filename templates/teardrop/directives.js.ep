@@ -20,7 +20,7 @@ angular.module('tearDropDirectives', []).
         });
         var commonCols=[
             { name: 'e-value', field: 'evalue', width: '8%', sort: { priority: 0, direction: uiGridConstants.ASC }, aggregationType: uiGridConstants.aggregationTypes.min, filter: { condition: uiGridConstants.filter.LESS_THAN } },
-            { name: 'Match Length', field: 'length', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{row.entity.length/row.entity.qlen*100 |number:1}}%)</div>' },
+            { name: 'Match Length', field: 'length', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{(row.entity.length*3)/row.entity.qlen*100 |number:1}}%)</div>' },
             { name: 'Hit Length', field: 'slen', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
             { name: 'positive %', field: 'ppos', aggregationType: uiGridConstants.aggregationTypes.max, width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
             { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 2, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
@@ -175,6 +175,83 @@ angular.module('tearDropDirectives', []).
             });
           });
         }
+
+        $scope.homologyMsaConfig = {
+          options: {
+            chart: { zoomType: 'xy', },
+            plotOptions: { },
+            legend: { enabled: false, },
+          },
+          series: [],
+          title: { text: '' },
+          loading: false,
+          xAxis: { min: 0, },
+          yAxis: [
+            { min: 0, title: { text: 'Hit' }, maxPadding: 0.01, endOnTick: false },
+          ],
+          size: { width: 1000, height: 500 },
+          func: function(chart) {
+            $scope.homologyMsaChart=chart;
+          }
+        };
+        $scope.blockHeight=10;
+        $scope.calcHomologyMsa = function() {
+          var colors={};
+          angular.forEach($scope.dbSources, function(db, idx) {
+            colors[db.name]=Highcharts.theme.colors[idx % Highcharts.theme.colors.length];
+          });
+          var hits={};
+          var maxLen=0;
+          if ($scope.gridApi==null) return;
+          angular.forEach($scope.gridApi.core.getVisibleRows($scope.gridApi.grid), function(row, idx) {
+            var hit=row.entity;
+            var k = hit.source_sequence_id+hit.transcript_id;
+            console.log(hit);
+            if (hits[k]==null) {
+              hits[k]={
+                name: hit.source_sequence_id,
+                color: colors[hit.db_source.name],
+                type: 'arearange',
+                data: [],
+                lineWidth: 1,
+                fillOpacity: 0.5,
+              };
+            }
+            var bottom = $scope.blockHeight*idx;
+            var center = $scope.blockHeight*idx+$scope.blockHeight/2;
+            // XXX show stranded
+            var left = hit.qstart < hit.qend ? hit.qstart : hit.qend;
+            if (maxLen < hit.qlen) maxLen=hit.qlen;
+            var state='init';
+            for(var i=0; i<hit.sseq.length; i++) {
+              var pos = i*3;
+              if (hit.sseq.charAt(i) != '-' && state != 'match') {
+                if (state == 'gap') {
+                  hits[k].data.push([ pos+left-1, center, center ]);
+                }
+                state='match';
+                hits[k].data.push([ pos+left, bottom+1, bottom+$scope.blockHeight-2 ]);
+                //curblock=[i+left, i+left];
+              }
+              else if (hit.sseq.charAt(i) != '-') {
+                //curblock[1]=i+left;
+              }
+              else if (hit.sseq.charAt(i) == '-' && state != 'gap') {
+                state='gap';
+                hits[k].data.push([ pos+left-1, bottom+1, bottom+$scope.blockHeight-2 ]);
+                hits[k].data.push([ pos+left, center, center ]);
+              }
+            }
+            if (state=='match') {
+              hits[k].data.push([ (hit.sseq.length*3)+left, bottom+1, bottom+$scope.blockHeight-2 ]);
+            }
+          });
+          angular.forEach(hits, function(hit) {
+            $scope.homologyMsaConfig.series.push(hit);
+          });
+          $scope.homologyMsaConfig.xAxis.max=maxLen;
+        }
+
         $scope.$watch('ngModel.id', function(newVal, oldVal) {
           if (newVal != null && newVal != oldVal) $scope.loadHomologs();
         });
@@ -461,16 +538,7 @@ angular.module('tearDropDirectives', []).
             if ($scope.height==null) $scope.height=500;
             $scope.coverageChartConfig = {
               options: {
-                "chart": { "type": "area", zoomType: 'x', events: { 
-                    load: function() { // needed to render annotations in export, but it is called 
-                      console.log(this);
-                      if ($scope.drawAnnotations!=null) $scope.drawAnnotations(this) 
-                    },
-                    redraw: function() {
-                      console.log(this);
-                      $scope.drawAnnotations(this);
-                    }
-                  } 
+                "chart": { "type": "area", zoomType: 'x', events: { } 
                 },
                 "plotOptions": { 
                   //"series": { "stacking":"normal",  }, 
@@ -486,8 +554,8 @@ angular.module('tearDropDirectives', []).
               loading: false,
               xAxis: {  },
               yAxis: [
-                { title: { text: 'Coverage' }, },
-                //{ title: { text: 'Mismatch Rate' }, opposite: true, min: 0 }
+                { title: { text: 'Coverage' }, maxPadding: 0.01, endOnTick: false },
+                { title: { text: 'Annotation' }, opposite: true, min: 0, maxPadding: 0.01, endOnTick: false }
               ],
               size: { width: $scope.width, height: $scope.height, },
               func: function(chart) {
@@ -524,8 +592,116 @@ angular.module('tearDropDirectives', []).
               };
             }
             $scope.resetChartData();
+            $scope.generateAnnotationSeries=function() {
+              console.log('generateAnnotationSeries!');
+              if ($scope.coverageChartConfig.getHighcharts==null) {
+                console.log('not yet initialized?');
+                return;
+              }
+              $scope.coverageChartConfig.getHighcharts().yAxis[1].update({ plotBands: [] });
+              $scope.coverageChartConfig.series=$scope.coverageChartConfig.series.filter(
+                function(s) { return s.name.indexOf('ann-') != 0 }
+              );
+              if ($scope.showAnnotations) {
+                var mrnaHeight=10;
+                var stackHeight=0;
+                var drawElements = {
+                  gene: function(el) {
+                    var geneHeight=el.children.length*mrnaHeight;
+                    /*
+                    $scope.coverageChartConfig.series.push({
+                      name: 'ann-gene-'+el.id,
+                      type: 'arearange',
+                      data: [ 
+                        [ el.cstart, stackHeight, stackHeight+geneHeight ],
+                        [ el.cend, stackHeight, stackHeight+geneHeight ],
+                      ],
+                      lineWidth: 0,
+                      fillOpacity: 0.1,
+                      color: '#ccc',
+                      yAxis: 1,
+                      zIndex: 0,
+                    });
+                    */
+                    angular.forEach(el.children, function(child, childIdx) {
+                      drawElements[child.mtype](child, childIdx);
+                    });
+                  },
+                  mRNA: function(el, idx) {
+                    console.log('add mrna');
+                    /*
+                    $scope.coverageChartConfig.series.push({
+                      name: 'ann-mRNA-'+el.id,
+                      type: 'arearange',
+                      data: [
+                        [ el.cstart, stackHeight+2, stackHeight+mrnaHeight-2 ],
+                        [ el.cend, stackHeight+2, stackHeight+mrnaHeight-2 ],
+                      ],
+                      lineWidth: 0,
+                      fillOpacity: .01,
+                      color: '#fff',
+                      yAxis: 1,
+                      zIndex: 1,
+                    });
+                    */
+                    if (!el.children) return;
+                    el.exonSeries = {
+                      name: 'ann-exons-'+el.id,
+                      type: 'arearange',
+                      data: [],
+                      lineWidth: 2,
+                      fillOpacity: 0.01,
+                      fillColor: '#ccc',
+                      lineColor: '#333',
+                      yAxis: 1,
+                      zIndex: 2,
+                    };
+                    var hasExon = el.children.some(function(child) { return child.mtype=='exon' });
+                    var exons = [];
+                    angular.forEach(el.children, function(child, childIdx) {
+                      if ((hasExon && child.mtype=='exon') || (!hasExon && child.mtype=='CDS')) {
+                        exons.push(child);
+                      }
+                    });
+                    angular.forEach(exons, function(child, childIdx) {
+                      if (childIdx>0) {
+                        el.exonSeries.data.push(
+                          [ exons[childIdx-1].cend+1, stackHeight+mrnaHeight/2, stackHeight+mrnaHeight/2 ]
+                        );
+                        el.exonSeries.data.push(
+                          [ child.cstart-1, stackHeight+mrnaHeight/2, stackHeight+mrnaHeight/2 ]
+                        );
+                      }
+                      el.exonSeries.data.push(
+                        [ child.cstart, stackHeight+2, stackHeight+mrnaHeight-2 ]
+                      );
+                      el.exonSeries.data.push(
+                        [ child.cend, stackHeight+2, stackHeight+mrnaHeight-2 ]
+                      );
+                    });
+                    $scope.coverageChartConfig.getHighcharts().yAxis[1].addPlotBand({
+                      id: 'band-'+el.id,
+                      from: stackHeight+mrnaHeight/2,
+                      to: stackHeight+mrnaHeight/2,
+                      label: { text: el.id, align: 'right' },
+                      zIndex: 100,
+                    });
+                    $scope.coverageChartConfig.series.push(el.exonSeries);
+                    stackHeight+=mrnaHeight;
+                  },
+                };
+                angular.forEach($scope.alignmentData.annotations, function(root, rootIdx) {
+                  drawElements[root.mtype](root, rootIdx);
+                });
+                $scope.coverageChartConfig.getHighcharts().yAxis[1].update({ max: stackHeight*3 });
+              }
+            }
             $scope.generateSeries=function() {
-              $scope.coverageChartConfig.series=[];
+              console.log('generateSeries!');
+              $scope.coverageChartConfig.series=$scope.coverageChartConfig.series.filter(
+                function(s) { return s.name.indexOf('ann-')==0 }
+              );
+              if ($scope.alignmentData.region==null) return;
               $scope.coverageChartConfig.xAxis.min=$scope.alignmentData.region.cstart;
               $scope.coverageChartConfig.xAxis.max=$scope.alignmentData.region.cend;
               if ($scope.showCoverage) {
@@ -544,106 +720,7 @@ angular.module('tearDropDirectives', []).
                 });
               }
             }
-            $scope.drawAnnotations = function(chart) {
-              if (chart!=null) $scope.chart=chart;
-              chart=$scope.chart;
-              console.log('drawAnno');
-              console.log(chart);
-              $('g#anno').remove();
-              // too early, can't draw anything yet...
-              if (chart.yAxis == null || chart.yAxis[0].dataMin == null) {
-                console.log('no y axis defined?');
-                return;
-              }
-              // nothing to draw
-              if (!$scope.showAnnotations || $scope.alignmentData.annotations == null) return;
-              $scope.annoGroup=null;
-              var fillColor = function(ann) {
-                return ann.annotation_type == 'transcript' ? '#ccc' : '#C5FFC5';
-              }
-              var stackHeight=0;
-              var mrnaHeight=15;
-              var convertCoords = function(tann) {
-                return {
-                  cstart: chart.xAxis[0].toPixels(tann.cstart),
-                  cend: chart.xAxis[0].toPixels(tann.cend),
-                };
-              }
-              $scope.annoGroup = chart.renderer.g().attr({'id': 'anno'}).add();
-              var drawElements = {
-                gene: function(el) {
-                  var coords = convertCoords(el);
-                  var transY = chart.yAxis[0].toPixels(0)-stackHeight;
-                  el.group = chart.renderer.g().attr({
-                    'id': 'gene.'+el.id,
-                    'transform': 'translate(0,'+transY+')'
-                  }).add($scope.annoGroup);
-                  var geneHeight=el.children.length*mrnaHeight;
-                  stackHeight+=geneHeight;
-                  chart.renderer
-                    .rect(coords.cstart, 1, coords.cend-coords.cstart, geneHeight-2)
-                    .attr({
-                      'stroke-width': 0, 
-                      'fill-opacity': 0.25,
-                      stroke: '#777', 
-                      fill: fillColor(el) 
-                    }).add(el.group);
-                  angular.forEach(el.children, function(child, childIdx) {
-                    child.parentGroup=el.group;
-                    drawElements[child.mtype](child, childIdx);
-                  });
-                },
-                mRNA: function(el, idx) {
-                  var transY = idx*mrnaHeight*-1;
-                  if (el.parentGroup==null) {
-                    transY = chart.yAxis[0].toPixels(0)-stackHeight;
-                    stackHeight+=mrnaHeight;
-                  }
-
-                  var coords = convertCoords(el);
-                   el.group = chart.renderer.g().attr({
-                    'id': 'mRNA.'+el.id,
-                    'transform': 'translate(0,'+transY+')',
-                  }).add(el.parentGroup ? el.parentGroup : $scope.annoGroup);
-                  chart.renderer
-                    .rect(coords.cstart, 3, coords.cend-coords.cstart, mrnaHeight-6)
-                    .attr({
-                      'stroke-width': 0, 
-                      'fill-opacity': .5,
-                      stroke: 'black', 
-                      fill: fillColor(el) 
-                    }).add(el.group);
-
-                  var hasExon = el.children.some(function(child) { return child.mtype=='exon' });
-                  angular.forEach(el.children, function(child, childIdx) {
-                    child.parentGroup=el.group;
-                    if (hasExon && child.mtype=='exon') {
-                      drawElements[child.mtype](child, childIdx);
-                    }
-                    else if (!hasExon && child.mtype=='CDS') {
-                      drawElements.exon(child, childIdx);
-                    }
-                  });
-
-                  chart.renderer.text(el.id, chart.chartWidth-5, mrnaHeight-2).attr({ 'text-anchor': 'end' }).add(el.group);
-                },
-                exon: function(el) {
-                  var coords = convertCoords(el);
-                  chart.renderer
-                    .rect(coords.cstart, 2, coords.cend-coords.cstart, mrnaHeight-4, 2)
-                    .attr({
-                        'stroke-width': 2, 
-                        'stroke-opacity': 1,
-                        'fill-opacity': .75,
-                        stroke: '#333', 
-                        fill: fillColor(el) 
-                    }).add(el.parentGroup);
-                },
-              };
-              angular.forEach($scope.alignmentData.annotations, function(root, rootIdx) {
-                drawElements[root.mtype](root, rootIdx);
-              });
-            }
+            
             $scope.setVisible = function(sample) {
               sample.visible=!sample.visible;
               $scope.updateChart();
@@ -658,14 +735,11 @@ angular.module('tearDropDirectives', []).
             $scope.updateChart = function() {
               $scope.generateSeries();
             }
-            $scope.$watch('showAnnotations', function(newVal, oldVal) {
-              if (newVal != oldVal) $scope.drawAnnotations();
-            });
             $scope.$watch('alignmentData.alignment.loading', function(newVal) {
               $scope.coverageChartConfig.loading=newVal;
             });
             $scope.$watchCollection('alignmentData.annotations', function(newVal, oldVal) {
-              $scope.drawAnnotations();
+              $scope.generateAnnotationSeries();
             });
             $scope.$watch('alignmentData.alignment.data', function(newVal, oldVal) {
               if (angular.equals(newVal, oldVal)) return;
@@ -676,6 +750,7 @@ angular.module('tearDropDirectives', []).
               angular.forEach(newVal.coverage_plus, function(s, sample) {
                 s.sample=s.name;
                 s.visible=true;
+                s.zIndex=10;
                 s.legendStyle=function() { return { 'background-color': this.visible ? this.color : '#ccc' } };
                 s.color=Highcharts.theme.colors[sampleIdx % Highcharts.theme.colors.length];
                 $scope.samples[s.sample]=s;
@@ -685,6 +760,7 @@ angular.module('tearDropDirectives', []).
                 tmp.type='line';
                 tmp.name=s.name+'+';
                 tmp.cat='stranded';
+                tmp.zIndex=10;
                 angular.forEach(s.data, function(v,k) {
                   //tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]-newVal.coverage_minus[sample].data[k] ];
                   //tmp.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k] ];
@@ -696,6 +772,7 @@ angular.module('tearDropDirectives', []).
                 s.type='line';
                 s.lineWidth=3;
                 s.cat='coverage';
+                s.zIndex=10;
                 angular.forEach(s.data, function(v,k) {
                   //s.data[k] = s.data[k]>0 ? s.data[k] : null;
                   //s.data[k] = [$scope.alignmentData.alignment.data.offset+k*$scope.alignmentData.alignment.data.binwidth, s.data[k]+newVal.coverage_minus[sample].data[k]];
@@ -710,6 +787,7 @@ angular.module('tearDropDirectives', []).
                 s.color=$scope.samples[s.sample].color;
                 s.name=s.name+'-';
                 s.cat='stranded';
+                s.zIndex=10;
                 angular.forEach(s.data, function(v,k) {
                   s.data[k] = [newVal.coords[sample].data[k], s.data[k]*-1 ];
                 });
@@ -722,6 +800,7 @@ angular.module('tearDropDirectives', []).
                 s.name=s.name+' Mis';
                 s.cat='mismatch';
                 s.stacking='normal';
+                s.zIndex=11;
                 //s.yAxis=1;
                 angular.forEach(s.data, function(v,k) {
                   /*
@@ -754,7 +833,7 @@ angular.module('tearDropDirectives', []).
             map.annotations=[];
             $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genomemappings/'+map.genome_mapping_id+'/annotations', {params: {tid: map.tid, tstart: map.region.cstart, tend: map.region.cend}}).success(function(data) {
                 map.annotations=data;
-                if (callback!=null) callback(data);
+                //XXX if (callback!=null) callback(data);
             }).error($rootScope.errHandler);
           }
         }

@@ -51,7 +51,7 @@ sub run {
     for my $c (split '', $msa->{$t}{seq}) {
       if ($c ne '-' && $state ne 'match') {
         $state='match';
-        $cur_block=[$cur, 0];
+        $cur_block=[$cur, $cur];
         $match++;
       }
       elsif ($c ne '-') {

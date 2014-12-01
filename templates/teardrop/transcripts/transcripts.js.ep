@@ -182,7 +182,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     loading: false,
     xAxis: { },
     yAxis: [
-      { min: 0, title: { text: 'Transcript' }, },
+      { min: 0, title: { text: 'Transcript' }, maxPadding: 0.05, endOnTick: false },
     ],
     size: { width: 1000, height: 250 },
     func: function(chart) {
@@ -192,8 +192,9 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
   $scope.blockHeight=10;
   $scope.loadTranscriptMsa = function() {
     $scope.chart.showLoading();
-    $rootScope.busyPromise = $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/'+$scope.gene.id+'/msa').success(function(d) {
+    $http.get('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/genes/'+$scope.gene.id+'/msa').success(function(d) {
       $scope.chart.hideLoading();
+      $scope.transcriptMsaConfig.series=[];
       angular.forEach(d, function(trans, cnt) {
         var seriesItem = {
           name: trans.id,

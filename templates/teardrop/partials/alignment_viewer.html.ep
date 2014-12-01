@@ -1,7 +1,7 @@
 <div class="row">
  <div class="col-md-2">
   <div class="checkbox">
-   <label><input type="checkbox" ng-model="showAnnotations" ng-change="updateChart()"> Annotations</label>
+   <label><input type="checkbox" ng-model="showAnnotations" ng-change="generateAnnotationSeries()"> Annotations</label>
   </div>
   <div class="checkbox">
    <label><input type="checkbox" ng-model="showCoverage" ng-change="updateChart()"> Coverage</label>

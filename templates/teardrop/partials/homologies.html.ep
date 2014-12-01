@@ -7,8 +7,23 @@
    <div class="col-md-1">
     <button class="btn btn-sm" ng-click="runBlast(selectedDbs)" ng-disabled="selectedDbs.length==0">Run BLAST</button>
    </div>
-   <div class="col-md-4">
+   <div class="col-md-3 col-md-offset-1">
     <add-tags ng-model="ngModel" tag-filter="{ category: 'homo' }"></add-tags>
+   </div>
+  </div>
+  <div class="row">
+   <div class="col-md-12">
+    <accordion>
+     <accordion-group open="calcHomologyMsa()">
+      <accordion-heading>View Alignment</accordion-heading>
+      <ul>
+       <li ng-repeat="aln in homologyMSA">
+        {{aln.id}}
+       </li>
+       <highchart id="homology_msa" config="homologyMsaConfig"></highchart>
+      </ul>
+     </accordion-group>
+    </accordion>
    </div>
   </div>
   <div class="row">
