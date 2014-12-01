@@ -13,6 +13,7 @@
 ## bugs/urgent
 
 - notifications about jobs don't work so well
+- small errors in msa view coordinate calculation (end)
 - import aligner/parameters from bam header
 - tag admin (merge, change, ...)
 - XXX show error on de page when de run result not yet imported
