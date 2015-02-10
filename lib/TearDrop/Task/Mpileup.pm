@@ -114,14 +114,34 @@ sub run {
         my $plus=0; my $mismatch_plus=0; my $minus=0; my $mismatch_minus=0; my $ins=0; my $del=0;
         if (defined $f[$i*3+1]) {
           my $p = $f[$i*3+1];
-          $ins = () = $p =~ m#\+([0-9])+[ACGTNacgtn]+#;
-          $del = () = $p =~ m#\-([0-9])+[ACGTNacgtn]+#;
-          $p=~s/[\-\+]([0-9])+[ACGTNacgtn]+//g;
-
-          $plus = () = $p =~ m#\.#g;
-          $minus = () = $p =~ m#\,#g;
-          $mismatch_plus = () = $p =~ m#[ACGTN]#g;
-          $mismatch_minus = () = $p =~ m#[acgtn]#g;
+          my @c = split '', $p;
+          my $i=0;
+          while($i<$#c) {
+            if ($c[$i] eq '.') {
+              $plus++;
+            }
+            elsif ($c[$i] eq ',') {
+              $minus++;
+            }
+            elsif ($c[$i] =~ m#[ACGTN]#) {
+              $mismatch_plus++;
+            }
+            elsif ($c[$i] =~ m#[acgtn]#) {
+              $mismatch_minus++;
+            }
+            elsif ($c[$i] eq '+' || $c[$i] eq '-') {
+              if ($c[$i] eq '+') { $ins++; }
+              elsif ($c[$i] eq '-') { $del++; }
+              my $skip='';
+              $i++;
+              while($c[$i] =~ m#([0-9])#) {
+                $skip.=$1;
+                $i++;
+              }
+              $i+=$skip-1;
+            }
+            $i++;
+          }
         }
         my $depth = $plus+$minus+$mismatch_plus+$mismatch_minus+$ins;
         push @{$cache->{$aln->bam_path}}, {

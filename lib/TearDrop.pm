@@ -147,7 +147,7 @@ sub startup {
       $param{url}='/projects/#projectId'.$param{url};
     }
     my %project_chain = (controller => 'Project', action => 'chained');
-    $routes->bridge($param{url})->to(%project_chain)->name('Project::chained')
+    $routes->under($param{url})->to(%project_chain)->name('Project::chained')
       ->route->via($param{method})->to(controller => $param{controller}, action => $param{action})
       ->name($param{controller}.'::'.$param{action});
   });
