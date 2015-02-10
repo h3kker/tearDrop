@@ -16,6 +16,8 @@ has 'sequences' => ( is => 'rw', isa => 'HashRef[Str]', traits => ['Hash'],
   default => sub { {} },  
   handles => {
     'has_sequences' => 'count',
+    'seqnames' => 'keys',
+    'seqs' => 'values',
   },
 );
 has 'evalue_cutoff' => ( is => 'rw', isa => 'Num', default => .01 );

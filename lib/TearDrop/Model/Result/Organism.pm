@@ -151,4 +151,13 @@ __PACKAGE__->has_many(
 sub _is_column_serializable { 1 };
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+
+use Bio::DB::Fasta;
+
+sub genome_sequence {
+  my ($self, $reg) = @_;
+  my $db = Bio::DB::Fasta->new($self->genome_path);
+  $db->seq($reg->{contig}, $reg->{start}, $reg->{end});
+}
+
 1;

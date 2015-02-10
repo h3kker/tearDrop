@@ -837,6 +837,7 @@ angular.module('tearDropDirectives', []).
         mappings: '=',
       },
       link: function($scope, element, attr) {
+        $scope.currentProject=$rootScope.currentProject;
         $scope.loadAnnotations = function(map, reload, callback) {
           if (map.region==null) map.region={cstart: map.tstart, cend: map.tend}; 
           if (reload || map.annotations==null) {

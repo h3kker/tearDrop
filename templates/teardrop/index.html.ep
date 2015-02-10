@@ -32,6 +32,7 @@
         <ul class="dropdown-menu" role="menu">
          <li><a href="#/transcripts">Transcripts</a></li> 
          <li><a href="#/genes">Genes</a></li> 
+         <li><a href="#/blast">BLAST search</a></li> 
         </ul>
        <li>
         <a href="#/deresults">DE Results</a>

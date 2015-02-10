@@ -194,11 +194,13 @@ sub startup {
   my $gm = $api->project_resource(url => '/genomemappings', controller => 'GenomeMapping');
     $api->project_bridge(parent => $gm, url => '/annotations', method => 'get', controller => 'GenomeMapping', action => 'annotations');
     $api->project_bridge(parent => $gm, url => '/pileup', method => 'get', controller => 'GenomeMapping', action => 'pileup');
+    $api->project_bridge(parent => $gm, url => '/fasta', method => 'get', controller => 'GenomeMapping', action => 'fasta');
   $api->project_resource(url => '/alignments', controller => 'Alignment');
   $api->project_bridge(url => '/assemblies/blast_results', method => 'get', controller => 'Assembly', action => 'blast_results');
   $api->project_bridge(url => '/assemblies/run_blast', method => 'get', controller => 'Assembly', action => 'run_blast');
   my $a = $api->project_resource(url => '/assemblies', controller => 'Assembly');
     $api->project_bridge(parent => $a, url => '/run_blast', method => 'get', controller => 'Assembly', action => 'run_blast');
+    $api->project_bridge(parent => $a, url => '/run_blast', method => 'post', controller => 'Assembly', action => 'run_blast');
     $api->project_bridge(parent => $a, url => '/blast_results', method => 'get', controller => 'Assembly', action => 'blast_results');
   $api->project_resource(url => '/conditions', controller => 'Condition');
   $api->project_resource(url => '/dbsources', controller => 'DbSource');

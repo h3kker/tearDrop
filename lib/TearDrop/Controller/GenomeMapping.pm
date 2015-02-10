@@ -64,4 +64,23 @@ sub pileup {
   $self->render(json => $task);
 }
 
+sub fasta {
+  my $self = shift;
+
+  my $context = $self->param('context') // $self->config->{alignments}{default_context};
+  my $reg = { contig => $self->param('tid'), start => $self->param('tstart') - $context, end => $self->param('tend')+$context };
+
+  my $gm = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('genomemappingId')) || croak 'no such mapping';
+  
+  my $seq = $gm->organism_name->genome_sequence($reg);
+  my $fasta = sprintf "> %s [%s:%d-%d]\n", $gm->organism_name->scientific_name, $reg->{contig}, $reg->{start}, $reg->{end};
+  my $block=0; my $block_len=79;
+  while(my $chunk = substr($seq, $block*$block_len, $block_len)) {
+    $block++;
+    $fasta.="$chunk\n";
+  }
+
+  $self->render(text => $fasta);
+}
+
 1;

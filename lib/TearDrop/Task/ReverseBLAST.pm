@@ -34,7 +34,7 @@ has 'entries' => ( is => 'rw', isa => 'ArrayRef[Str]', traits => ['Array'],
 sub run {
   my $self = shift;
 
-  for my $f (qw/database assembly/) {
+  for my $f (qw/assembly/) {
     confess 'No '.$f.' defined' unless $self->$f;
   }
   confess 'Nothing to blast!' unless $self->has_entries || $self->has_sequences;
@@ -65,11 +65,14 @@ sub run {
     $self->app->log->debug("Extracted sequences to ".$fasta->filename);
   }
   elsif ($self->has_sequences) {
-    $self->app->log->debug("adding ".scalar keys %{$self->sequences}." fasta sequences");
+    $self->app->log->debug("adding ".$self->has_sequences." fasta sequences");
+    $self->app->log->debug($self->app->dumper($self->sequences));
+    my %t = %{$self->sequences};
     for my $n (keys %{$self->sequences}) {
       print $fasta "> ".$n."\n";
       print $fasta $self->sequences->{$n}."\n";
     }
+    close $fasta;
   }
   if(-s $fasta->filename) {
     my $script = $self->dbtype_query_scripts->{$self->query_type} ||
@@ -92,6 +95,9 @@ sub run {
     catch {
       confess 'BLAST failed: '.$_;
     };
+  }
+  else {
+    $self->app->log->debug('Not running, fasta emtpy');
   }
   \@entries;
 }

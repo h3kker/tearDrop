@@ -12,6 +12,12 @@
         </div>
         <div class="panel-body">
          <div class="row">
+          <div class="col-md-12" ng-init="map.context=5000">
+           <a role="button" class="btn btn-default btn-xs" href="<%= config->{base_uri} =%>/api/projects/{{currentProject.name}}/genomemappings/{{map.genome_mapping_id}}/fasta?tid={{map.tid}}&tstart={{map.tstart}}&tend={{map.tend}}&context={{map.context}}">Get FASTA file</a>
+           +/- <input type="text" ng-model="map.context" class="input-sm" style="width:10em"> bp
+          </div>
+         </div>
+         <div class="row">
           <div class="col-md-12">
            <accordion>
             <accordion-group open="loadGenomeAlignments(map)">

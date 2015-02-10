@@ -1,0 +1,55 @@
+<h1>BLAST search</h1>
+<div class="row">
+ <div class="col-md-9 col-md-offset-1">
+  <form class="form-horizontal">
+   <div class="form-group">
+    <label for="blastSeq" class="col-sm-2 control-label">Sequence</label>
+    <div class="col-sm-7">
+     <textarea class="form-control input-sm" ng-model="blastSearch.sequence" rows="5"></textarea>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="nucProt" class="col-sm-2 control-label">Type</label>
+    <div class="col-sm-7 radio">
+     <label>
+      <input type="radio" name="nucProt" value="nucl" ng-model="blastSearch.type">
+      Nucleotide
+     </label>
+     <label>
+      <input type="radio" name="nucProt" value="prot" ng-model="blastSearch.type">
+      Protein/Amino Acid
+     </label>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="assembly" class="col-sm-2 control-label">Assembly</label>
+    <div class="col-sm-7">
+     <select class="form-control input-sm" name="assembly" ng-model="blastSearch.assemblyId" ng-options="assembly.id as assembly.name for assembly in assemblies | orderBy:'name'"></select>
+    </div>
+   </div>
+   <div class="form-group">
+    <label for="params" class="col-sm-2 control-label">Parameters</label>
+    <div class="col-sm-7 form-inline">
+     <div class="form-group">
+      <label for="evalue">E-Value</label>
+      <input id="evalue" type="text" class="form-control input-sm" ng-model="blastSearch.evalue">
+     </div>
+     <div class="form-group">
+      <label for="maxHits">Max Hits</label>
+      <input id="maxHits" type="text" class="form-control input-sm" ng-model="blastSearch.maxHits">
+     </div>
+    </div>
+   </div>
+   <div class="form-group">
+    <button class="btn btn-sm" ng-click="runBlast()">Run BLAST</button>
+   </div>
+  </form>
+ </div>
+ <div class="row">
+  <div class="col-md-12">
+   <p>
+    <div ui-grid="gridOptions" class="grid"></div>
+   </p>
+  </div>
+ </div>
+</div>

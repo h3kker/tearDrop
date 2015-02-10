@@ -161,8 +161,10 @@
            <h4>Genome Mappings</h4>
            <p>{{transcript.transcript_mapping_count}} total mappings, {{transcript.mappings.length}} accepted</p>
            <ol>
-            <li ng-repeat="map in transcript.mappings | orderBy:'match_ratio'">
+            <li ng-repeat="map in transcript.mappings | orderBy:'match_ratio'" ng-init="map.context=5000">
              {{map.tid}} {{map.tstart | number}}-{{map.tend | number}} ({{map.match_ratio*100}}%)
+             <a role="button" class="btn btn-default btn-xs" href="<%= config->{base_uri} =%>/api/projects/{{currentProject.name}}/genomemappings/{{map.genome_mapping_id}}/fasta?tid={{map.tid}}&tstart={{map.tstart}}&tend={{map.tend}}&context={{map.context}}">Get FASTA file</a>
+             +/- <input type="text" ng-model="map.context" class="input-sm" style="width:10em"> bp
             </li>
            </ol>
           </div>

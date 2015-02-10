@@ -13,6 +13,10 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     controller: 'GenesCtrl',
     reloadOnSearch: false,
   });
+  $routeProvider.when('/blast', {
+    templateUrl: '<%= config->{base_uri} =%>/transcripts/blast.html',
+    controller: 'BlastCtrl',
+  });
   $routeProvider.when('/genes/:id', {
     templateUrl: '<%= config->{base_uri} =%>/transcripts/gene_details.html',
     controller: 'GenesDetailCtrl'
@@ -21,6 +25,37 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     templateUrl: '<%= config->{base_uri} =%>/transcripts/transcript_details.html',
     controller: 'TranscriptsDetailCtrl'
   });
+}])
+.controller('BlastCtrl', ['$rootScope', '$scope', '$http', 'Assembly', 'uiGridConstants', function($rootScope, $scope, $http, Assembly, uiGridConstants) {
+  $scope.assemblies=Assembly.prototype.getAll();
+  $scope.blastSearch={type: 'nucl'};
+  $scope.runBlast = function(p) {
+    $rootScope.busyPromise=$http.post('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/assemblies/'+$scope.blastSearch.assemblyId+'/run_blast', $scope.blastSearch).success(
+      function(res) {
+        console.log(res);
+        $scope.gridOptions.data=res;
+      })
+      .error($rootScope.errHandler);
+  }
+
+  $scope.gridOptions={
+    enableFiltering: true,
+    showFooter: true,
+    minRowsToShow: 50,
+    multiSelect: false,
+    onRegisterApi: function(gridApi) {
+    },
+    columnDefs: [
+      { name: 'Hit', visible: true, field: 'source_sequence_id', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }, aggregationType: uiGridConstants.aggregationTypes.count },
+      { name: 'Transcript', visible: true, field: 'transcript.id', filter: { condition: uiGridConstants.filter.CONTAINS }, aggregationType: uiGridConstants.aggregationTypes.count, cellTemplate: '<div class="ui-grid-cell-contents"><a href="#/transcripts/{{row.entity.transcript.id}}"><reviewed-description ng-model="row.entity.transcript"></reviewed-description></a></div>' },
+      { name: 'e-value', field: 'evalue', width: '8%', sort: { priority: 0, direction: uiGridConstants.ASC }, aggregationType: uiGridConstants.aggregationTypes.min, filter: { condition: uiGridConstants.filter.LESS_THAN } },
+      { name: 'Match Length', field: 'length', width: '8%', sort: { priority: 1, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max, cellTemplate: '<div class="ui-grid-cell-contents">{{COL_FIELD CUSTOM_FILTERS}} ({{(row.entity.length*3)/row.entity.qlen*100 |number:1}}%)</div>' },
+      { name: 'Hit Length', field: 'slen', width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
+      { name: 'positive %', field: 'ppos', aggregationType: uiGridConstants.aggregationTypes.max, width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, },
+      { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 2, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
+    ],
+  };
+
 }])
 .controller('TranscriptsCtrl', ['$rootScope', '$scope', '$http', '$location', 'Assembly', function($rootScope, $scope, $http, $location) {
   if ($rootScope.transcripts==null) {
