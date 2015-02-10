@@ -20,6 +20,7 @@
 - deal with multiple alignments => selection, define "favorites"?
 - select primary assembly as default for transcript list, reverse blast, etc...
 - truncate fasta titles on export (long cdd descriptions)
+- extract genomic sequences + up/downstream
 - DONE fix annotation in genome alignment viewer: arearange + plotbands!
 - DONE reciprocal best hit
 - DONE genome alignment zoom
@@ -118,7 +119,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   * transfer annotations
 - analyze genome mapping
   * DONE set no/good/many mapping tags
-  * intron sizes
+  * intron sizes, mapping to predicted introns (tophat junctions.bed, star SJ.out.tab)
   * coverage
   * identity
   * create fields for various metrics with overloaded accessors!
@@ -130,7 +131,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 - analyze coverage
   * categorize high/low
   * look for dips
-  * possible introns (via genomic coverage, use annotation where available)
+  * possible introns (via genomic coverage, use annotation where available; otherwise junctions.bed or SJ.out.tab?)
 - generate rating from tags
 
 ## manual curation

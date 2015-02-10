@@ -1,6 +1,8 @@
 use utf8;
 package TearDrop::Model::Result::GenomeMapping;
 
+use 5.12.0;
+
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
@@ -277,9 +279,11 @@ sub import_file {
 
   my @rows;
   if ($self->program eq 'blat') {
+    my $minintronlen=35;
+    my $maxintronlen=500000;
     open my $IF, "<".$self->path or confess("Open ".$self->path.": $!");
     my $l=0;
-    while(<$IF>) {
+    LINE: while(<$IF>) {
       $l++;
       my $ispsl=1 ; ## if m/^psLayout/; # should do but want some slack here?
       # skip header
@@ -293,8 +297,24 @@ sub import_file {
           $blocksizes, $qstarts, $tstarts
       ) = @v[0..2, 8..16, 18..20];
       $qid=$self->transcript_assembly->prefix.'.'.$qid if $self->needs_prefix;
-      my $match_pct = sprintf "%.2f", $matchscore/$qsize;
+      my $gaps=0;
+      $qstarts=~s/[, ]+$//;
+      $tstarts=~s/[, ]+$//;
+      my @blocks = split ',', $blocksizes;
+      my @t = split ',', $tstarts;
+      my @q = split ',', $qstarts;
+      for (my $i=0; $i < scalar @blocks-1; $i++) {
+        my $tgap = $t[$i+1]-$t[$i]-$blocks[$i];
+        my $qgap = $q[$i+1]-$q[$i]-$blocks[$i];
+        next if $tgap > $maxintronlen;
+        $tgap =0 if ($qgap ==0 && $tgap >= $minintronlen && $tgap <= $maxintronlen); #target gap is intron
+        $gaps += ($tgap>$qgap)?  $tgap : $qgap; # count the larger gap if both seqs happen to have a gap
+      }
+      my $match_pct = sprintf "%.2f", $matchscore/($qend-$qstart+$gaps);
       next unless $match_pct>.5;
+
+      my $coverage = sprintf "%.2f", ($qend-$qstart)/$qsize;
+      next unless $coverage>.5;
 
       push @rows, {
         genome_mapping_id => $self->id,

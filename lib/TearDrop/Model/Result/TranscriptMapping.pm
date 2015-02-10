@@ -198,8 +198,8 @@ sub is_good {
   my ($self, $params) = @_;
   $params ||= {};
   $params->{match_cutoff}||=.85;
-  $params->{max_intron_length}||=20000;
-  $params->{max_map_length}||=80000;
+  $params->{max_intron_length}||=30000;
+  $params->{max_map_length}||=100000;
   $params->{coverage}||=.8;
 
   if ($self->match_ratio < $params->{match_cutoff}) {
