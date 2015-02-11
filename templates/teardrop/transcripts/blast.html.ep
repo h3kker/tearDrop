@@ -32,15 +32,16 @@
     <div class="col-sm-7 form-inline">
      <div class="form-group">
       <label for="evalue">E-Value</label>
-      <input id="evalue" type="text" class="form-control input-sm" ng-model="blastSearch.evalue">
+      <input id="evalue" type="text" class="form-control input-sm" ng-model="blastSearch.evalue_cutoff">
      </div>
      <div class="form-group">
       <label for="maxHits">Max Hits</label>
-      <input id="maxHits" type="text" class="form-control input-sm" ng-model="blastSearch.maxHits">
+      <input id="maxHits" type="text" class="form-control input-sm" ng-model="blastSearch.max_target_seqs">
      </div>
     </div>
    </div>
    <div class="form-group">
+    <label for="submitBtn" class="col-sm-2 control-label"></label>
     <button class="btn btn-sm" ng-click="runBlast()">Run BLAST</button>
    </div>
   </form>

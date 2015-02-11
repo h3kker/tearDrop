@@ -40,10 +40,23 @@ sub run_blast {
       $req_params->{$k}=$p->{$k};
     }
   }
+  $req_params->{entry}=$self->every_param('entry');
   $req_params->{assemblyId} ||= $self->param('assemblyId');
   if($req_params->{sequence}) {
     my $seq = $req_params->{sequence};
-    $blast_param{sequences}={ 'noName' => $seq };
+    my %seqs;
+    my $cur_seq='noName';
+    for my $l (split /\r?\n/, $seq) {
+      if ($l =~ m#^>\s*(.+)$#) {
+        $cur_seq=$1;
+        $seqs{$cur_seq}='';
+      }
+      else {
+        $l=~s/^\s+(.+?)\s+$//;
+        $seqs{$cur_seq}.=$l if $l;
+      }
+    }
+    $blast_param{sequences}=\%seqs;
     $blast_param{query_type}=$req_params->{type};
   }
   else {

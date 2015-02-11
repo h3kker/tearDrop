@@ -26,17 +26,38 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
     controller: 'TranscriptsDetailCtrl'
   });
 }])
-.controller('BlastCtrl', ['$rootScope', '$scope', '$http', 'Assembly', 'uiGridConstants', function($rootScope, $scope, $http, Assembly, uiGridConstants) {
-  $scope.assemblies=Assembly.prototype.getAll();
-  $scope.blastSearch={type: 'nucl'};
+.controller('BlastCtrl', ['$rootScope', '$scope', '$http', 'Assembly', 'uiGridConstants', 'store', function($rootScope, $scope, $http, Assembly, uiGridConstants, store) {
+  $scope.assemblies=Assembly.prototype.getAll(
+    function(d) {
+      if (d.length==1 && $scope.blastSearch.assemblyId==null) {
+        $scope.blastSearch.assemblyId=d[0].id
+      }
+    }
+  );
+  $scope.blastSearch=store.get('lastBlastSearch');
+  if ($scope.blastSearch==null) {
+    $scope.blastSearch={type: 'nucl', lastResult: []};
+  }
+  $scope.$watch('blastSearch.sequence', function(newV, oldV) {
+    if (newV != null && newV != oldV) {
+      newV.split(/\r?\n/).forEach(function(l) {
+        if (!l.match(/^>/)) {
+          $scope.blastSearch.type = l.match(/^[ACGTN]+$/i) ? 'nucl' : 'prot';
+        }
+      });
+    }
+  });
+
   $scope.runBlast = function(p) {
     $rootScope.busyPromise=$http.post('<%= config->{base_uri} =%>/api/projects/'+$rootScope.currentProject.name+'/assemblies/'+$scope.blastSearch.assemblyId+'/run_blast', $scope.blastSearch).success(
       function(res) {
-        console.log(res);
         $scope.gridOptions.data=res;
+        $scope.blastSearch.lastResult=res;
+        store.set('lastBlastSearch', $scope.blastSearch);
       })
       .error($rootScope.errHandler);
   }
+
 
   $scope.gridOptions={
     enableFiltering: true,
@@ -54,6 +75,7 @@ angular.module('TearDrop.transcripts', ['ngRoute', 'ui.bootstrap', 'ui.grid', 'u
       { name: 'positive %', field: 'ppos', aggregationType: uiGridConstants.aggregationTypes.max, width: '8%', filter: { condition: uiGridConstants.filter.GREATER_THAN }, },
       { name: 'identical %', field: 'pident', width: '8%', sort: { priority: 2, direction: uiGridConstants.DESC }, filter: { condition: uiGridConstants.filter.GREATER_THAN }, aggregationType: uiGridConstants.aggregationTypes.max },
     ],
+    data: $scope.blastSearch.lastResult,
   };
 
 }])

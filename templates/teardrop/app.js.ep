@@ -5,6 +5,7 @@ var tearDrop = angular.module('TearDrop', [
   'ngCookies',
   'ngRoute',
   'cgBusy',
+  'angular-storage',
   'ui.grid.edit',
   'ui.grid.cellNav',
   'ui.grid.autoResize',
@@ -120,10 +121,10 @@ tearDrop.value('cgBusyDefaults', {
 });
 
 
-tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
+tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl, store) {
   $rootScope.growl=growl;
   try {
-    $rootScope.currentProject=angular.fromJson(window.localStorage.getItem('project'));
+    $rootScope.currentProject=store.get('project'); //angular.fromJson(window.localStorage.getItem('project'));
   }
   catch(e) {
     $rootScope.currentProject=null;
@@ -139,8 +140,8 @@ tearDrop.run(function($rootScope, $timeout, $http, $cacheFactory, growl) {
   }
   $rootScope.reloadProjects();
   $rootScope.setProject = function(project) {
-    window.localStorage.setItem('project', angular.toJson(project));
-    window.localStorage.setItem('projectName', project.name);
+    store.set('project', project);
+    store.set('projectName', project.name);
     $rootScope.currentProject=project;
   }
   $rootScope.currentProjectName = function() {
