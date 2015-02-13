@@ -70,7 +70,7 @@ TearDrop::Command::import_blast - import BLAST results
    --db, --db_source [db]
        Name of the database that was BLASTed, ie. where you extracted the sequences from. This database needs to be configured!
 
-   Filtering (currently non-functional, please set your options).
+   Filtering (currently non-functional, please set the corresponding BLAST options).
     --evalue_cutoff
         default .01
     --max_target_seqs

@@ -5,7 +5,7 @@
 - set access control/no-cache cookie!
 - command line tools
   - DONE run_blast
-  - import_metadata
+  - DONE import_metadata
   - deploy_project (---> use dbix migration??)
   - import_transcript_meta.pl??
   - transfer_annotations??
@@ -94,8 +94,6 @@
 - alignment overviews
   * mapping percent, dis/concordant pairings; maybe idxstats
 
-use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
-
 ## automated annotation workflow
 
 - bulk blast
@@ -168,12 +166,13 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
 
 ## data import
 
+- create metadata import task
 - via web?
   - local files: submit to worker
   - upload: might be complicated; maybe not via browser, curl/wget? should have a resume. 
 - suppport g/bzip
 - create/import stats for 
-  - DONE alignments (tophat, star, bowtie)
+  - DONE alignments (tophat, star, bowtie2)
   - count tables
     interesting: raw counts, fpkm/tpm, normalized counts, per sample
     needed for filtering, put into db after all? 
@@ -183,7 +182,7 @@ use/extend https://github.com/WealthBar/angular-d3? or not. Highcharts FTW!!!
   - DONE reverse blast table
   - forward blast table (test me!)
   - multiple formats
-- use Text::CSV or similar for table import
+- DONE use Text::CSV or similar for table import
 - YAML/JSON import for tables (also export?) 
 - blast db location for transcript assembly/automatically create blast db
 
