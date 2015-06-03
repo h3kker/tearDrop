@@ -16,10 +16,10 @@ has usage => sub { shift->extract_usage };
 sub run {
   my ($self, @args) = @_;
 
-  my %opt = (evalue_cutoff => 0.01, max_target_seqs => 20);
+  my %opt = (evalue_cutoff => 0.01, max_target_seqs => 20, type=>'prot');
   GetOptionsFromArray(\@args, \%opt, 'project|p=s', 
     'db_source|db=s', 'entry|e=s@', 'fasta|fa:s', 
-    'assembly|a=s', 'evalue_cutoff=f', 'max_target_seqs=i')
+    'assembly|a=s', 'evalue_cutoff=f', 'max_target_seqs=i', 'type=s')
       or croak $self->help;
 
   croak 'need project context' unless $opt{project};
@@ -54,14 +54,20 @@ sub run {
     my $cur_seq;
     while(<$in>) {
       chomp;
-      if (m#^>\s*(.+)#) {
+      if (m#^>\s*(\S+)#) {
         $cur_seq=$1;
       }
-      $sequences{$cur_seq}.=$_;
+      else {
+        $sequences{$cur_seq}.=$_;
+      }
     }
     $in->close;
   }
   croak 'could not find any sequences to blast (and I tried really hard!)' unless (@entries || %sequences);
+
+  unless($opt{assembly}) {
+    $opt{assembly} = $self->app->schema($opt{project})->resultset('TranscriptAssembly')->first->name;
+  }
   
   my $task = new TearDrop::Task::ReverseBLAST(
     project => $opt{project},
@@ -71,6 +77,7 @@ sub run {
     database => $opt{db_source},
     entries => \@entries,
     sequences => \%sequences,
+    query_type => $opt{type},
   );
   try { 
     my $res = $task->run || croak 'task failed!';

@@ -23,6 +23,6 @@ has 'sequences' => ( is => 'rw', isa => 'HashRef[Str]', traits => ['Hash'],
 has 'evalue_cutoff' => ( is => 'rw', isa => 'Num', default => .01 );
 has 'max_target_seqs' => ( is => 'rw', isa => 'Int', default => 20 );
 
-has 'database' => ( is => 'rw', isa => 'Str' );
+has 'database' => ( is => 'rw', isa => 'Str | Undef' );
 
 1;
