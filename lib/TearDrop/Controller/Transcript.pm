@@ -152,7 +152,7 @@ sub pileup {
   my $assembly = $rs->assembly || die 'assembly '.$rs->assembly_id.' not found';
 
   my @alns = $assembly->transcriptome_alignments;
-  die 'no alignments for transcript' unless @alns;
+  croak 'no alignments for transcript' unless @alns;
 
   # XXX should check if original_id settings is consistent for all alignments
   my $pileup = TearDrop::Task::Mpileup->new(

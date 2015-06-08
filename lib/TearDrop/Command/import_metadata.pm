@@ -51,7 +51,7 @@ sub run {
   my ($self, @args) = @_;
 
   my %opt = ( import_files => 0, separator => ',', basedir => 'data' );
-  GetOptionsFromArray(\@args, \%opt, 'project|p=s', 'import_files|f', 'basedir|b=s', 'separator|s=s', 'help|h', 'list_filenames') or croak $self->help;
+  GetOptionsFromArray(\@args, \%opt, 'project|p=s', 'import_files|f', 'basedir|b=s', 'separator|s=s', 'transcript_map=s', 'help|h', 'list_filenames') or croak $self->help;
   if ($opt{help}) {
     print $self->help;
     return;
@@ -83,7 +83,7 @@ sub run {
         my $rs = $self->app->schema($opt{project})->resultset($self->tbl_src->{$table})->update_or_create(\%s);
         if ($opt{import_files} && $rs->can('import_file')) {
           say "\timport file ".$rs->path;
-          $rs->import_file;
+          $rs->import_file($opt{transcript_map}); # only used for transcript_assemblies
         }
       } catch {
         warn $_;
@@ -243,6 +243,9 @@ TearDrop::Command::import_metadata - import metadata
       Also import referenced files, e.g. transcript alignments
   -s, --separator [char]
       character for field delimiter, default: C<,>  
+
+  --transcript_map [file]
+      transcript[tab]gene mapping file for importing transcripts - one gene can have many transcripts
 
   -h, --help
       Display this message

@@ -54,11 +54,15 @@ sub pileup {
   my $gm = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('genomemappingId')) || croak 'no such mapping';
   
   $self->app->log->debug($self->app->dumper($reg));
+  my @alns = $gm->organism_name->genome_alignments;
+  @alns = grep { !$_->alignment->sample->flagged } @alns;
+  croak 'no alignments!' unless @alns;
+
   my $task = TearDrop::Task::Mpileup->new(
     reference_path => $gm->organism_name->genome_path,
     region => $self->param('tid'), start => $reg->{start}, end => $reg->{end},
     type => 'genome',
-    alignments => [ map { $_->alignment } $gm->organism_name->genome_alignments ],
+    alignments => [ map { $_->alignment } @alns ],
   )->run;
 
   $self->render(json => $task);

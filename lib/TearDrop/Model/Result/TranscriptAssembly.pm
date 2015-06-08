@@ -244,8 +244,21 @@ with 'TearDrop::Model::HasFileImport';
 sub _is_column_serializable { 1 };
 
 sub import_file {
-  my $self = shift;
+  my ($self, $transcript_map) = @_;
+
   $self->delete_related('transcripts');
+
+  my $gene_map;
+  if ($transcript_map) {
+    open my $TR, "<".$transcript_map || confess 'open '.$transcript_map.": $!";
+    while(<$TR>) {
+      chomp;
+      my @m = split "\t";
+      $gene_map->{$m[1]}=$m[0];
+    }
+    close $TR;
+  }
+
   open my $FA, "<".$self->path || confess 'open '.$self->path.": $!";
   my $cur_trans;
   my $count;
@@ -256,14 +269,10 @@ sub import_file {
     #debug '  ('.$count.') flushing '.@rows.' to db (line '. $. .')';
     my %create_genes;
     for my $r (@rows) {
-      if ($r->{id} =~ m#(.*c\d+_g\d+)_i.+#) {
-        $r->{gene_id}=$1;
-        next if exists $genes{$r->{gene_id}};
-        $create_genes{$r->{gene_id}} = { id => $r->{gene_id} };
-        if ($self->add_prefix && $r->{original_id} =~ m#(.*c\d+_g\d+)_i.+#) {
-          $create_genes{$r->{gene_id}}->{original_id}=$1;
-        }
-      }
+      next if !$r->{gene};
+      my $g = delete $r->{gene};
+      next if $genes{$g->{id}};
+      $create_genes{$g->{id}}=$g;
     }
     if (values %create_genes) {
       $self->result_source->schema->resultset('Gene')->populate([ values %create_genes ]);
@@ -288,12 +297,26 @@ sub import_file {
       $cur_trans={
         id => $trans_id,
         nsequence => '',
-        assembly_id => $self->id,
+        transcript_assembly_id => $self->id,
       };
       if ($self->add_prefix) {
         $cur_trans->{original_id} = $cur_trans->{id};
         $cur_trans->{id} = $self->prefix.'.'.$trans_id;
       }
+      if ($gene_map->{$cur_trans->{original_id} || $cur_trans->{id}}) {
+        $cur_trans->{gene}={
+          id => $gene_map->{$cur_trans->{original_id} || $cur_trans->{id}}
+        };
+        if ($self->add_prefix) {
+          $cur_trans->{gene}{original_id}=$cur_trans->{gene}{id};
+          $cur_trans->{gene}{id}=$self->prefix.'.'.$cur_trans->{gene}{id};
+        }
+        $cur_trans->{gene_id}=$cur_trans->{gene}{id};
+      }
+
+      #if ($cur_trans->{id} =~ m#(.*c\d+_g\d+)_i.+#) {
+      #  $cur_trans->{gene_id}=$1;
+      #}
     }
     else {
       $cur_trans->{nsequence}.=$_;

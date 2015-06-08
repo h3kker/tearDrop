@@ -237,4 +237,13 @@ sub setup_projects {
   }
 }
 
+sub create_project_db {
+  my ($app, $opt) = @_;
+
+  $app->schema->storage->dbh_do(sub {
+    my ($storage, $dbh) = @_;
+    $dbh->do(qq{CREATE DATABASE teardrop_}.$opt->{project}.qq{ OWNER }.$app->config->{plugins}{DBIxClass}{$opt->{project}}{user});
+  });
+}
+
 1;

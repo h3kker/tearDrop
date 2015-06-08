@@ -253,6 +253,7 @@ sub as_tree {
     push @{$gene->{children}}, $mrna;
     my @bs = split ',', $tm->blocksizes;
     my @blocks = split ',', $tm->tstarts;
+    confess "block size and block starts different: ".scalar(@bs)."/".scalar(@blocks) unless scalar @bs == scalar @blocks;
     for my $idx (0..$#blocks) {
       push @{$mrna->{children}}, {
         id => $tm->transcript_id.'.'.$idx,
@@ -340,6 +341,90 @@ sub import_file {
         #debug 'flushing '.@rows.' to database (line '. $. .')';
         $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
         @rows=();
+        #debug 'done.';
+      }
+    }
+    close $IF;
+    if (@rows) {
+      #debug 'flushing remaining '.@rows.' to database';
+      $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+      #debug 'done.';
+    }
+  }
+  elsif ($self->program eq 'cufflinks') {
+    open my $IF, "<".$self->path or confess("Open ".$self->path.": $!");
+    my $l=0;
+    my %transcripts;
+    LINE: while(<$IF>) {
+      $l++;
+      chomp;
+      my @v = split "\t";
+
+      my %m = map { my @tmp = split ' ', $_; $tmp[1]=~tr/"//d; $tmp[0] => $tmp[1] } split ';', $v[8];
+      $m{transcript_id}=$self->transcript_assembly->prefix.'.'.$m{transcript_id} if $self->needs_prefix;
+      $m{gene_id}=$self->transcript_assembly->prefix.'.'.$m{gene_id} if $self->needs_prefix;
+      $transcripts{$m{transcript_id}}||={
+        id => $m{transcript_id},
+        gene_id => $m{gene_id},
+        exons => [],
+      };
+      push @{$transcripts{$m{transcript_id}}->{exons}}, {
+        exon => $m{exon_number},
+        strand => $v[6],
+        tid => $v[0],
+        start => $v[3],
+        end => $v[4],
+      };
+    }
+    my @rows;
+    for my $t (values %transcripts) {
+      $t->{exons}=[ sort { $a->{exon} <=> $b->{exon} } @{$t->{exons}} ];
+      $t->{trans_length}=0;
+      my @trans_starts=(1);
+      for my $e (@{$t->{exons}}) {
+        if (!exists $t->{start} || $e->{start}<$t->{start}) {
+          $t->{start}=$e->{start};
+        }
+        if (!exists $t->{end} || $e->{end}>$t->{end}) {
+          $t->{end}=$e->{end};
+        }
+        if (!exists $t->{strand}) {
+          $t->{strand}=$e->{strand};
+        }
+        if ($t->{strand} ne $e->{strand}) {
+          croak "something's wrong: ".$t->{id}." exons on different strands???";
+        }
+
+        if (!exists $t->{tid}) {
+          $t->{tid}=$e->{tid};
+        }
+        $t->{trans_length}+=$e->{end}-$e->{start}+1;
+        push @trans_starts, $trans_starts[$#trans_starts]+($e->{end}-$e->{start});
+      }
+      push @rows, {
+        genome_mapping_id => $self->id,
+        transcript_id => $t->{id},
+        matches => $t->{trans_length},
+        match_ratio => 1,
+        mismatches => 0,
+        rep_matches => 0,
+        strand => $t->{strand},
+        qstart => 1,
+        qend => $t->{trans_length},
+        tid => $t->{tid},
+        tsize => $t->{end}-$t->{start},
+        tstart => $t->{start},
+        tend => $t->{end},
+        blocksizes => join(",", map { $_->{end}-$_->{start} } @{$t->{exons}}),
+        qstarts => join(",", map { $_->{start} } @{$t->{exons}}),
+        tstarts => join(",",@trans_starts[0..($#trans_starts-1)]),
+      };
+      if (@rows >= 100) {
+      #if (@rows >= config->{import_flush_rows}) {
+        #debug 'flushing '.@rows.' to database (line '. $. .')';
+        $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+        @rows=();
+
         #debug 'done.';
       }
     }

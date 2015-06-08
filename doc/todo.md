@@ -6,7 +6,7 @@
 - command line tools
   - DONE run_blast
   - DONE import_metadata
-  - deploy_project (---> use dbix migration??)
+  - DONE deploy_project (---> use dbix migration??)
   - import_transcript_meta.pl??
   - transfer_annotations??
 
