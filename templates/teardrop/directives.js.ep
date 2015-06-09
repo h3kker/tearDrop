@@ -39,7 +39,8 @@ angular.module('tearDropDirectives', []).
                '</button>'+
               '{{COL_FIELD CUSTOM_FILTERS}}</div>' },
             { name: 'DB', field: 'db_source.description', width: '10%', filter: { condition: uiGridConstants.filter.CONTAINS }},
-            { name: 'Hit', field: 'stitle', filter: { condition: uiGridConstants.filter.CONTAINS }, cellTemplate: '<div class="ui-grid-cell-contents"><button class="btn btn-xs" ng-click="getExternalScopes().runReverseBlast(row.entity)"><i class="fa fa-undo"></i></button>{{row.entity.source_sequence_id}} - {{COL_FIELD CUSTOM_FILTERS}}</div>' },
+            //{ name: 'Hit', field: 'stitle', filter: { condition: uiGridConstants.filter.CONTAINS }, cellTemplate: '<div class="ui-grid-cell-contents"><button class="btn btn-xs" ng-click="getExternalScopes().runReverseBlast(row.entity)"><i class="fa fa-undo"></i></button>{{row.entity.source_sequence_id}} - {{COL_FIELD CUSTOM_FILTERS}}</div>' },
+            { name: 'Hit', field: 'stitle', filter: { condition: function(searchTerm, cellValue, row) { var re=new RegExp(searchTerm, 'i'); return re.test(row.entity.source_sequence_id) || re.test(row.entity.stitle) } }, cellTemplate: '<div class="ui-grid-cell-contents"><button class="btn btn-xs" ng-click="getExternalScopes().runReverseBlast(row.entity)"><i class="fa fa-undo"></i></button>{{row.entity.source_sequence_id}} - {{COL_FIELD CUSTOM_FILTERS}}</div>' },
           ].concat(commonCols),
         });
         $scope.gridOptions.onRegisterApi = function(gridApi) {
