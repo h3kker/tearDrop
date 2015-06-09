@@ -157,6 +157,7 @@ use Bio::DB::Fasta;
 sub genome_sequence {
   my ($self, $reg) = @_;
   my $db = Bio::DB::Fasta->new($self->genome_path);
+  warn $reg->{contig}." ".$reg->{start}." ".$reg->{end};
   $db->seq($reg->{contig}, $reg->{start}, $reg->{end});
 }
 

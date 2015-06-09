@@ -655,6 +655,7 @@ angular.module('tearDropDirectives', []).
                     });
                     */
                     if (!el.children) return;
+                    console.log('here');
                     el.exonSeries = {
                       name: 'ann-exons-'+el.id,
                       type: 'arearange',
@@ -689,6 +690,9 @@ angular.module('tearDropDirectives', []).
                         [ child.cend, stackHeight+2, stackHeight+mrnaHeight-2 ]
                       );
                     });
+                    console.log(el.exonSeries.data);
+                    el.exonSeries.data.sort(function(a,b) { return a[0]-b[0] });
+                    console.log(el.exonSeries.data);
                     $scope.coverageChartConfig.getHighcharts().yAxis[1].addPlotBand({
                       id: 'band-'+el.id,
                       from: stackHeight+mrnaHeight/2,

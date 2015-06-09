@@ -416,8 +416,8 @@ sub import_file {
         tstart => $t->{start},
         tend => $t->{end},
         blocksizes => join(",", map { $_->{end}-$_->{start} } @{$t->{exons}}),
-        qstarts => join(",", map { $_->{start} } @{$t->{exons}}),
-        tstarts => join(",",@trans_starts[0..($#trans_starts-1)]),
+        tstarts => join(",", map { $_->{start} } @{$t->{exons}}),
+        qstarts => join(",",@trans_starts[0..($#trans_starts-1)]),
       };
       if (@rows >= 100) {
       #if (@rows >= config->{import_flush_rows}) {
