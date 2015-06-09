@@ -72,6 +72,11 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
         'xAxis',
         'yAxis'
       ];
+    var chartTypeMap = {
+        'stock': 'StockChart',
+        'map': 'Map',
+        'chart': 'Chart'
+      };
     var getMergedOptions = function (scope, element, config) {
       var mergedOptions = {};
       var defaultOptions = {
@@ -146,10 +151,15 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
       }
     };
     var chartOptionsWithoutEasyOptions = function (options) {
-      return angular.extend({}, options, {
+      return highchartsNGUtils.deepExtend({}, options, {
         data: null,
         visible: null
       });
+    };
+    var getChartType = function (scope) {
+      if (scope.config === undefined)
+        return 'Chart';
+      return chartTypeMap[('' + scope.config.chartType).toLowerCase()] || (scope.config.useHighStocks ? 'StockChart' : 'Chart');
     };
     return {
       restrict: 'EAC',
@@ -226,7 +236,8 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
           var config = scope.config || {};
           var mergedOptions = getMergedOptions(scope, element, config);
           var func = config.func || undefined;
-          chart = config.useHighStocks ? new Highcharts.StockChart(mergedOptions, func) : new Highcharts.Chart(mergedOptions, func);
+          var chartType = getChartType(scope);
+          chart = new Highcharts[chartType](mergedOptions, func);
           for (var i = 0; i < axisNames.length; i++) {
             if (config[axisNames[i]]) {
               processExtremes(chart, config[axisNames[i]], axisNames[i]);
@@ -261,11 +272,16 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
         }, true);
         scope.$watch('config.loading', function (loading) {
           if (loading) {
-            chart.showLoading();
+            chart.showLoading(loading === true ? null : loading);
           } else {
             chart.hideLoading();
           }
         });
+        scope.$watch('config.noData', function (noData) {
+          if (scope.config && scope.config.loading) {
+            chart.showLoading(noData);
+          }
+        }, true);
         scope.$watch('config.credits.enabled', function (enabled) {
           if (enabled) {
             chart.credits.show();
@@ -273,20 +289,30 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
             chart.credits.hide();
           }
         });
-        scope.$watch('config.useHighStocks', function (useHighStocks, oldUseHighStocks) {
-          if (useHighStocks === oldUseHighStocks)
+        scope.$watch(getChartType, function (chartType, oldChartType) {
+          if (chartType === oldChartType)
             return;
           initChart();
         });
         angular.forEach(axisNames, function (axisName) {
           scope.$watch('config.' + axisName, function (newAxes, oldAxes) {
-            if (newAxes === oldAxes)
+            if (newAxes === oldAxes || !newAxes) {
               return;
-            if (newAxes) {
+            }
+            if (angular.isArray(newAxes)) {
+              for (var axisIndex = 0; axisIndex < newAxes.length; axisIndex++) {
+                var axis = newAxes[axisIndex];
+                if (axisIndex < chart[axisName].length) {
+                  chart[axisName][axisIndex].update(axis, false);
+                  updateZoom(chart[axisName][axisIndex], angular.copy(axis));
+                }
+              }
+            } else {
+              // update single axis
               chart[axisName][0].update(newAxes, false);
               updateZoom(chart[axisName][0], angular.copy(newAxes));
-              chart.redraw();
             }
+            chart.redraw();
           }, true);
         });
         scope.$watch('config.options', function (newOptions, oldOptions, scope) {
@@ -309,7 +335,10 @@ if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.ex
         });
         scope.$on('$destroy', function () {
           if (chart) {
-            chart.destroy();
+            try {
+              chart.destroy();
+            } catch (ex) {
+            }
             $timeout(function () {
               element.remove();
             }, 0);
