@@ -84,7 +84,7 @@ sub run_blast {
   croak 'need assembly, transcript or gene parameters' unless $blast_param{assembly};
 
   $blast_param{evalue_cutoff} = $req_params->{'evalue_cutoff'} if defined $req_params->{'evalue_cutoff'};
-  $blast_param{max_target_seqs} = $req_params->{'max_target_seqs'} if defined $req_params->{'max_target_seqs'};
+  $blast_param{max_target_seqs} = $req_params->{'max_target_seqs'} if $req_params->{'max_target_seqs'};
 
   my $task = new TearDrop::Task::ReverseBLAST(%blast_param);
   # run directly, usually doesn't take too long.
