@@ -241,39 +241,52 @@ sub import_file {
 
   $self->delete_related('gene_model_mappings');
   open my $IF, "<".$self->path or confess "Open ".$self->path.": $!";
-  my @rows;
+  my @gff_fields = qw/chr prog type start end score strand frame info/;
   my %auto_ids;
+  my @features;
+  my %ids;
   while(<$IF>) {
     next if m/^#/;
     next if m/^\+$/;
     chomp;
-    my @f = split " ", $_, 9;
-    my %sf = map { my @subf = split "=", $_; lc($subf[0]), $subf[1] } split ";", $f[8];
+    my @f = split " ", $_, scalar @gff_fields;
+    my %f = map { $gff_fields[$_] => $f[$_] } 0..$#gff_fields;
+    my %sf = map { my @subf = split "=", $_; lc($subf[0]), $subf[1] } split ";", $f{info};
     if (exists $sf{note}) {
       $sf{note}=~tr/\+/ /;
     }
     unless($sf{id}) {
       if ($sf{parent}) {
-        $sf{id}=$sf{parent}.'.'.$f[2];
+        $sf{id}=$sf{parent}.'.'.$f{type};
         $sf{id}.='.'.($auto_ids{$sf{id}}++);
       }
       else {
         confess "Don't know how to create an automatic id in line $.";
       }
     }
-    $sf{Name}||=$sf{ID};
+    $sf{name}||=$sf{id};
+    $f{info_h}=\%sf;
+    $ids{$sf{id}}++;
+    push @features, \%f;
+  }
+  %auto_ids=();
+  my @rows;
+  for my $f (@features) {
+    if ($ids{$f->{info_h}{id}}>1) {
+      $f->{info_h}{id} = sprintf "%s.%s.%02d", $f->{info_h}{id}, $f->{type}, ++$auto_ids{$f->{info_h}{id}};
+    }
     push @rows, {
-      contig => $f[0],
-      mtype => $f[2],
-      cstart => $f[3],
-      cend => $f[4],
-      # score => $f[5], # ignore
-      strand => $f[6],
-      # frame => $f[7], # ignore
-      id => $sf{id},
-      name => $sf{name},
-      parent => $sf{parent},
-      additional => $sf{note},
+      contig => $f->{chr},
+      mtype => $f->{type},
+      cstart => $f->{start},
+      cend => $f->{end},
+      # score => $f->{score}, # ignore
+      strand => $f->{strand},
+      # frame => $f->{frame}, # ignore
+      id => $f->{info_h}{id},
+      name => $f->{info_h}{name},
+      parent => $f->{info_h}{parent},
+      additional => $f->{info_h}{note},
       gene_model_id => $self->id,
     };
     if (@rows >= 1000) {

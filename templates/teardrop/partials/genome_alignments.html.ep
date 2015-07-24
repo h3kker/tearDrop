@@ -12,7 +12,10 @@
         </div>
         <div class="panel-body">
          <div class="row">
-          <div class="col-md-12" ng-init="map.context=5000">
+          <div class="col-md-1">
+           <a role="button" class="btn btn-default btn-xs" href="http://localhost:60151/goto?locus={{map.tid}}:{{map.tstart}}-{{map.tend}}" target="_new"><i class="fa fa-external-link"></i> Show in IGV</a>
+          </div>
+          <div class="col-md-11" ng-init="map.context=5000">
            <a role="button" class="btn btn-default btn-xs" href="<%= config->{base_uri} =%>/api/projects/{{currentProject.name}}/genomemappings/{{map.genome_mapping_id}}/fasta?tid={{map.tid}}&tstart={{map.tstart}}&tend={{map.tend}}&context={{map.context}}">Get FASTA file</a>
            +/- <input type="text" ng-model="map.context" class="input-sm" style="width:10em"> bp
           </div>
@@ -37,8 +40,8 @@
             <accordion-group ng-repeat="ann in map.annotations | orderBy:['cstart', 'cend'] | filter:{'annotation_type': 'transcript'}">
              <accordion-heading>
               {{ann.cstart | number}} - {{ann.cend | number}} ({{ann.strand}}): {{ann.name || ann.id}}</span> <i class="fa fa-eye" ng-click="loadGenomeAlignments(map, ann, true)"></i>
-             </accordion-heading>
-             <p><a href="#/genes/{{ann.id}}">{{ann.id}}<span ng-show="ann.name">/{{ann.name}}</span></a></p>
+              </accordion-heading>
+             <p><a href="#/genes/{{ann.id}}">{{ann.id}}<span ng-show="ann.name">/{{ann.name}}</span></a> <a class="btn btn-xs btn-default" href="http://localhost:60151/goto?locus={{ann.contig}}:{{ann.cstart}}-{{ann.cend}}" target="_new"><i class="fa fa-external-link"></i> IGV</a></p>
              <p>{{ann.description}}</p>
              <ol>
               <li ng-repeat="trans in ann.children | orderBy:['cstart', 'cend']" ng-init="trans.expand=false">

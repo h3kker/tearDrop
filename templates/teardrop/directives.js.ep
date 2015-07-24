@@ -663,11 +663,12 @@ angular.module('tearDropDirectives', []).
                       data: [],
                       lineWidth: 2,
                       fillOpacity: 0.01,
-                      fillColor: '#ccc',
+                      fillColor: el.strand=='+' ? '#386cb0' : '#7fc97f',
                       lineColor: '#333',
                       yAxis: 1,
                       zIndex: 2,
                     };
+                    console.log(el);
                     var hasExon = el.children.some(function(child) { return child.mtype=='exon' });
                     var exons = [];
                     angular.forEach(el.children, function(child, childIdx) {
@@ -691,7 +692,6 @@ angular.module('tearDropDirectives', []).
                         [ child.cend, stackHeight+2, stackHeight+mrnaHeight-2 ]
                       );
                     });
-                    console.log(el.exonSeries.data);
                     el.exonSeries.data.sort(function(a,b) { return a[0]-b[0] });
                     console.log(el.exonSeries.data);
                     $scope.coverageChartConfig.getHighcharts().yAxis[1].addPlotBand({

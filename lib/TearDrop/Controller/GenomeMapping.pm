@@ -38,9 +38,12 @@ sub annotations {
   my $self = shift;
 
   my $reg = $self->check_region_params;
-  my $gm = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('genomemappingId')) || croak 'no such mapping';
   my @ret;
-  push @ret, @{$gm->as_tree($reg, { filter => 1 })};
+  my $gm = $self->stash('project_schema')->resultset($self->resultset)->find($self->param('genomemappingId')) || croak 'no such mapping';
+  #push @ret, @{$gm->as_tree($reg, { filter => 1 })};
+  for my $map ($self->stash('project_schema')->resultset($self->resultset)->all) {
+    push @ret, @{$map->as_tree($reg, { filter => 1 })};
+  }
   for my $mod ($gm->organism_name->gene_models) {
     push @ret, @{$mod->as_tree($reg)};
   }

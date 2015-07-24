@@ -351,6 +351,56 @@ sub import_file {
       #debug 'done.';
     }
   }
+  elsif ($self->program eq 'CodingQuarry') {
+    open my $IF, "<".$self->path or confess("Open ".$self->path.": $!");
+    my $l=0;
+    my %features;
+    my %transcripts;
+    my @gff_fields = qw/chr prog type start end score strand ignore1 info ignore2 ignore3/;
+    LINE: while(<$IF>) {
+      $l++;
+      chomp;
+      s/#.*//;
+      next if $_ eq '';
+      my @f = split "\t", $_, scalar @gff_fields;
+      my %f = map { $gff_fields[$_] => $f[$_] } 0..$#gff_fields;
+      if ($f{prog} eq 'CodingQuarry_v1.1') {
+        # Stop codon not included
+        if ($f{strand} eq '+') {
+          $f{end}+=3;
+        }
+        else {
+          $f{start}-=3;
+        }
+      }
+      my %inf = map { my @tmp = split "=", $_; lc($tmp[0]) => $tmp[1] } split ";", $f{info};
+      $f{info_h}=\%inf;
+      $features{$inf{id}}=\%f;
+    }
+    for my $f (values %features) {
+      if ($f->{type} eq 'gene') {
+        $f->{exons}||=[];
+        $transcripts{$f->{info_h}{id}} ||= {
+          id => sprintf("%s.01", $f->{info_h}{id}),
+          gene_id => $f->{info_h}{id},
+          exons => $f->{exons},
+        };
+      }
+      elsif ($f->{type} eq 'CDS') {
+        confess 'Parent '.$f->{info_h}{parent}.' does not exist' unless $features{$f->{info_h}{parent}};
+        $features{$f->{info_h}{parent}}->{exons}||=[];
+        push @{$features{$f->{info_h}{parent}}->{exons}}, {
+          exon => scalar(@{$features{$f->{info_h}{parent}}->{exons}}),
+          strand => $f->{strand},
+          tid => $f->{chr},
+          start => $f->{start},
+          end => $f->{end},
+        };
+      }
+    }
+    close $IF;
+    $self->load_transcripts(\%transcripts);
+  }
   elsif ($self->program eq 'cufflinks') {
     open my $IF, "<".$self->path or confess("Open ".$self->path.": $!");
     my $l=0;
@@ -359,6 +409,7 @@ sub import_file {
       $l++;
       chomp;
       my @v = split "\t";
+      next unless $v[2] eq 'exon';
 
       my %m = map { my @tmp = split ' ', $_; $tmp[1]=~tr/"//d; $tmp[0] => $tmp[1] } split ';', $v[8];
       $m{transcript_id}=$self->transcript_assembly->prefix.'.'.$m{transcript_id} if $self->needs_prefix;
@@ -376,69 +427,74 @@ sub import_file {
         end => $v[4],
       };
     }
-    my @rows;
-    for my $t (values %transcripts) {
-      $t->{exons}=[ sort { $a->{exon} <=> $b->{exon} } @{$t->{exons}} ];
-      $t->{trans_length}=0;
-      my @trans_starts=(1);
-      for my $e (@{$t->{exons}}) {
-        if (!exists $t->{start} || $e->{start}<$t->{start}) {
-          $t->{start}=$e->{start};
-        }
-        if (!exists $t->{end} || $e->{end}>$t->{end}) {
-          $t->{end}=$e->{end};
-        }
-        if (!exists $t->{strand}) {
-          $t->{strand}=$e->{strand};
-        }
-        if ($t->{strand} ne $e->{strand}) {
-          croak "something's wrong: ".$t->{id}." exons on different strands???";
-        }
-
-        if (!exists $t->{tid}) {
-          $t->{tid}=$e->{tid};
-        }
-        $t->{trans_length}+=$e->{end}-$e->{start}+1;
-        push @trans_starts, $trans_starts[$#trans_starts]+($e->{end}-$e->{start});
-      }
-      push @rows, {
-        genome_mapping_id => $self->id,
-        transcript_id => $t->{id},
-        matches => $t->{trans_length},
-        match_ratio => 1,
-        mismatches => 0,
-        rep_matches => 0,
-        strand => $t->{strand},
-        qstart => 1,
-        qend => $t->{trans_length},
-        tid => $t->{tid},
-        tsize => $t->{end}-$t->{start},
-        tstart => $t->{start},
-        tend => $t->{end},
-        blocksizes => join(",", map { $_->{end}-$_->{start} } @{$t->{exons}}),
-        tstarts => join(",", map { $_->{start} } @{$t->{exons}}),
-        qstarts => join(",",@trans_starts[0..($#trans_starts-1)]),
-      };
-      if (@rows >= 100) {
-      #if (@rows >= config->{import_flush_rows}) {
-        #debug 'flushing '.@rows.' to database (line '. $. .')';
-        $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
-        @rows=();
-
-        #debug 'done.';
-      }
-    }
     close $IF;
-    if (@rows) {
-      #debug 'flushing remaining '.@rows.' to database';
-      $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
-      #debug 'done.';
-    }
+    $self->load_transcripts(\%transcripts);
   }
   else {
     confess "don't know how to handle ".$self->program." maps";
   }
 
+}
+
+sub load_transcripts {
+  my ($self, $transcripts) = @_;
+  my @rows;
+  for my $t (values %$transcripts) {
+    $t->{exons}=[ sort { $a->{exon} <=> $b->{exon} } @{$t->{exons}} ];
+    $t->{trans_length}=0;
+    my @trans_starts=(1);
+    for my $e (@{$t->{exons}}) {
+      if (!exists $t->{start} || $e->{start}<$t->{start}) {
+        $t->{start}=$e->{start};
+      }
+      if (!exists $t->{end} || $e->{end}>$t->{end}) {
+        $t->{end}=$e->{end};
+      }
+      if (!exists $t->{strand}) {
+        $t->{strand}=$e->{strand};
+      }
+      if ($t->{strand} ne $e->{strand}) {
+        croak "something's wrong: ".$t->{id}." exons on different strands???";
+      }
+
+      if (!exists $t->{tid}) {
+        $t->{tid}=$e->{tid};
+      }
+      $t->{trans_length}+=$e->{end}-$e->{start}+1;
+      push @trans_starts, $trans_starts[$#trans_starts]+($e->{end}-$e->{start});
+    }
+    push @rows, {
+      genome_mapping_id => $self->id,
+      transcript_id => $t->{id},
+      matches => $t->{trans_length},
+      match_ratio => 1,
+      mismatches => 0,
+      rep_matches => 0,
+      strand => $t->{strand},
+      qstart => 1,
+      qend => $t->{trans_length},
+      tid => $t->{tid},
+      tsize => $t->{end}-$t->{start},
+      tstart => $t->{start},
+      tend => $t->{end},
+      blocksizes => join(",", map { $_->{end}-$_->{start} } @{$t->{exons}}),
+      tstarts => join(",", map { $_->{start} } @{$t->{exons}}),
+      qstarts => join(",",@trans_starts[0..($#trans_starts-1)]),
+    };
+    if (@rows >= 100) {
+    #if (@rows >= config->{import_flush_rows}) {
+      #debug 'flushing '.@rows.' to database (line '. $. .')';
+      $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+      @rows=();
+
+      #debug 'done.';
+    }
+  }
+  if (@rows) {
+    #debug 'flushing remaining '.@rows.' to database';
+    $self->result_source->schema->resultset('TranscriptMapping')->populate(\@rows);
+    #debug 'done.';
+  }
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

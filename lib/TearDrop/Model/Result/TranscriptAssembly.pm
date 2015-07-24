@@ -116,6 +116,8 @@ __PACKAGE__->add_columns(
   { data_type => "timestamp", is_nullable => 1 },
   "path",
   { data_type => "text", is_nullable => 1 },
+  "transcript_map",
+  { data_type => "text", is_nullable => 1 },
   "is_primary",
   { data_type => "boolean", is_nullable => 0 },
   "sha1",
@@ -244,13 +246,13 @@ with 'TearDrop::Model::HasFileImport';
 sub _is_column_serializable { 1 };
 
 sub import_file {
-  my ($self, $transcript_map) = @_;
+  my $self = shift;
 
   $self->delete_related('transcripts');
 
   my $gene_map;
-  if ($transcript_map) {
-    open my $TR, "<".$transcript_map || confess 'open '.$transcript_map.": $!";
+  if ($self->transcript_map) {
+    open my $TR, "<".$self->transcript_map || confess 'open '.$self->transcript_map.": $!";
     while(<$TR>) {
       chomp;
       my @m = split "\t";
@@ -312,6 +314,13 @@ sub import_file {
           $cur_trans->{gene}{id}=$self->prefix.'.'.$cur_trans->{gene}{id};
         }
         $cur_trans->{gene_id}=$cur_trans->{gene}{id};
+      }
+      else {
+        $cur_trans->{gene}={
+          id => $cur_trans->{id},
+          original_id => $cur_trans->{original_id},
+        };
+        $cur_trans->{gene_id}=$cur_trans->{id};
       }
 
       #if ($cur_trans->{id} =~ m#(.*c\d+_g\d+)_i.+#) {
