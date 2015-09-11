@@ -87,7 +87,7 @@ sub fasta {
     $fasta.="$chunk\n";
   }
 
-  $self->render(text => $fasta);
+  $self->render(format => 'txt', text => $fasta);
 }
 
 1;

@@ -57,7 +57,10 @@ sub list_fasta {
   for my $t ($rs->all) {
     push @ret, $t->to_fasta;
   }
-  $self->render(text => join "\n", @ret);
+  my $headers = Mojo::Headers->new;
+  $headers->add( 'Content-Disposition', 'attachment;filename=genes_export.fasta' );
+  $self->res->content->headers($headers);
+  $self->render(format => 'txt', text => join "\n", @ret);
 }
 
 sub read {

@@ -79,7 +79,10 @@ sub results_fasta {
   for my $r ($rs->all) {
     push @f, $r->$obj->to_fasta;
   }
-  $self->render(text => join "\n", @f);
+  my $headers = Mojo::Headers->new;
+  $headers->add( 'Content-Disposition', 'attachment;filename=deresults_export.fasta' );
+  $self->res->content->headers($headers);
+  $self->render(format => 'txt', text => join "\n", @f);
 }
 
 

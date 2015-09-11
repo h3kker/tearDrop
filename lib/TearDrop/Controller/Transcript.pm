@@ -56,7 +56,7 @@ sub list_fasta {
   my $headers = Mojo::Headers->new; 
   $headers->add( 'Content-Disposition', 'attachment;filename=transcripts_export.fasta' );
   $self->res->content->headers($headers);
-  $self->render(text => join "\n", @ret);
+  $self->render(format => 'txt', text => join "\n", @ret);
 }
 
 sub read {
