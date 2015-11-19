@@ -28,7 +28,7 @@ sub list {
     ]
   });
   my @ret;
-  for my $r ($rs->all) {
+  while(my $r = $rs->next) {
     my $ser = $r->TO_JSON;
     $ser->{organism} = $r->organism;
     $ser->{transcripts} = [ map { $_->TO_JSON } $r->transcripts ];
@@ -54,7 +54,7 @@ sub list_fasta {
     prefetch => [ { 'transcripts' => [ 'organism' ] }, { 'gene_tags' => [ 'tag', ] } ],
   });
   my @ret;
-  for my $t ($rs->all) {
+  while(my $t = $rs->next) {
     push @ret, $t->to_fasta;
   }
   my $headers = Mojo::Headers->new;

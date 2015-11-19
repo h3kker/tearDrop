@@ -332,7 +332,7 @@ sub filtered_mappings {
 sub comparisons {
   {
     rating => { cmp => '>', column => 'me.rating' }, 
-    assembly => { cmp => '=', column => 'transcript_assemblies.name' },
+    assembly => { cmp => '=', column => 'assembly.name' },
     transcript_assembly_id => { cmp => '=', column => 'me.transcript_assembly_id' },
     id => { cmp => 'like', column => 'me.id' },
     'gene.id' => { cmp => 'like', column => 'gene.id' },

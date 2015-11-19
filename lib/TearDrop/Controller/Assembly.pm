@@ -93,6 +93,7 @@ sub run_blast {
   for my $r (@$result) {
     my $ser = $r->TO_JSON;
     $ser->{transcript} = $r->transcript;
+    $ser->{gene} = $r->transcript->gene;
     $ser->{db_source} = $r->db_source;
     push @ret, $ser;
   }

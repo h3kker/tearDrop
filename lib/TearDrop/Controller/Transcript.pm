@@ -50,7 +50,7 @@ sub list_fasta {
     prefetch => [ 'organism', { 'transcript_tags' => [ 'tag' ] } ],
   });
   my @ret;
-  for my $t ($rs->all) {
+  while (my $t = $rs->next) {
     push @ret, $t->to_fasta;
   }
   my $headers = Mojo::Headers->new; 

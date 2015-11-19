@@ -22,7 +22,7 @@ sub list {
     ]
   });
   my @ret;
-  for my $r ($rs->all) {
+  while(my $r = $rs->next) {
     my $ser = $r->TO_JSON;
     $ser->{contrasts} = [ map {
       $_->contrast->TO_JSON
@@ -76,7 +76,7 @@ sub results_fasta {
     order_by => $self->stash('sort'),
   });
   my @f;
-  for my $r ($rs->all) {
+  while(my $r = $rs->next) {
     push @f, $r->$obj->to_fasta;
   }
   my $headers = Mojo::Headers->new;
