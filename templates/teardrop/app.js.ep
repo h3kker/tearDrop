@@ -79,7 +79,7 @@ var tearDrop = angular.module('TearDrop', [
 
     columnDefs: [
       { name: 'F', type: 'boolean', field: 'flagged', cellTemplate: '<div class="ui-grid-cell-contents"><i class="fa" ng-class="'+"{ 'fa-check-circle text-success': !row.entity.flagged, 'fa-ban text-danger': row.entity.flagged }"+'"></i></div>', enableCellEdit: true, width: '5%' },
-      { name: 'Id', field: 'forskalle_id', cellTemplate: '<div class="ui-grid-cell-contents"><span ng-show="{{COL_FIELD}}"><a href="http://ngs.csf.ac.at/forskalle/#/samples/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></span><span ng-hide="{{COL_FIELD}}">{{row.entity.id}}</span></div>', enableCellEdit: true, width: '7%', },
+      { name: 'Id', field: 'forskalle_id', cellTemplate: '<div class="ui-grid-cell-contents"><span ng-show="{{COL_FIELD}}"><a href="http://ngs.vbcf.ac.at/forskalle/#/samples/{{COL_FIELD}}">{{COL_FIELD CUSTOM_FILTERS}}</a></span><span ng-hide="{{COL_FIELD}}">{{row.entity.id}}</span></div>', enableCellEdit: true, width: '7%', },
       { name: 'Name', field: 'name', enableCellEdit: true, width: '15%', },
       { name: 'Description', field: 'description', enableCellEdit: true, width: '*',},
       { name: 'Condition', field: 'condition.name', editableCellTemplate: 'ui-grid/dropdownEditor', editDropdownOptionsArray: $scope.conditions, editDropdownIdLabel: 'name', editDropdownValueLabel: 'name', sort: { direction: uiGridConstants.ASC, priority: 0 }, width: '10%'},

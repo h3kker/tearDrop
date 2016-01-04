@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CSF.NGS TearDrop</title>
+  <title>VBCF.NGS TearDrop</title>
   <link rel="stylesheet" href="<%= config->{base_uri} %>/css/app.css"/>
   <link rel="stylesheet" href="<%= config->{base_uri} %>/css/bootstrap.css" media="all">
   <link rel="stylesheet" href="<%= config->{base_uri} %>/css/font-awesome.min.css">
@@ -13,7 +13,7 @@
   <div class="container-fluid">
     <div class="navbar-header">
       <a class="navbar-brand" href="<%= config->{base_uri} =%>/#/">
-        CSF.NGS teardrop
+        VBCF.NGS teardrop
       </a>
     </div>
   </div>
